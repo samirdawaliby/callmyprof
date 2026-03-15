@@ -110,17 +110,44 @@ const LANDING_CSS = `
   /* ---- Hero ---- */
   .hero {
     padding: 120px 24px 80px;
-    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 40%, #991B1B 100%);
+    background: #1E293B;
     position: relative;
     overflow: hidden;
     text-align: center;
     color: #fff;
   }
+  .hero-bg-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.35;
+    z-index: 0;
+  }
+  .hero-bg-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.35;
+    z-index: 0;
+  }
   .hero::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1.5' fill='rgba(255,255,255,0.08)'/%3E%3C/svg%3E");
+    background: linear-gradient(135deg, rgba(220,38,38,0.7) 0%, rgba(30,41,59,0.85) 60%, rgba(15,23,42,0.9) 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1.5' fill='rgba(255,255,255,0.06)'/%3E%3C/svg%3E");
+    z-index: 0;
     pointer-events: none;
   }
   .hero-inner {
@@ -360,48 +387,102 @@ const LANDING_CSS = `
     margin-right: auto;
   }
 
-  /* ---- How it works ---- */
-  .how-grid {
+  /* ---- Image strip ---- */
+  .image-strip {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 32px;
+    gap: 0;
+    max-height: 280px;
+    overflow: hidden;
+  }
+  .image-strip img {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    transition: transform 0.5s;
+  }
+  .image-strip img:hover {
+    transform: scale(1.05);
+  }
+  @media (max-width: 768px) {
+    .image-strip { grid-template-columns: 1fr 1fr; max-height: 200px; }
+    .image-strip img { height: 200px; }
+  }
+  @media (max-width: 480px) {
+    .image-strip { grid-template-columns: 1fr 1fr; max-height: 150px; }
+    .image-strip img { height: 150px; }
+  }
+
+  /* ---- How it works ---- */
+  .how-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+  .how-image {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .how-image img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    display: block;
+  }
+  .how-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
   }
   .how-step {
     text-align: center;
     position: relative;
     animation: slideUp 0.5s ease both;
+    background: var(--gray-50);
+    border-radius: 16px;
+    padding: 24px 16px;
+    border: 1px solid var(--gray-100);
+    transition: all 0.3s;
+  }
+  .how-step:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    border-color: var(--primary);
   }
   .how-step:nth-child(1) { animation-delay: 0.1s; }
   .how-step:nth-child(2) { animation-delay: 0.2s; }
   .how-step:nth-child(3) { animation-delay: 0.3s; }
   .how-step:nth-child(4) { animation-delay: 0.4s; }
   .how-number {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
     background: linear-gradient(135deg, var(--primary), var(--primary-light));
     color: #fff;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 16px;
+    margin: 0 auto 12px;
     box-shadow: 0 4px 12px rgba(220,38,38,0.3);
   }
   .how-step h4 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--gray-900);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .how-step p {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--gray-500);
-    line-height: 1.6;
+    line-height: 1.5;
   }
-  @media (max-width: 768px) {
-    .how-grid { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 900px) {
+    .how-layout { grid-template-columns: 1fr; }
+    .how-image { display: none; }
   }
   @media (max-width: 480px) {
     .how-grid { grid-template-columns: 1fr; }
@@ -610,9 +691,23 @@ const LANDING_CSS = `
   /* ---- Tutor CTA ---- */
   .tutor-cta {
     padding: 80px 24px;
-    background: linear-gradient(135deg, var(--secondary), #0F172A);
+    background: var(--secondary);
     text-align: center;
     color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .tutor-cta-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.2;
+  }
+  .tutor-cta > *:not(.tutor-cta-bg) {
+    position: relative;
+    z-index: 1;
   }
   .tutor-cta h2 {
     font-size: 32px;
@@ -946,6 +1041,7 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
 
   <!-- HERO -->
   <section class="hero">
+    <img class="hero-bg-image" src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920&q=80&auto=format" alt="" loading="eager">
     <div class="hero-inner">
       <div class="hero-text">
         <h1>${t(locale, 'hero.title')}</h1>
@@ -1047,29 +1143,42 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
     </div>
   </section>
 
+  <!-- IMAGE STRIP -->
+  <div class="image-strip">
+    <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=75&auto=format" alt="Classroom" loading="lazy">
+    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=75&auto=format" alt="Students studying" loading="lazy">
+    <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600&q=75&auto=format" alt="School" loading="lazy">
+    <img src="https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=600&q=75&auto=format" alt="Learning" loading="lazy">
+  </div>
+
   <!-- HOW IT WORKS -->
   <section class="section" id="how">
     <h2 class="section-title">${t(locale, 'how.title')}</h2>
-    <div class="how-grid">
-      <div class="how-step">
-        <div class="how-number">1</div>
-        <h4>${t(locale, 'how.step1_title')}</h4>
-        <p>${t(locale, 'how.step1_desc')}</p>
+    <div class="how-layout">
+      <div class="how-image">
+        <img src="https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=800&q=80&auto=format" alt="Tutor with student" loading="lazy">
       </div>
-      <div class="how-step">
-        <div class="how-number">2</div>
-        <h4>${t(locale, 'how.step2_title')}</h4>
-        <p>${t(locale, 'how.step2_desc')}</p>
-      </div>
-      <div class="how-step">
-        <div class="how-number">3</div>
-        <h4>${t(locale, 'how.step3_title')}</h4>
-        <p>${t(locale, 'how.step3_desc')}</p>
-      </div>
-      <div class="how-step">
-        <div class="how-number">4</div>
-        <h4>${t(locale, 'how.step4_title')}</h4>
-        <p>${t(locale, 'how.step4_desc')}</p>
+      <div class="how-grid">
+        <div class="how-step">
+          <div class="how-number">1</div>
+          <h4>${t(locale, 'how.step1_title')}</h4>
+          <p>${t(locale, 'how.step1_desc')}</p>
+        </div>
+        <div class="how-step">
+          <div class="how-number">2</div>
+          <h4>${t(locale, 'how.step2_title')}</h4>
+          <p>${t(locale, 'how.step2_desc')}</p>
+        </div>
+        <div class="how-step">
+          <div class="how-number">3</div>
+          <h4>${t(locale, 'how.step3_title')}</h4>
+          <p>${t(locale, 'how.step3_desc')}</p>
+        </div>
+        <div class="how-step">
+          <div class="how-number">4</div>
+          <h4>${t(locale, 'how.step4_title')}</h4>
+          <p>${t(locale, 'how.step4_desc')}</p>
+        </div>
       </div>
     </div>
   </section>
@@ -1157,6 +1266,7 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
 
   <!-- BECOME A TUTOR -->
   <section class="tutor-cta">
+    <img class="tutor-cta-bg" src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&q=75&auto=format" alt="" loading="lazy">
     <h2>${t(locale, 'tutor_cta.title')}</h2>
     <p>${t(locale, 'tutor_cta.subtitle')}</p>
     <a href="/onboarding" class="tutor-cta-btn">
