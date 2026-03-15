@@ -2,6 +2,7 @@ name = "callmyprof"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 account_id = "bc9bdfa814d313ad361e1120f2d57af9"
+workers_dev = true
 
 routes = [
   { pattern = "callmyprof.com/*", zone_name = "callmyprof.com" },
