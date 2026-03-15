@@ -7,6 +7,8 @@
 import { requireAuth, getSessionIdFromRequest, deleteSession } from '../shared/auth';
 import { htmlResponse, jsonResponse, redirectResponse, errorResponse } from '../shared/utils';
 import { htmlPage } from '../shared/html-utils';
+import { detectLocale, langCookieHeader } from '../shared/i18n/index';
+import type { Locale } from '../shared/i18n/index';
 import { renderLoginPage, handleLogin } from './pages/login';
 import { renderDashboard } from './pages/dashboard';
 import { renderFormateursListe } from './pages/formateurs-liste';
@@ -28,7 +30,8 @@ import { renderPackages } from './pages/packages';
 import { createPackage, updatePackageType } from './api/packages';
 import { renderAvis } from './pages/avis';
 import { toggleAvisVisibility } from './api/avis';
-import { renderLanding } from './pages/landing';
+import { renderLanding, renderThanksPage } from './pages/landing';
+import { createLead, updateLeadStatus } from './api/leads';
 import { renderStatistiques } from './pages/statistiques';
 import type { User } from '../shared/types';
 
@@ -41,6 +44,12 @@ export interface Env {
   R2: R2Bucket;
   AI: Ai;
   ENVIRONMENT: string;
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
+  PAYPAL_CLIENT_ID?: string;
+  PAYPAL_SECRET?: string;
+  WHATSAPP_TOKEN?: string;
+  WHATSAPP_PHONE_ID?: string;
 }
 
 // ============================================================================
@@ -208,15 +217,35 @@ export default {
         });
       }
 
+      // Locale detection (used by public pages)
+      const locale = detectLocale(request);
+      const langParam = url.searchParams.get('lang');
+      const langCookie = langParam ? langCookieHeader(langParam as Locale) : undefined;
+
       // Landing page (public marketing page)
       if (path === '/' && method === 'GET') {
-        const html = await renderLanding(env);
-        return htmlResponse(html);
+        const html = await renderLanding(env, request);
+        const headers: Record<string, string> = {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        };
+        if (langCookie) headers['Set-Cookie'] = langCookie;
+        return new Response(html, { status: 200, headers });
+      }
+
+      // Thank you page
+      if (path === '/thanks' && method === 'GET') {
+        return htmlResponse(renderThanksPage(locale));
+      }
+
+      // Lead creation (public CTA form)
+      if (path === '/api/leads' && method === 'POST') {
+        return createLead(env, request);
       }
 
       // Login page
       if (path === '/login' && method === 'GET') {
-        return htmlResponse(renderLoginPage());
+        return htmlResponse(renderLoginPage(undefined, locale));
       }
 
       // Login POST
@@ -365,6 +394,15 @@ export default {
         if (familleId && method === 'GET') {
           const html = await renderFamilleDetail(env, familleId, userName);
           return htmlResponse(html);
+        }
+      }
+
+      // ---- Leads (admin) ----
+      // Lead status update API (PUT /api/leads/:id/status)
+      {
+        const leadStatusId = matchPath(path, '/api/leads/:id/status');
+        if (leadStatusId && method === 'PUT') {
+          return updateLeadStatus(env, leadStatusId, request);
         }
       }
 
@@ -568,8 +606,7 @@ export default {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Erreur - Soutien Scolaire Caplogy</title>
-  <link rel="icon" href="https://www.caplogy.com/logo_C.png">
+  <title>Error - CallMyProf</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }

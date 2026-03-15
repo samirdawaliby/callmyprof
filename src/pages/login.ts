@@ -1,11 +1,12 @@
 /**
- * Soutien Scolaire Caplogy - Page de connexion
- * Login page avec design Caplogy, animations, gradient background
+ * CallMyProf - Login Page
+ * Admin login with red+charcoal branding, animations, i18n
  */
 
 import { CSS_VARS, CSS_BASE, CSS_ANIMATIONS } from '../../shared/html-utils';
 import { verifyPassword, createSession } from '../../shared/auth';
 import { parseFormData, redirectResponse, htmlResponse } from '../../shared/utils';
+import { type Locale, t } from '../../shared/i18n/index';
 import type { Env } from '../../shared/types';
 
 // ============================================================================
@@ -15,7 +16,7 @@ import type { Env } from '../../shared/types';
 const LOGIN_CSS = `
   /* ---- Animated gradient background ---- */
   body {
-    background: linear-gradient(-45deg, #0d3865, #092847, #1a4f8a, #0d3865, #6dcbdd);
+    background: linear-gradient(-45deg, #1E293B, #0F172A, #334155, #1E293B, #DC2626);
     background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
     min-height: 100vh;
@@ -125,7 +126,7 @@ const LOGIN_CSS = `
     left: 0;
     right: 0;
     height: 5px;
-    background: linear-gradient(90deg, #6dcbdd, #0d3865, #6dcbdd);
+    background: linear-gradient(90deg, #DC2626, #1E293B, #DC2626);
     background-size: 200% 100%;
     animation: borderShimmer 3s ease-in-out infinite;
   }
@@ -148,7 +149,7 @@ const LOGIN_CSS = `
     width: 72px;
     height: 72px;
     border-radius: 20px;
-    background: linear-gradient(135deg, #0d3865, #1a4f8a);
+    background: linear-gradient(135deg, #1E293B, #334155);
     font-size: 36px;
     margin-bottom: 18px;
     box-shadow: 0 8px 24px rgba(13, 56, 101, 0.25);
@@ -161,7 +162,7 @@ const LOGIN_CSS = `
     position: absolute;
     inset: -3px;
     border-radius: 23px;
-    background: linear-gradient(135deg, #6dcbdd, transparent, #6dcbdd);
+    background: linear-gradient(135deg, #DC2626, transparent, #DC2626);
     z-index: -1;
     opacity: 0.5;
     animation: spin 6s linear infinite;
@@ -170,7 +171,7 @@ const LOGIN_CSS = `
   .login-title {
     font-size: 24px;
     font-weight: 800;
-    color: #0d3865;
+    color: #1E293B;
     letter-spacing: -0.5px;
     margin-bottom: 6px;
   }
@@ -252,14 +253,14 @@ const LOGIN_CSS = `
   }
 
   .field-input:focus {
-    border-color: #6dcbdd;
+    border-color: #DC2626;
     background: #fff;
     box-shadow: 0 0 0 4px rgba(109, 203, 221, 0.15);
   }
 
   .field-input:focus ~ .field-icon,
   .field-input:focus + .field-icon {
-    color: #0d3865;
+    color: #1E293B;
   }
 
   .field-input::placeholder {
@@ -272,7 +273,7 @@ const LOGIN_CSS = `
     padding: 15px 24px;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, #0d3865 0%, #1a4f8a 50%, #0d3865 100%);
+    background: linear-gradient(135deg, #1E293B 0%, #334155 50%, #1E293B 100%);
     background-size: 200% auto;
     color: #fff;
     font-size: 16px;
@@ -381,12 +382,12 @@ const LOGIN_CSS = `
   }
 
   .login-footer a {
-    color: #6dcbdd;
+    color: #DC2626;
     text-decoration: none;
     font-weight: 500;
   }
   .login-footer a:hover {
-    color: #0d3865;
+    color: #1E293B;
   }
 
   /* ---- Responsive ---- */
@@ -413,7 +414,7 @@ const LOGIN_CSS = `
 // RENDER LOGIN PAGE
 // ============================================================================
 
-export function renderLoginPage(error?: string): string {
+export function renderLoginPage(error?: string, locale: Locale = 'en'): string {
   const errorHtml = error
     ? `<div class="login-error">
         <span class="error-icon">&#9888;</span>
@@ -427,7 +428,7 @@ export function renderLoginPage(error?: string): string {
     const left = (i * 5.3 + 7) % 100;
     const delay = (i * 1.7) % 12;
     const duration = 8 + (i % 7) * 3;
-    const color = i % 2 === 0 ? '#6dcbdd' : '#ffffff';
+    const color = i % 2 === 0 ? '#DC2626' : '#ffffff';
     return `<div class="particle" style="width:${size}px;height:${size}px;left:${left}%;background:${color};animation-delay:${delay}s;animation-duration:${duration}s;"></div>`;
   }).join('\n    ');
 
@@ -446,8 +447,7 @@ export function renderLoginPage(error?: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connexion - Soutien Scolaire Caplogy</title>
-  <link rel="icon" href="https://www.caplogy.com/logo_C.png">
+  <title>${t(locale, 'login.title')} - CallMyProf</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     ${CSS_VARS}
@@ -470,16 +470,16 @@ export function renderLoginPage(error?: string): string {
   <div class="login-wrapper">
     <div class="login-card">
       <div class="login-header">
-        <div class="login-logo">&#127891;</div>
-        <h1 class="login-title">Soutien Scolaire Caplogy</h1>
-        <p class="login-subtitle">Plateforme de gestion</p>
+        <div class="login-logo">&#128222;</div>
+        <h1 class="login-title">CallMyProf</h1>
+        <p class="login-subtitle">${t(locale, 'login.title')}</p>
       </div>
 
       <form class="login-form" method="POST" action="/login" id="loginForm">
         ${errorHtml}
 
         <div class="field-group">
-          <label class="field-label" for="email">Adresse email</label>
+          <label class="field-label" for="email">${t(locale, 'login.email')}</label>
           <div class="field-input-wrap">
             <span class="field-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -491,7 +491,7 @@ export function renderLoginPage(error?: string): string {
               id="email"
               name="email"
               class="field-input"
-              placeholder="admin@caplogy.com"
+              placeholder="admin@callmyprof.com"
               required
               autocomplete="email"
               autofocus
@@ -500,7 +500,7 @@ export function renderLoginPage(error?: string): string {
         </div>
 
         <div class="field-group">
-          <label class="field-label" for="password">Mot de passe</label>
+          <label class="field-label" for="password">${t(locale, 'login.password')}</label>
           <div class="field-input-wrap">
             <span class="field-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -512,7 +512,7 @@ export function renderLoginPage(error?: string): string {
               id="password"
               name="password"
               class="field-input"
-              placeholder="Entrez votre mot de passe"
+              placeholder="${t(locale, 'login.password')}"
               required
               autocomplete="current-password"
             >
@@ -521,14 +521,14 @@ export function renderLoginPage(error?: string): string {
 
         <button type="submit" class="login-btn" id="loginBtn">
           <span class="btn-spinner"></span>
-          <span class="btn-text">Se connecter</span>
-          <span class="btn-loading-text">Connexion en cours...</span>
+          <span class="btn-text">${t(locale, 'login.submit')}</span>
+          <span class="btn-loading-text">${t(locale, 'common.loading')}</span>
           <span class="btn-arrow">&#8594;</span>
         </button>
       </form>
 
       <div class="login-footer">
-        <p>Caplogy &copy; ${new Date().getFullYear()} &mdash; Tous droits r&eacute;serv&eacute;s</p>
+        <p>CallMyProf &copy; ${new Date().getFullYear()}</p>
       </div>
     </div>
   </div>

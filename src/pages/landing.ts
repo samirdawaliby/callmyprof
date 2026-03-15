@@ -1,1019 +1,657 @@
 /**
- * Soutien Scolaire Caplogy - Landing Page publique
- * Page marketing avec hero, simulateur, domaines, packages, temoignages
- * NO sidebar - standalone public page
+ * CallMyProf - Landing Page
+ * Public marketing page: hero, CTA form, how it works, subjects, pricing, testimonials
+ * Full i18n support (EN/FR/AR) with RTL
  */
 
 import { CSS_VARS, CSS_BASE, CSS_ANIMATIONS } from '../../shared/html-utils';
-import { PACKAGES, formatPrix, TARIFS } from '../../shared/pricing';
-import type { Env } from '../../shared/types';
+import { type Locale, t, htmlAttrs, detectLocale, getCurrency } from '../../shared/i18n/index';
+import type { Env, Domaine } from '../../shared/types';
 
 // ============================================================================
-// DOMAINES DATA
-// ============================================================================
-
-const DOMAINES = [
-  { emoji: '\u{1F4DA}', nom: 'Soutien scolaire', desc: 'Maths, Fran\u00e7ais, Physique, SVT... du primaire au sup\u00e9rieur', nb: 50 },
-  { emoji: '\u{1F30D}', nom: 'Langues vivantes', desc: 'Anglais, Espagnol, Allemand, Italien, Mandarin...', nb: 25 },
-  { emoji: '\u{1F3B5}', nom: 'Musique & instruments', desc: 'Piano, guitare, chant, solf\u00e8ge et th\u00e9orie musicale', nb: 20 },
-  { emoji: '\u{1F4BB}', nom: 'Informatique', desc: 'Programmation, bureautique, cr\u00e9ation num\u00e9rique', nb: 18 },
-  { emoji: '\u{1F3A8}', nom: 'Arts & cr\u00e9ation', desc: 'Dessin, peinture, sculpture, arts visuels', nb: 15 },
-  { emoji: '\u{26BD}', nom: 'Sport & bien-\u00eatre', desc: 'Coaching sportif, yoga, m\u00e9ditation, disciplines', nb: 22 },
-  { emoji: '\u{1F393}', nom: 'Concours & pro', desc: 'Pr\u00e9pa concours, examens, formations pro', nb: 30 },
-  { emoji: '\u{1F9E0}', nom: 'Accompagnement', desc: 'M\u00e9thodologie, DYS, TDAH, HPI, coaching scolaire', nb: 20 },
-];
-
-// ============================================================================
-// TESTIMONIALS DATA
-// ============================================================================
-
-const TESTIMONIALS = [
-  {
-    note: 5,
-    text: 'Notre fils a progress\u00e9 de 4 points en math\u00e9matiques en seulement 2 mois. Le formateur est exceptionnel, patient et p\u00e9dagogue.',
-    name: 'Sophie M.',
-    ville: 'Lyon',
-    context: 'Maman de Lucas, 3\u00e8me',
-  },
-  {
-    note: 5,
-    text: 'Le cr\u00e9dit d\'imp\u00f4t de 50% rend le service vraiment accessible. Ma fille adore ses cours de piano et a fait des progr\u00e8s incroyables.',
-    name: 'Pierre D.',
-    ville: 'Paris',
-    context: 'Papa de Camille, CM2',
-  },
-  {
-    note: 4,
-    text: 'Excellent accompagnement pour notre enfant TDAH. Le formateur comprend parfaitement ses besoins sp\u00e9cifiques et adapte ses m\u00e9thodes.',
-    name: 'Isabelle R.',
-    ville: 'Bordeaux',
-    context: 'Maman de Th\u00e9o, 5\u00e8me',
-  },
-];
-
-// ============================================================================
-// CSS
+// LANDING CSS
 // ============================================================================
 
 const LANDING_CSS = `
-  /* ---- Global landing ---- */
-  body {
-    background: var(--white);
-    overflow-x: hidden;
-  }
-
   /* ---- Navbar ---- */
-  .landing-nav {
+  .navbar {
     position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 1000;
-    padding: 16px 40px;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 0 24px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(9, 40, 71, 0.92);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(109, 203, 221, 0.15);
-    transition: all 0.3s ease;
   }
-
-  .landing-nav-logo {
+  .nav-logo {
     display: flex;
     align-items: center;
     gap: 10px;
     text-decoration: none;
-    color: var(--white);
-    font-size: 18px;
-    font-weight: 700;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
   }
-
-  .landing-nav-logo img {
-    height: 30px;
-    border-radius: 6px;
+  .nav-logo-icon {
+    font-size: 26px;
   }
-
-  .landing-nav-links {
+  .nav-links {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 24px;
+    list-style: none;
   }
-
-  .landing-nav-links a {
-    padding: 8px 18px;
-    color: rgba(255,255,255,0.8);
+  .nav-links a {
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
     font-size: 14px;
     font-weight: 500;
-    border-radius: var(--radius-sm);
+    transition: color 0.2s;
+  }
+  .nav-links a:hover {
+    color: #fff;
+  }
+  .nav-lang {
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .nav-lang a {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
   }
-
-  .landing-nav-links a:hover {
-    color: var(--white);
-    background: rgba(255,255,255,0.08);
+  .nav-lang a:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
   }
-
-  .landing-nav-links .nav-cta {
-    background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
-    color: var(--primary-dark);
-    font-weight: 700;
-    padding: 9px 22px;
+  .nav-lang a.active {
+    background: var(--primary);
+    color: #fff;
   }
-
-  .landing-nav-links .nav-cta:hover {
-    box-shadow: 0 4px 16px rgba(109, 203, 221, 0.4);
-    transform: translateY(-1px);
+  .nav-mobile-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
   }
-
   @media (max-width: 768px) {
-    .landing-nav { padding: 12px 16px; }
-    .landing-nav-links { gap: 4px; }
-    .landing-nav-links a { padding: 7px 12px; font-size: 12px; }
+    .nav-links { display: none; }
+    .nav-mobile-toggle { display: block; }
+    .nav-links.open {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 64px;
+      left: 0;
+      right: 0;
+      background: rgba(30, 41, 59, 0.98);
+      padding: 20px 24px;
+      gap: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
   }
 
   /* ---- Hero ---- */
   .hero {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(160deg, var(--primary-dark) 0%, var(--primary) 40%, #1a5a9e 70%, var(--primary-dark) 100%);
-    background-size: 300% 300%;
-    animation: heroGradient 12s ease-in-out infinite;
+    padding: 120px 24px 80px;
+    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 40%, #991B1B 100%);
     position: relative;
     overflow: hidden;
-    padding: 120px 40px 80px;
     text-align: center;
+    color: #fff;
   }
-
-  @keyframes heroGradient {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-
-  /* Floating shapes */
-  .hero-shapes {
+  .hero::before {
+    content: '';
     position: absolute;
     inset: 0;
-    overflow: hidden;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1.5' fill='rgba(255,255,255,0.08)'/%3E%3C/svg%3E");
     pointer-events: none;
   }
-
-  .hero-shape {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.08;
-    background: var(--secondary);
-  }
-
-  .hero-shape:nth-child(1) {
-    width: 500px; height: 500px;
-    top: -10%; right: -8%;
-    animation: floatShape1 18s ease-in-out infinite;
-  }
-  .hero-shape:nth-child(2) {
-    width: 300px; height: 300px;
-    bottom: -5%; left: -5%;
-    animation: floatShape2 14s ease-in-out infinite;
-    background: var(--secondary-light);
-    opacity: 0.06;
-  }
-  .hero-shape:nth-child(3) {
-    width: 200px; height: 200px;
-    top: 30%; left: 10%;
-    animation: floatShape3 10s ease-in-out infinite;
-    opacity: 0.05;
-  }
-  .hero-shape:nth-child(4) {
-    width: 150px; height: 150px;
-    top: 20%; right: 15%;
-    animation: floatShape2 12s ease-in-out infinite;
-    animation-delay: 3s;
-    background: #fff;
-    opacity: 0.04;
-  }
-  .hero-shape:nth-child(5) {
-    width: 80px; height: 80px;
-    bottom: 25%; right: 25%;
-    animation: floatShape1 8s ease-in-out infinite;
-    animation-delay: 2s;
-    opacity: 0.07;
-  }
-  .hero-shape:nth-child(6) {
-    width: 120px; height: 120px;
-    top: 50%; left: 25%;
-    animation: floatShape3 15s ease-in-out infinite;
-    animation-delay: 5s;
-    opacity: 0.04;
-    background: #fff;
-  }
-
-  @keyframes floatShape1 {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    33% { transform: translate(30px, -40px) rotate(5deg); }
-    66% { transform: translate(-20px, 20px) rotate(-3deg); }
-  }
-  @keyframes floatShape2 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(40px, -30px) scale(1.05); }
-  }
-  @keyframes floatShape3 {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-50px) rotate(8deg); }
-  }
-
-  .hero-content {
+  .hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
     position: relative;
-    z-index: 2;
-    max-width: 800px;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    text-align: left;
   }
-
-  .hero h1 {
-    font-size: 52px;
+  [dir="rtl"] .hero-inner { text-align: right; }
+  .hero-text h1 {
+    font-size: 48px;
     font-weight: 800;
-    color: var(--white);
-    letter-spacing: -1.5px;
-    line-height: 1.12;
-    margin-bottom: 20px;
-    animation: slideUp 0.7s ease both;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+    animation: slideUp 0.6s ease both;
   }
-
-  .hero h1 .highlight {
-    background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .hero-subtitle {
+  .hero-text h2 {
     font-size: 20px;
-    color: rgba(255,255,255,0.8);
-    line-height: 1.6;
-    margin-bottom: 12px;
     font-weight: 400;
-    animation: slideUp 0.7s ease both;
-    animation-delay: 0.15s;
-  }
-
-  .hero-credit {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(109, 203, 221, 0.3);
-    border-radius: 30px;
-    padding: 10px 24px;
+    opacity: 0.9;
     margin-bottom: 32px;
-    font-size: 16px;
-    color: var(--white);
-    font-weight: 600;
-    animation: bounceIn 0.8s ease both;
-    animation-delay: 0.4s;
+    line-height: 1.5;
+    animation: slideUp 0.6s ease 0.1s both;
   }
-
-  .hero-credit .original-price {
-    text-decoration: line-through;
-    opacity: 0.5;
-    font-weight: 400;
-  }
-
-  .hero-credit .credit-badge {
-    background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
-    color: var(--primary-dark);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: 800;
-    font-size: 14px;
-    animation: pulse 2.5s ease-in-out infinite;
-  }
-
-  .hero-buttons {
+  .hero-trust {
     display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 40px;
-    animation: slideUp 0.7s ease both;
-    animation-delay: 0.3s;
+    gap: 24px;
     flex-wrap: wrap;
+    animation: slideUp 0.6s ease 0.2s both;
+  }
+  .hero-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+  .hero-trust-item .check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
   }
 
-  .hero-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 36px;
-    border-radius: var(--radius-md);
-    font-size: 16px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: all 0.25s ease;
-    border: none;
+  /* ---- CTA Form ---- */
+  .cta-form-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideUp 0.6s ease 0.2s both;
+    color: var(--gray-900);
+    text-align: left;
+  }
+  [dir="rtl"] .cta-form-card { text-align: right; }
+  .cta-form-card h3 {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    color: var(--gray-900);
+  }
+  .cta-form-card .form-sub {
+    font-size: 14px;
+    color: var(--gray-500);
+    margin-bottom: 24px;
+  }
+  .cta-form-card .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .cta-form-card .form-group {
+    margin-bottom: 12px;
+  }
+  .cta-form-card label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 4px;
+  }
+  .cta-form-card input,
+  .cta-form-card select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: var(--gray-900);
+    background: var(--gray-50);
+    transition: all 0.2s;
+    outline: none;
+  }
+  .cta-form-card input:focus,
+  .cta-form-card select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+    background: #fff;
+  }
+  .cta-form-card select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
     cursor: pointer;
   }
-
-  .hero-btn-primary {
-    background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
-    color: var(--primary-dark);
-    box-shadow: 0 4px 20px rgba(109, 203, 221, 0.4);
+  [dir="rtl"] .cta-form-card select {
+    background-position: left 12px center;
+    padding-right: 12px;
+    padding-left: 36px;
   }
-  .hero-btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 30px rgba(109, 203, 221, 0.5);
-    color: var(--primary-dark);
-  }
-
-  .hero-btn-outline {
-    background: transparent;
-    color: var(--white);
-    border: 2px solid rgba(255,255,255,0.3);
-  }
-  .hero-btn-outline:hover {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.6);
-    transform: translateY(-3px);
-    color: var(--white);
-  }
-
-  .hero-badges {
+  .phone-group {
     display: flex;
-    justify-content: center;
-    gap: 28px;
-    flex-wrap: wrap;
-    animation: fadeIn 1s ease both;
-    animation-delay: 0.6s;
+    gap: 8px;
   }
-
-  .hero-badge {
+  .phone-group select {
+    width: 100px;
+    flex-shrink: 0;
+  }
+  .phone-group input {
+    flex: 1;
+  }
+  .service-type-row {
     display: flex;
-    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .service-type-btn {
+    flex: 1;
+    padding: 10px 8px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px;
+    background: var(--gray-50);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    color: var(--gray-600);
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .service-type-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  .service-type-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .cta-submit-btn {
+    width: 100%;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #DC2626, #EF4444);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
     align-items: center;
-    gap: 6px;
-    color: rgba(255,255,255,0.7);
-    font-size: 12px;
-    font-weight: 500;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;
   }
-
-  .hero-badge .badge-icon {
-    font-size: 28px;
-    animation: float 3s ease-in-out infinite;
+  .cta-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(220,38,38,0.4);
   }
-  .hero-badge:nth-child(2) .badge-icon { animation-delay: 1s; }
-  .hero-badge:nth-child(3) .badge-icon { animation-delay: 2s; }
+  .cta-submit-btn:active {
+    transform: translateY(0);
+  }
+  .cta-submit-btn.loading {
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  @keyframes ctaPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(220,38,38,0); }
+  }
+  .cta-submit-btn { animation: ctaPulse 2s ease-in-out infinite; }
+  .cta-submit-btn:hover { animation: none; }
 
-  @media (max-width: 768px) {
-    .hero { padding: 100px 20px 60px; }
-    .hero h1 { font-size: 32px; }
-    .hero-subtitle { font-size: 16px; }
-    .hero-btn { padding: 14px 24px; font-size: 14px; }
+  @media (max-width: 900px) {
+    .hero-inner {
+      grid-template-columns: 1fr;
+      text-align: center;
+      gap: 40px;
+    }
+    [dir="rtl"] .hero-inner { text-align: center; }
+    .hero-text h1 { font-size: 36px; }
+    .hero-text h2 { font-size: 18px; }
+    .hero-trust { justify-content: center; }
+    .cta-form-card .form-row { grid-template-columns: 1fr; }
   }
 
   /* ---- Section common ---- */
-  .landing-section {
-    padding: 90px 40px;
+  .section {
+    padding: 80px 24px;
     max-width: 1200px;
     margin: 0 auto;
   }
-
-  @media (max-width: 768px) {
-    .landing-section { padding: 60px 20px; }
-  }
-
   .section-title {
+    text-align: center;
     font-size: 36px;
     font-weight: 800;
     color: var(--gray-900);
-    text-align: center;
-    letter-spacing: -1px;
     margin-bottom: 12px;
+    letter-spacing: -0.5px;
   }
-
   .section-subtitle {
-    font-size: 17px;
-    color: var(--gray-500);
     text-align: center;
+    font-size: 16px;
+    color: var(--gray-500);
+    margin-bottom: 48px;
     max-width: 600px;
-    margin: 0 auto 48px;
-    line-height: 1.6;
-  }
-
-  /* ---- Price simulator ---- */
-  .simulator-section {
-    background: var(--gray-50);
-  }
-
-  .simulator-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 90px 40px;
-  }
-
-  .simulator-card {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    padding: 40px 48px;
-    max-width: 700px;
-    margin: 0 auto;
-    border: 1px solid var(--gray-100);
-  }
-
-  .sim-controls {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 28px;
-    flex-wrap: wrap;
-  }
-
-  .sim-type-btns {
-    display: flex;
-    gap: 0;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    border: 2px solid var(--gray-200);
-  }
-
-  .sim-type-btn {
-    padding: 12px 28px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    background: var(--white);
-    color: var(--gray-600);
-    transition: all 0.2s ease;
-  }
-
-  .sim-type-btn.active {
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    color: var(--white);
-  }
-
-  .sim-slider-wrap {
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .sim-slider-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--gray-600);
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .sim-slider-label .sim-hours-val {
-    color: var(--primary);
-    font-weight: 800;
-    font-size: 15px;
-  }
-
-  .sim-slider {
-    width: 100%;
-    height: 8px;
-    -webkit-appearance: none;
-    appearance: none;
-    border-radius: 4px;
-    background: var(--gray-200);
-    outline: none;
-  }
-
-  .sim-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(13,56,101,0.3);
-    transition: transform 0.15s ease;
-  }
-  .sim-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-  }
-
-  .sim-result {
-    text-align: center;
-    padding: 28px 0 0;
-    border-top: 1px solid var(--gray-100);
-  }
-
-  .sim-result-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
-  }
-
-  .sim-original {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--gray-400);
-    text-decoration: line-through;
-    position: relative;
-  }
-
-  @keyframes strikeThrough {
-    from { width: 0; }
-    to { width: 100%; }
-  }
-
-  .sim-arrow {
-    font-size: 24px;
-    color: var(--success);
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  .sim-final {
-    font-size: 42px;
-    font-weight: 800;
-    color: var(--primary);
-    letter-spacing: -1px;
-  }
-
-  .sim-credit-info {
-    font-size: 14px;
-    color: var(--gray-500);
-    margin-top: 4px;
-  }
-
-  .sim-credit-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--success-light);
-    color: #065f46;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    margin-top: 12px;
-    border: 1px solid #a7f3d0;
-  }
-
-  .sim-hourly {
-    font-size: 14px;
-    color: var(--gray-500);
-    margin-top: 10px;
-  }
-
-  /* ---- Domaines grid ---- */
-  .domaines-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 20px;
-  }
-
-  .domaine-card {
-    background: var(--white);
-    border-radius: var(--radius-md);
-    padding: 28px 24px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--gray-100);
-    text-align: center;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  .domaine-card.visible {
-    opacity: 1;
-    transform: translateY(0);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-
-  .domaine-card:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--shadow-xl);
-  }
-
-  .domaine-card::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--secondary), var(--primary-light));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .domaine-card:hover::after { opacity: 1; }
-
-  .domaine-emoji {
-    font-size: 44px;
-    margin-bottom: 14px;
-    display: inline-block;
-    animation: float 3s ease-in-out infinite;
-  }
-  .domaine-card:nth-child(2) .domaine-emoji { animation-delay: 0.5s; }
-  .domaine-card:nth-child(3) .domaine-emoji { animation-delay: 1s; }
-  .domaine-card:nth-child(4) .domaine-emoji { animation-delay: 1.5s; }
-  .domaine-card:nth-child(5) .domaine-emoji { animation-delay: 2s; }
-  .domaine-card:nth-child(6) .domaine-emoji { animation-delay: 2.5s; }
-  .domaine-card:nth-child(7) .domaine-emoji { animation-delay: 3s; }
-  .domaine-card:nth-child(8) .domaine-emoji { animation-delay: 3.5s; }
-
-  .domaine-nom {
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--gray-900);
-    margin-bottom: 8px;
-  }
-
-  .domaine-desc {
-    font-size: 13px;
-    color: var(--gray-500);
-    line-height: 1.5;
-    margin-bottom: 12px;
-  }
-
-  .domaine-count {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--primary);
-    background: rgba(13, 56, 101, 0.06);
-    padding: 4px 12px;
-    border-radius: 20px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   /* ---- How it works ---- */
-  .how-section {
-    background: linear-gradient(160deg, var(--primary-dark), var(--primary));
-    color: var(--white);
-    padding: 90px 40px;
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
   }
-
-  .how-section .section-title { color: var(--white); }
-  .how-section .section-subtitle { color: rgba(255,255,255,0.7); }
-
-  .how-steps {
-    display: flex;
-    justify-content: center;
-    gap: 0;
-    position: relative;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  @media (max-width: 768px) {
-    .how-steps { flex-direction: column; align-items: center; gap: 20px; }
-    .how-step-line { display: none; }
-  }
-
   .how-step {
-    flex: 1;
     text-align: center;
     position: relative;
-    padding: 0 20px;
-    animation: slideUp 0.6s ease both;
+    animation: slideUp 0.5s ease both;
   }
   .how-step:nth-child(1) { animation-delay: 0.1s; }
-  .how-step:nth-child(2) { animation-delay: 0.3s; }
-  .how-step:nth-child(3) { animation-delay: 0.5s; }
-
-  .how-step-number {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
-    color: var(--primary-dark);
-    font-size: 26px;
+  .how-step:nth-child(2) { animation-delay: 0.2s; }
+  .how-step:nth-child(3) { animation-delay: 0.3s; }
+  .how-step:nth-child(4) { animation-delay: 0.4s; }
+  .how-number {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: #fff;
+    font-size: 24px;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 18px;
-    position: relative;
-    z-index: 2;
-    box-shadow: 0 4px 16px rgba(109, 203, 221, 0.3);
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 12px rgba(220,38,38,0.3);
   }
-
-  .how-step-line {
-    position: absolute;
-    top: 32px;
-    left: 50%;
-    width: 100%;
-    height: 3px;
-    background: rgba(109, 203, 221, 0.3);
-    z-index: 1;
-  }
-  .how-step:last-child .how-step-line { display: none; }
-
-  .how-step-icon {
-    font-size: 36px;
-    margin-bottom: 12px;
-    display: block;
-    animation: float 3s ease-in-out infinite;
-  }
-  .how-step:nth-child(2) .how-step-icon { animation-delay: 1s; }
-  .how-step:nth-child(3) .how-step-icon { animation-delay: 2s; }
-
-  .how-step-title {
-    font-size: 17px;
+  .how-step h4 {
+    font-size: 16px;
     font-weight: 700;
+    color: var(--gray-900);
     margin-bottom: 8px;
   }
-
-  .how-step-desc {
+  .how-step p {
     font-size: 14px;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.5;
+    color: var(--gray-500);
+    line-height: 1.6;
+  }
+  @media (max-width: 768px) {
+    .how-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .how-grid { grid-template-columns: 1fr; }
   }
 
-  /* ---- Packages comparison ---- */
-  .packages-grid {
+  /* ---- Subjects grid ---- */
+  .subjects-bg {
+    background: var(--gray-50);
+  }
+  .subjects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  .subject-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    border: 1px solid var(--gray-100);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .subject-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    border-color: var(--primary);
+  }
+  .subject-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .subject-card h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 6px;
+  }
+  @media (max-width: 768px) {
+    .subjects-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .subjects-grid { grid-template-columns: 1fr; }
   }
 
-  .package-card {
-    background: var(--white);
-    border-radius: var(--radius-md);
-    padding: 28px 22px;
-    box-shadow: var(--shadow-sm);
+  /* ---- Pricing ---- */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .pricing-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 36px 28px;
     border: 2px solid var(--gray-100);
     text-align: center;
+    transition: all 0.3s;
     position: relative;
-    transition: all 0.3s ease;
   }
-
-  .package-card:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--shadow-xl);
-    border-color: var(--secondary);
+  .pricing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.1);
   }
-
-  .package-card.popular {
-    border-color: var(--secondary);
-    box-shadow: var(--shadow-lg);
-    transform: scale(1.03);
+  .pricing-card.featured {
+    border-color: var(--primary);
+    box-shadow: 0 8px 24px rgba(220,38,38,0.15);
   }
-
-  .package-card.popular:hover {
-    transform: scale(1.03) translateY(-6px);
-  }
-
-  .package-badge-popular {
+  .pricing-badge {
     position: absolute;
     top: -12px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
-    color: var(--primary-dark);
-    font-size: 11px;
-    font-weight: 800;
+    background: var(--primary);
+    color: #fff;
     padding: 4px 16px;
     border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    animation: pulse 2.5s ease-in-out infinite;
+    font-size: 12px;
+    font-weight: 700;
     white-space: nowrap;
   }
-
-  .package-name {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--gray-900);
-    margin-bottom: 4px;
-    margin-top: 4px;
-  }
-
-  .package-hours {
-    font-size: 13px;
-    color: var(--gray-500);
+  .pricing-icon {
+    font-size: 40px;
     margin-bottom: 16px;
+    display: block;
   }
-
-  .package-price {
-    font-size: 32px;
+  .pricing-card h4 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin-bottom: 8px;
+  }
+  .pricing-card .pricing-desc {
+    font-size: 14px;
+    color: var(--gray-500);
+    margin-bottom: 20px;
+  }
+  .pricing-price {
+    font-size: 14px;
+    color: var(--gray-500);
+    margin-bottom: 4px;
+  }
+  .pricing-amount {
+    font-size: 42px;
     font-weight: 800;
     color: var(--primary);
-    letter-spacing: -1px;
-    margin-bottom: 2px;
+    line-height: 1;
+    margin-bottom: 4px;
   }
-
-  .package-per-hour {
-    font-size: 13px;
+  .pricing-unit {
+    font-size: 14px;
     color: var(--gray-500);
-    margin-bottom: 12px;
+    margin-bottom: 24px;
   }
-
-  .package-credit {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 4px 12px;
-    border-radius: 20px;
-    margin-bottom: 14px;
+  .pricing-features {
+    list-style: none;
+    text-align: left;
+    margin-bottom: 28px;
   }
-
-  .package-credit.eligible {
-    background: var(--success-light);
-    color: #065f46;
-    border: 1px solid #a7f3d0;
-  }
-
-  .package-credit.not-eligible {
-    background: var(--gray-100);
-    color: var(--gray-500);
-    border: 1px solid var(--gray-200);
-  }
-
-  .package-final-price {
+  [dir="rtl"] .pricing-features { text-align: right; }
+  .pricing-features li {
+    padding: 8px 0;
     font-size: 14px;
     color: var(--gray-600);
-    padding-top: 12px;
-    border-top: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--gray-50);
   }
-
-  .package-final-price strong {
+  .pricing-features li:last-child { border-bottom: none; }
+  .pricing-features .feat-check {
     color: var(--success);
-    font-weight: 800;
-    font-size: 18px;
+    font-weight: 700;
   }
-
-  .package-desc {
-    font-size: 12px;
-    color: var(--gray-400);
-    margin-top: 8px;
-    line-height: 1.4;
+  .pricing-cta {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--primary);
+    background: transparent;
+    color: var(--primary);
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pricing-cta:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+  .pricing-card.featured .pricing-cta {
+    background: var(--primary);
+    color: #fff;
+  }
+  .pricing-card.featured .pricing-cta:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+  }
+  @media (max-width: 768px) {
+    .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
   }
 
   /* ---- Testimonials ---- */
-  .testimonials-section {
+  .testimonials-bg {
     background: var(--gray-50);
   }
-
-  .testimonials-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 90px 40px;
-  }
-
   .testimonials-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
   }
-
   .testimonial-card {
-    background: var(--white);
-    border-radius: var(--radius-md);
+    background: #fff;
+    border-radius: 16px;
     padding: 28px;
-    box-shadow: var(--shadow-sm);
     border: 1px solid var(--gray-100);
-    position: relative;
-    transition: all 0.3s ease;
   }
-  .testimonial-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-  }
-
   .testimonial-stars {
-    margin-bottom: 14px;
-    font-size: 20px;
+    color: #f59e0b;
+    font-size: 16px;
     letter-spacing: 2px;
+    margin-bottom: 12px;
   }
-
   .testimonial-text {
-    font-style: italic;
+    font-size: 14px;
     color: var(--gray-700);
-    font-size: 14px;
     line-height: 1.7;
-    margin-bottom: 18px;
-    position: relative;
-    padding-left: 18px;
+    margin-bottom: 16px;
+    font-style: italic;
   }
-
-  .testimonial-text::before {
-    content: '\\201C';
-    position: absolute;
-    left: 0;
-    top: -2px;
-    font-size: 24px;
-    color: var(--secondary);
-    font-style: normal;
-    font-weight: 800;
-  }
-
   .testimonial-author {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-top: 1px solid var(--gray-100);
-    padding-top: 14px;
-  }
-
-  .testimonial-avatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--primary-dark);
-    flex-shrink: 0;
-  }
-
-  .testimonial-name {
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--gray-900);
   }
-
-  .testimonial-context {
+  .testimonial-role {
     font-size: 12px;
-    color: var(--gray-500);
+    color: var(--gray-400);
+  }
+  @media (max-width: 768px) {
+    .testimonials-grid { grid-template-columns: 1fr; }
   }
 
-  /* ---- Formateur CTA ---- */
-  .formateur-cta {
-    background: linear-gradient(160deg, var(--primary-dark), var(--primary), #1a5a9e);
-    padding: 90px 40px;
+  /* ---- Tutor CTA ---- */
+  .tutor-cta {
+    padding: 80px 24px;
+    background: linear-gradient(135deg, var(--secondary), #0F172A);
     text-align: center;
-    position: relative;
-    overflow: hidden;
+    color: #fff;
   }
-
-  .formateur-cta::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -20%;
-    width: 600px;
-    height: 600px;
-    border-radius: 50%;
-    background: rgba(109,203,221,0.06);
-    animation: floatShape1 20s ease-in-out infinite;
-  }
-
-  .formateur-cta-inner {
-    max-width: 700px;
-    margin: 0 auto;
-    position: relative;
-    z-index: 2;
-  }
-
-  .formateur-cta h2 {
-    font-size: 36px;
+  .tutor-cta h2 {
+    font-size: 32px;
     font-weight: 800;
-    color: var(--white);
-    margin-bottom: 14px;
-    letter-spacing: -1px;
+    margin-bottom: 12px;
   }
-
-  .formateur-cta-subtitle {
-    font-size: 17px;
-    color: rgba(255,255,255,0.75);
+  .tutor-cta p {
+    font-size: 16px;
+    opacity: 0.8;
     margin-bottom: 28px;
-    line-height: 1.6;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
   }
-
-  .formateur-benefits {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .formateur-benefit {
-    display: flex;
+  .tutor-cta-btn {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
-    padding: 10px 20px;
-    border-radius: 30px;
-    font-size: 14px;
-    color: rgba(255,255,255,0.9);
-    font-weight: 500;
+    gap: 10px;
+    padding: 14px 32px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s;
   }
-
-  .formateur-benefit .benefit-icon {
-    font-size: 18px;
+  .tutor-cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(220,38,38,0.4);
+    color: #fff;
   }
 
   /* ---- Footer ---- */
-  .landing-footer {
-    background: var(--gray-900);
+  .footer {
+    background: var(--secondary);
     color: rgba(255,255,255,0.6);
-    padding: 48px 40px 28px;
+    padding: 60px 24px 30px;
   }
-
   .footer-inner {
     max-width: 1200px;
     margin: 0 auto;
@@ -1021,154 +659,233 @@ const LANDING_CSS = `
     grid-template-columns: 2fr 1fr 1fr 1fr;
     gap: 40px;
   }
-
+  .footer-brand h3 {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .footer-brand p {
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 300px;
+  }
+  .footer-col h4 {
+    color: rgba(255,255,255,0.9);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .footer-col a {
+    display: block;
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 4px 0;
+    transition: color 0.2s;
+  }
+  .footer-col a:hover {
+    color: #fff;
+  }
+  .footer-bottom {
+    max-width: 1200px;
+    margin: 40px auto 0;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    text-align: center;
+    font-size: 13px;
+  }
   @media (max-width: 768px) {
-    .footer-inner { grid-template-columns: 1fr 1fr; gap: 28px; }
+    .footer-inner { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 480px) {
     .footer-inner { grid-template-columns: 1fr; }
   }
 
-  .footer-brand {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .footer-logo {
+  /* ---- WhatsApp Widget ---- */
+  .whatsapp-widget {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 99;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #25D366;
+    color: #fff;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    font-size: 28px;
     text-decoration: none;
-    color: var(--white);
-    font-size: 16px;
-    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(37,211,102,0.4);
+    transition: all 0.3s;
   }
-
-  .footer-logo img {
-    height: 28px;
-    border-radius: 6px;
-  }
-
-  .footer-brand p {
-    font-size: 13px;
-    line-height: 1.6;
-    color: rgba(255,255,255,0.5);
-  }
-
-  .footer-col h4 {
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(255,255,255,0.8);
-    margin-bottom: 14px;
-  }
-
-  .footer-col a {
-    display: block;
-    font-size: 13px;
-    color: rgba(255,255,255,0.5);
-    text-decoration: none;
-    padding: 4px 0;
-    transition: color 0.2s ease;
-  }
-
-  .footer-col a:hover {
-    color: var(--secondary);
-  }
-
-  .footer-bottom {
-    max-width: 1200px;
-    margin: 28px auto 0;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255,255,255,0.08);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    color: rgba(255,255,255,0.35);
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  /* ---- Smooth scroll ---- */
-  html {
-    scroll-behavior: smooth;
+  [dir="rtl"] .whatsapp-widget { right: auto; left: 24px; }
+  .whatsapp-widget:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(37,211,102,0.5);
+    color: #fff;
   }
 `;
 
 // ============================================================================
-// RENDER
+// SUBJECTS DATA (static, matches catalogue domains)
 // ============================================================================
 
-export async function renderLanding(env: Env): Promise<string> {
-  // Build packages HTML from PACKAGES data
-  const packagesHtml = PACKAGES.map(pkg => {
-    const isPopular = pkg.tag === 'Populaire';
-    const credit = pkg.eligible_credit_impot ? Math.round(pkg.prix * 0.5 * 100) / 100 : 0;
-    const resteACharge = pkg.prix - credit;
+function getSubjects() {
+  return [
+    { icon: '&#128218;', key: 'domain.scolaire' },
+    { icon: '&#127760;', key: 'domain.langues' },
+    { icon: '&#127925;', key: 'domain.musique' },
+    { icon: '&#128187;', key: 'domain.informatique' },
+    { icon: '&#127912;', key: 'domain.arts' },
+    { icon: '&#9917;', key: 'domain.sport' },
+    { icon: '&#127891;', key: 'domain.concours' },
+    { icon: '&#129504;', key: 'domain.accompagnement' },
+  ];
+}
 
-    return `
-      <div class="package-card${isPopular ? ' popular' : ''}">
-        ${pkg.tag ? `<div class="package-badge-popular">${pkg.tag}</div>` : ''}
-        <div class="package-name">${pkg.nom}</div>
-        <div class="package-hours">${pkg.nb_heures}h &middot; ${pkg.type_cours === 'collectif' ? 'Collectif' : 'Individuel'}</div>
-        <div class="package-price">${formatPrix(pkg.prix)}</div>
-        <div class="package-per-hour">${formatPrix(pkg.prix_par_heure)}/h</div>
-        <div class="package-credit ${pkg.eligible_credit_impot ? 'eligible' : 'not-eligible'}">
-          ${pkg.eligible_credit_impot ? '\u2705 Cr\u00e9dit d\'imp\u00f4t 50%' : '\u274C Non \u00e9ligible'}
-        </div>
-        ${pkg.eligible_credit_impot ? `
-          <div class="package-final-price">
-            Soit <strong>${formatPrix(resteACharge)}</strong> apr\u00e8s cr\u00e9dit
-          </div>
-        ` : ''}
-        <div class="package-desc">${pkg.description}</div>
-      </div>`;
+// ============================================================================
+// TESTIMONIALS DATA
+// ============================================================================
+
+const TESTIMONIALS = [
+  {
+    text_en: 'My son went from a C to an A in math in just two months. The tutor was incredibly patient and knowledgeable.',
+    text_fr: 'Mon fils est pass\u00e9 de 10 \u00e0 16 en maths en deux mois. Le professeur \u00e9tait incroyablement patient.',
+    text_ar: '\u0627\u0628\u0646\u064A \u0627\u0646\u062A\u0642\u0644 \u0645\u0646 \u0639\u0644\u0627\u0645\u0629 \u0645\u062A\u0648\u0633\u0637\u0629 \u0625\u0644\u0649 \u0639\u0644\u0627\u0645\u0629 \u0645\u0645\u062A\u0627\u0632\u0629 \u0641\u064A \u0634\u0647\u0631\u064A\u0646 \u0641\u0642\u0637',
+    author: 'Sarah M.',
+    role_en: 'Parent',
+    role_fr: 'Parent',
+    role_ar: '\u0648\u0644\u064A \u0623\u0645\u0631',
+    note: 5,
+  },
+  {
+    text_en: 'The group classes are amazing value. My daughter loves the collaborative environment and her grades improved.',
+    text_fr: 'Les cours collectifs sont d\'un excellent rapport qualit\u00e9-prix. Ma fille adore et ses notes ont augment\u00e9.',
+    text_ar: '\u0627\u0644\u062F\u0631\u0648\u0633 \u0627\u0644\u062C\u0645\u0627\u0639\u064A\u0629 \u0630\u0627\u062A \u0642\u064A\u0645\u0629 \u0645\u0645\u062A\u0627\u0632\u0629. \u0627\u0628\u0646\u062A\u064A \u062A\u062D\u0628 \u0627\u0644\u0628\u064A\u0626\u0629 \u0627\u0644\u062A\u0639\u0627\u0648\u0646\u064A\u0629',
+    author: 'Ahmed K.',
+    role_en: 'Parent',
+    role_fr: 'Parent',
+    role_ar: '\u0648\u0644\u064A \u0623\u0645\u0631',
+    note: 5,
+  },
+  {
+    text_en: 'I was struggling with English for years. CallMyProf matched me with the perfect tutor and now I feel confident.',
+    text_fr: 'Je galérais en anglais depuis des ann\u00e9es. CallMyProf m\'a trouv\u00e9 le prof parfait et je me sens confiant.',
+    text_ar: '\u0643\u0646\u062A \u0623\u0639\u0627\u0646\u064A \u0645\u0639 \u0627\u0644\u0625\u0646\u062C\u0644\u064A\u0632\u064A\u0629 \u0644\u0633\u0646\u0648\u0627\u062A. CallMyProf \u0648\u062C\u062F \u0644\u064A \u0627\u0644\u0645\u0639\u0644\u0645 \u0627\u0644\u0645\u062B\u0627\u0644\u064A',
+    author: 'Lina R.',
+    role_en: 'Student, 16',
+    role_fr: '\u00c9l\u00e8ve, 16 ans',
+    role_ar: '\u0637\u0627\u0644\u0628\u0629\u060C 16 \u0633\u0646\u0629',
+    note: 5,
+  },
+];
+
+// ============================================================================
+// PHONE CODES
+// ============================================================================
+
+const PHONE_CODES = [
+  { code: '+1', country: 'US' },
+  { code: '+44', country: 'UK' },
+  { code: '+33', country: 'FR' },
+  { code: '+961', country: 'LB' },
+  { code: '+971', country: 'AE' },
+  { code: '+966', country: 'SA' },
+  { code: '+212', country: 'MA' },
+  { code: '+216', country: 'TN' },
+  { code: '+213', country: 'DZ' },
+  { code: '+20', country: 'EG' },
+  { code: '+49', country: 'DE' },
+  { code: '+34', country: 'ES' },
+  { code: '+39', country: 'IT' },
+  { code: '+32', country: 'BE' },
+  { code: '+41', country: 'CH' },
+  { code: '+974', country: 'QA' },
+  { code: '+965', country: 'KW' },
+  { code: '+962', country: 'JO' },
+];
+
+// ============================================================================
+// RENDER LANDING
+// ============================================================================
+
+export async function renderLanding(env: Env, request: Request): Promise<string> {
+  const locale = detectLocale(request);
+  const attrs = htmlAttrs(locale);
+  const cf = (request as any).cf;
+  const country = cf?.country || '';
+  const currency = getCurrency(country);
+
+  // Determine starting price based on currency
+  const startPrice = currency.code === 'EUR' ? '15\u20AC' : currency.code === 'GBP' ? '\u00A315' : '$15';
+
+  // Load domaines from DB for the subject dropdown
+  let domaines: Domaine[] = [];
+  try {
+    const result = await env.DB.prepare('SELECT * FROM domaines WHERE actif = 1 ORDER BY ordre').all<Domaine>();
+    domaines = result.results || [];
+  } catch {
+    // DB might not be ready yet
+  }
+
+  const domaineOptions = domaines.map(d => {
+    const nom = locale === 'ar' ? (d.nom_ar || d.nom) : locale === 'fr' ? d.nom : (d.nom_en || d.nom);
+    return `<option value="${d.id}">${nom}</option>`;
   }).join('');
 
-  // Domaines cards HTML
-  const domainesHtml = DOMAINES.map(d => `
-    <div class="domaine-card">
-      <div class="domaine-emoji">${d.emoji}</div>
-      <div class="domaine-nom">${d.nom}</div>
-      <div class="domaine-desc">${d.desc}</div>
-      <span class="domaine-count">${d.nb}+ th\u00e9matiques</span>
-    </div>
-  `).join('');
+  const subjects = getSubjects();
+  const year = new Date().getFullYear();
 
-  // Testimonials HTML
-  const starsFor = (n: number) => {
-    let s = '';
-    for (let i = 1; i <= 5; i++) {
-      s += i <= n ? '<span style="color: #f59e0b;">\u2605</span>' : '<span style="color: #e2e8f0;">\u2605</span>';
-    }
-    return s;
-  };
+  // Determine default phone code from country
+  const defaultCode = PHONE_CODES.find(p => p.country === country)?.code || '+1';
 
-  const testimonialsHtml = TESTIMONIALS.map(t => `
-    <div class="testimonial-card">
-      <div class="testimonial-stars">${starsFor(t.note)}</div>
-      <div class="testimonial-text">${t.text}</div>
-      <div class="testimonial-author">
-        <div class="testimonial-avatar">${t.name.charAt(0)}</div>
-        <div>
-          <div class="testimonial-name">${t.name} &middot; ${t.ville}</div>
-          <div class="testimonial-context">${t.context}</div>
-        </div>
-      </div>
-    </div>
-  `).join('');
+  const phoneCodeOptions = PHONE_CODES.map(p => {
+    const selected = p.code === defaultCode ? ' selected' : '';
+    return `<option value="${p.code}"${selected}>${p.code} ${p.country}</option>`;
+  }).join('');
 
-  const html = `<!DOCTYPE html>
-<html lang="fr">
+  const levels = [
+    { value: 'elementary', label: t(locale, 'level.elementary') },
+    { value: 'middle', label: t(locale, 'level.middle') },
+    { value: 'high', label: t(locale, 'level.high') },
+    { value: 'university', label: t(locale, 'level.university') },
+    { value: 'adult', label: t(locale, 'level.adult') },
+  ];
+  const levelOptions = levels.map(l => `<option value="${l.value}">${l.label}</option>`).join('');
+
+  const testimonialCards = TESTIMONIALS.map(tm => {
+    const text = locale === 'ar' ? tm.text_ar : locale === 'fr' ? tm.text_fr : tm.text_en;
+    const role = locale === 'ar' ? tm.role_ar : locale === 'fr' ? tm.role_fr : tm.role_en;
+    const stars = '\u2605'.repeat(tm.note);
+    return `<div class="testimonial-card card">
+      <div class="testimonial-stars">${stars}</div>
+      <p class="testimonial-text">&ldquo;${text}&rdquo;</p>
+      <div class="testimonial-author">${tm.author}</div>
+      <div class="testimonial-role">${role}</div>
+    </div>`;
+  }).join('');
+
+  const subjectCards = subjects.map(s => `
+    <div class="subject-card card" onclick="document.getElementById('form-subject').focus()">
+      <span class="subject-icon">${s.icon}</span>
+      <h4>${t(locale, s.key)}</h4>
+    </div>`).join('');
+
+  return `<!DOCTYPE html>
+<html lang="${attrs.lang}" dir="${attrs.dir}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Soutien Scolaire Caplogy - Cours particuliers \u00e0 domicile</title>
-  <meta name="description" content="Soutien scolaire, langues, musique, informatique... Cours particuliers \u00e0 domicile avec cr\u00e9dit d'imp\u00f4t de 50%. SAP agr\u00e9\u00e9, 200+ th\u00e9matiques.">
-  <link rel="icon" href="https://www.caplogy.com/logo_C.png">
+  <title>CallMyProf - ${t(locale, 'hero.title')}</title>
+  <meta name="description" content="${t(locale, 'hero.subtitle', { price: startPrice })}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     ${CSS_VARS}
@@ -1179,318 +896,420 @@ export async function renderLanding(env: Env): Promise<string> {
 </head>
 <body>
 
-  <!-- Navbar -->
-  <nav class="landing-nav">
-    <a href="/" class="landing-nav-logo">
-      <img src="https://www.caplogy.com/logo_C.png" alt="Caplogy">
-      <span>Soutien Scolaire</span>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <span class="nav-logo-icon">&#128222;</span>
+      <span>CallMyProf</span>
     </a>
-    <div class="landing-nav-links">
-      <a href="#domaines">Domaines</a>
-      <a href="#tarifs">Tarifs</a>
-      <a href="#temoignages">Avis</a>
-      <a href="/onboarding" class="nav-cta">Devenir formateur</a>
-    </div>
+    <button class="nav-mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="#subjects">${t(locale, 'nav.subjects')}</a></li>
+      <li><a href="#pricing">${t(locale, 'nav.pricing')}</a></li>
+      <li><a href="/onboarding">${t(locale, 'nav.become_tutor')}</a></li>
+      <li><a href="/login">${t(locale, 'nav.login')}</a></li>
+      <li>
+        <div class="nav-lang">
+          <a href="?lang=en" class="${locale === 'en' ? 'active' : ''}">EN</a>
+          <a href="?lang=fr" class="${locale === 'fr' ? 'active' : ''}">FR</a>
+          <a href="?lang=ar" class="${locale === 'ar' ? 'active' : ''}">AR</a>
+        </div>
+      </li>
+    </ul>
   </nav>
 
-  <!-- Hero -->
-  <section class="hero" id="hero">
-    <div class="hero-shapes">
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-    </div>
-    <div class="hero-content">
-      <h1>
-        <span class="highlight">Soutien Scolaire</span><br>
-        &agrave; domicile par Caplogy
-      </h1>
-      <p class="hero-subtitle">
-        Cours particuliers et collectifs dans 200+ th&eacute;matiques.
-        Des formateurs qualifi&eacute;s, un suivi personnalis&eacute;.
-      </p>
-      <div class="hero-credit">
-        <span class="original-price">36,00 &euro;/h</span>
-        <span>\u2192</span>
-        <span class="credit-badge">-50% Cr&eacute;dit d'imp&ocirc;t</span>
-        <span>\u2192</span>
-        <strong>18,00 &euro;/h</strong>
-      </div>
-      <div class="hero-buttons">
-        <a href="#simulator" class="hero-btn hero-btn-primary">
-          \u{1F4B0} Simuler mon prix
-        </a>
-        <a href="/onboarding" class="hero-btn hero-btn-outline">
-          \u{1F468}\u{200D}\u{1F3EB} Devenir formateur
-        </a>
-      </div>
-      <div class="hero-badges">
-        <div class="hero-badge">
-          <span class="badge-icon">\u{1F3E0}</span>
-          <span>SAP Agr&eacute;&eacute;</span>
-        </div>
-        <div class="hero-badge">
-          <span class="badge-icon">\u{1F4B3}</span>
-          <span>Cr&eacute;dit d'imp&ocirc;t 50%</span>
-        </div>
-        <div class="hero-badge">
-          <span class="badge-icon">\u{1F4DA}</span>
-          <span>200+ th&eacute;matiques</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Price simulator -->
-  <section class="simulator-section" id="simulator">
-    <div class="simulator-inner">
-      <h2 class="section-title">Simulez votre tarif</h2>
-      <p class="section-subtitle">
-        D&eacute;couvrez le co&ucirc;t r&eacute;el de vos cours apr&egrave;s cr&eacute;dit d'imp&ocirc;t de 50%.
-      </p>
-      <div class="simulator-card">
-        <div class="sim-controls">
-          <div class="sim-type-btns">
-            <button class="sim-type-btn active" onclick="setSimType('individuel')" id="sim-btn-individuel">Individuel</button>
-            <button class="sim-type-btn" onclick="setSimType('collectif')" id="sim-btn-collectif">Collectif</button>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1>${t(locale, 'hero.title')}</h1>
+        <h2>${t(locale, 'hero.subtitle', { price: startPrice })}</h2>
+        <div class="hero-trust">
+          <div class="hero-trust-item">
+            <span class="check">&#10003;</span>
+            ${t(locale, 'hero.trust_1')}
           </div>
-          <div class="sim-slider-wrap">
-            <div class="sim-slider-label">
-              <span>Nombre d'heures</span>
-              <span class="sim-hours-val" id="sim-hours-label">1h</span>
+          <div class="hero-trust-item">
+            <span class="check">&#10003;</span>
+            ${t(locale, 'hero.trust_2')}
+          </div>
+          <div class="hero-trust-item">
+            <span class="check">&#10003;</span>
+            ${t(locale, 'hero.trust_3')}
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA FORM -->
+      <div class="cta-form-card">
+        <h3>${t(locale, 'form.title')}</h3>
+        <p class="form-sub">${t(locale, 'hero.trust_1')}</p>
+        <form id="ctaForm" method="POST" action="/api/leads">
+          <input type="hidden" name="detected_locale" value="${locale}">
+          <input type="hidden" name="country" value="${country}">
+          <input type="hidden" name="service_type" value="individual" id="service_type_input">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>${t(locale, 'form.first_name')} *</label>
+              <input type="text" name="prenom" required placeholder="${t(locale, 'form.first_name')}">
             </div>
-            <input type="range" class="sim-slider" id="sim-slider" min="1" max="20" value="1" oninput="updateSim()">
+            <div class="form-group">
+              <label>${t(locale, 'form.last_name')} *</label>
+              <input type="text" name="nom" required placeholder="${t(locale, 'form.last_name')}">
+            </div>
           </div>
-        </div>
-        <div class="sim-result">
-          <div class="sim-result-row">
-            <span class="sim-original" id="sim-original">36,00 &euro;</span>
-            <span class="sim-arrow">\u2192</span>
-            <span class="sim-final" id="sim-final">18,00 &euro;</span>
+
+          <div class="form-group">
+            <label>${t(locale, 'form.email')} *</label>
+            <input type="email" name="email" required placeholder="email@example.com">
           </div>
-          <div class="sim-credit-info" id="sim-credit-info">
-            Cr&eacute;dit d'imp&ocirc;t de 18,00 &euro;
+
+          <div class="form-group">
+            <label>${t(locale, 'form.phone')} *</label>
+            <div class="phone-group">
+              <select name="country_code">
+                ${phoneCodeOptions}
+              </select>
+              <input type="tel" name="telephone" required placeholder="123 456 789">
+            </div>
           </div>
-          <div class="sim-credit-badge" id="sim-credit-badge">
-            \u2705 &Eacute;ligible au cr&eacute;dit d'imp&ocirc;t 50%
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>${t(locale, 'form.subject')}</label>
+              <select name="domaine_id" id="form-subject">
+                <option value="">${t(locale, 'form.subject_placeholder')}</option>
+                ${domaineOptions}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>${t(locale, 'form.level')}</label>
+              <select name="level">
+                <option value="">${t(locale, 'form.level_placeholder')}</option>
+                ${levelOptions}
+              </select>
+            </div>
           </div>
-          <div class="sim-hourly" id="sim-hourly">
-            Soit 18,00 &euro;/h apr&egrave;s cr&eacute;dit d'imp&ocirc;t
+
+          <div class="form-group">
+            <label>${t(locale, 'form.schedule')}</label>
+            <input type="text" name="preferred_schedule" placeholder="${t(locale, 'form.schedule_placeholder')}">
           </div>
-        </div>
+
+          <div class="form-group">
+            <label>${t(locale, 'form.service_type')}</label>
+            <div class="service-type-row">
+              <button type="button" class="service-type-btn active" data-type="individual" onclick="selectServiceType(this)">
+                ${t(locale, 'form.individual')}
+              </button>
+              <button type="button" class="service-type-btn" data-type="group" onclick="selectServiceType(this)">
+                ${t(locale, 'form.group')}
+              </button>
+              <button type="button" class="service-type-btn" data-type="online" onclick="selectServiceType(this)">
+                ${t(locale, 'form.online')}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="cta-submit-btn" id="ctaSubmitBtn">
+            <span class="btn-text">&#128222; ${t(locale, 'form.submit')}</span>
+            <span class="btn-loading" style="display:none">${t(locale, 'form.submitting')}</span>
+          </button>
+        </form>
       </div>
     </div>
   </section>
 
-  <!-- 8 Domaines -->
-  <section class="landing-section" id="domaines">
-    <h2 class="section-title">8 domaines, 200+ th&eacute;matiques</h2>
-    <p class="section-subtitle">
-      Du soutien scolaire classique aux activit&eacute;s cr&eacute;atives, trouvez la th&eacute;matique qui correspond &agrave; vos besoins.
-    </p>
-    <div class="domaines-grid">
-      ${domainesHtml}
-    </div>
-  </section>
-
-  <!-- How it works -->
-  <section class="how-section" id="comment">
-    <h2 class="section-title">Comment &ccedil;a marche ?</h2>
-    <p class="section-subtitle">
-      3 &eacute;tapes simples pour d&eacute;marrer.
-    </p>
-    <div class="how-steps">
+  <!-- HOW IT WORKS -->
+  <section class="section" id="how">
+    <h2 class="section-title">${t(locale, 'how.title')}</h2>
+    <div class="how-grid">
       <div class="how-step">
-        <div class="how-step-number">1</div>
-        <div class="how-step-line"></div>
-        <span class="how-step-icon">\u{1F4DA}</span>
-        <div class="how-step-title">Choisissez vos th&eacute;matiques</div>
-        <div class="how-step-desc">S&eacute;lectionnez parmi 200+ th&eacute;matiques dans 8 domaines diff&eacute;rents.</div>
+        <div class="how-number">1</div>
+        <h4>${t(locale, 'how.step1_title')}</h4>
+        <p>${t(locale, 'how.step1_desc')}</p>
       </div>
       <div class="how-step">
-        <div class="how-step-number">2</div>
-        <div class="how-step-line"></div>
-        <span class="how-step-icon">\u{1F50D}</span>
-        <div class="how-step-title">Nous trouvons votre formateur</div>
-        <div class="how-step-desc">Notre algorithme associe le formateur id&eacute;al selon le profil et les besoins.</div>
+        <div class="how-number">2</div>
+        <h4>${t(locale, 'how.step2_title')}</h4>
+        <p>${t(locale, 'how.step2_desc')}</p>
       </div>
       <div class="how-step">
-        <div class="how-step-number">3</div>
-        <span class="how-step-icon">\u{1F393}</span>
-        <div class="how-step-title">Commencez les cours</div>
-        <div class="how-step-desc">Les cours d&eacute;marrent &agrave; domicile ou en ligne. Suivez les progr&egrave;s en temps r&eacute;el.</div>
+        <div class="how-number">3</div>
+        <h4>${t(locale, 'how.step3_title')}</h4>
+        <p>${t(locale, 'how.step3_desc')}</p>
+      </div>
+      <div class="how-step">
+        <div class="how-number">4</div>
+        <h4>${t(locale, 'how.step4_title')}</h4>
+        <p>${t(locale, 'how.step4_desc')}</p>
       </div>
     </div>
   </section>
 
-  <!-- Packages -->
-  <section class="landing-section" id="tarifs">
-    <h2 class="section-title">Nos formules</h2>
-    <p class="section-subtitle">
-      Des packages adapt&eacute;s &agrave; tous les besoins et tous les budgets.
-    </p>
-    <div class="packages-grid">
-      ${packagesHtml}
+  <!-- SUBJECTS -->
+  <section class="subjects-bg" id="subjects">
+    <div class="section">
+      <h2 class="section-title">${t(locale, 'subjects.title')}</h2>
+      <div class="subjects-grid">
+        ${subjectCards}
+      </div>
     </div>
   </section>
 
-  <!-- Testimonials -->
-  <section class="testimonials-section" id="temoignages">
-    <div class="testimonials-inner">
-      <h2 class="section-title">Ce que disent nos familles</h2>
-      <p class="section-subtitle">
-        Des milliers de familles nous font confiance pour l'accompagnement de leurs enfants.
-      </p>
+  <!-- PRICING -->
+  <section class="section" id="pricing">
+    <h2 class="section-title">${t(locale, 'pricing.title')}</h2>
+    <div class="pricing-grid">
+      <!-- Individual -->
+      <div class="pricing-card featured">
+        <span class="pricing-badge">&#11088; Most Popular</span>
+        <span class="pricing-icon">&#128100;</span>
+        <h4>${t(locale, 'pricing.individual_title')}</h4>
+        <p class="pricing-desc">${t(locale, 'pricing.individual_desc')}</p>
+        <div class="pricing-price">${t(locale, 'pricing.from')}</div>
+        <div class="pricing-amount">${currency.symbol}15</div>
+        <div class="pricing-unit">${t(locale, 'pricing.per_hour')}</div>
+        <ul class="pricing-features">
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f1')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f2')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f3')}</li>
+        </ul>
+        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
+          ${t(locale, 'hero.cta')}
+        </button>
+      </div>
+
+      <!-- Group -->
+      <div class="pricing-card">
+        <span class="pricing-icon">&#128101;</span>
+        <h4>${t(locale, 'pricing.group_title')}</h4>
+        <p class="pricing-desc">${t(locale, 'pricing.group_desc')}</p>
+        <div class="pricing-price">${t(locale, 'pricing.from')}</div>
+        <div class="pricing-amount">${currency.symbol}8</div>
+        <div class="pricing-unit">${t(locale, 'pricing.per_hour')}</div>
+        <ul class="pricing-features">
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f1')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f2')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f3')}</li>
+        </ul>
+        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
+          ${t(locale, 'hero.cta')}
+        </button>
+      </div>
+
+      <!-- Online -->
+      <div class="pricing-card">
+        <span class="pricing-icon">&#128187;</span>
+        <h4>${t(locale, 'pricing.online_title')}</h4>
+        <p class="pricing-desc">${t(locale, 'pricing.online_desc')}</p>
+        <div class="pricing-price">${t(locale, 'pricing.from')}</div>
+        <div class="pricing-amount">${currency.symbol}12</div>
+        <div class="pricing-unit">${t(locale, 'pricing.per_hour')}</div>
+        <ul class="pricing-features">
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.online_f1')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.online_f2')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.online_f3')}</li>
+        </ul>
+        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
+          ${t(locale, 'hero.cta')}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials-bg" id="testimonials">
+    <div class="section">
+      <h2 class="section-title">${t(locale, 'testimonials.title')}</h2>
       <div class="testimonials-grid">
-        ${testimonialsHtml}
+        ${testimonialCards}
       </div>
     </div>
   </section>
 
-  <!-- Formateur CTA -->
-  <section class="formateur-cta" id="formateur">
-    <div class="formateur-cta-inner">
-      <h2>Devenez formateur Caplogy</h2>
-      <p class="formateur-cta-subtitle">
-        Rejoignez notre r&eacute;seau de formateurs qualifi&eacute;s. G&eacute;rez votre emploi du temps,
-        choisissez vos &eacute;l&egrave;ves et g&eacute;n&eacute;rez des revenus compl&eacute;mentaires.
-      </p>
-      <div class="formateur-benefits">
-        <div class="formateur-benefit">
-          <span class="benefit-icon">\u{1F4C5}</span>
-          Flexibilit&eacute; totale
-        </div>
-        <div class="formateur-benefit">
-          <span class="benefit-icon">\u{1F4B0}</span>
-          22-30 &euro;/h
-        </div>
-        <div class="formateur-benefit">
-          <span class="benefit-icon">\u{1F4F1}</span>
-          Outils num&eacute;riques
-        </div>
-        <div class="formateur-benefit">
-          <span class="benefit-icon">\u{1F91D}</span>
-          Accompagnement admin
-        </div>
-      </div>
-      <a href="/onboarding" class="hero-btn hero-btn-primary">
-        \u{1F680} Rejoindre l'&eacute;quipe
-      </a>
-    </div>
+  <!-- BECOME A TUTOR -->
+  <section class="tutor-cta">
+    <h2>${t(locale, 'tutor_cta.title')}</h2>
+    <p>${t(locale, 'tutor_cta.subtitle')}</p>
+    <a href="/onboarding" class="tutor-cta-btn">
+      &#128640; ${t(locale, 'tutor_cta.button')}
+    </a>
   </section>
 
-  <!-- Footer -->
-  <footer class="landing-footer">
+  <!-- FOOTER -->
+  <footer class="footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <a href="/" class="footer-logo">
-          <img src="https://www.caplogy.com/logo_C.png" alt="Caplogy">
-          <span>Soutien Scolaire Caplogy</span>
-        </a>
-        <p>
-          Service d'aide &agrave; la personne agr&eacute;&eacute; SAP. Cours particuliers et collectifs
-          &agrave; domicile dans toute la France. &Eacute;ligible au cr&eacute;dit d'imp&ocirc;t de 50%.
-        </p>
+        <h3>&#128222; CallMyProf</h3>
+        <p>${t(locale, 'footer.tagline')}</p>
       </div>
       <div class="footer-col">
-        <h4>Services</h4>
-        <a href="#domaines">Soutien scolaire</a>
-        <a href="#domaines">Langues</a>
-        <a href="#domaines">Musique</a>
-        <a href="#domaines">Informatique</a>
-        <a href="#tarifs">Nos formules</a>
+        <h4>${t(locale, 'footer.company')}</h4>
+        <a href="#">${t(locale, 'footer.about')}</a>
+        <a href="#">${t(locale, 'footer.contact')}</a>
+        <a href="#">${t(locale, 'footer.careers')}</a>
       </div>
       <div class="footer-col">
-        <h4>Formateurs</h4>
-        <a href="/onboarding">Devenir formateur</a>
-        <a href="/login">Espace formateur</a>
+        <h4>${t(locale, 'footer.legal')}</h4>
+        <a href="#">${t(locale, 'footer.terms')}</a>
+        <a href="#">${t(locale, 'footer.privacy')}</a>
       </div>
       <div class="footer-col">
-        <h4>L&eacute;gal</h4>
-        <a href="#">Mentions l&eacute;gales</a>
-        <a href="#">CGV</a>
-        <a href="#">Politique de confidentialit&eacute;</a>
-        <a href="#">Contact</a>
+        <h4>${t(locale, 'footer.support')}</h4>
+        <a href="#">${t(locale, 'footer.faq')}</a>
+        <a href="#">${t(locale, 'footer.help')}</a>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>&copy; ${new Date().getFullYear()} Caplogy SAS. Tous droits r&eacute;serv&eacute;s.</span>
-      <span>TVA non applicable, art. 293 B du CGI</span>
+      ${t(locale, 'footer.copyright', { year: String(year) })}
     </div>
   </footer>
 
-  <!-- Scripts -->
+  <!-- WHATSAPP WIDGET -->
+  <a href="https://wa.me/MESSAGE" class="whatsapp-widget" title="${t(locale, 'whatsapp.tooltip')}" target="_blank" rel="noopener">
+    &#128172;
+  </a>
+
+  <!-- SCRIPTS -->
   <script>
-    // ---- Price simulator ----
-    let simType = 'individuel';
-    const tarifIndividuel = ${TARIFS.individuel.tarif_horaire};
-    const tarifCollectif = ${TARIFS.collectif.tarif_horaire_par_eleve};
-
-    function fmt(n) {
-      return n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' \\u20AC';
+    // Service type toggle
+    function selectServiceType(btn) {
+      document.querySelectorAll('.service-type-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('service_type_input').value = btn.getAttribute('data-type');
     }
 
-    function setSimType(t) {
-      simType = t;
-      document.getElementById('sim-btn-individuel').classList.toggle('active', t === 'individuel');
-      document.getElementById('sim-btn-collectif').classList.toggle('active', t === 'collectif');
-      updateSim();
-    }
+    // Form submission via fetch
+    document.getElementById('ctaForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var form = e.target;
+      var btn = document.getElementById('ctaSubmitBtn');
+      var btnText = btn.querySelector('.btn-text');
+      var btnLoading = btn.querySelector('.btn-loading');
+      btn.classList.add('loading');
+      btnText.style.display = 'none';
+      btnLoading.style.display = 'inline';
 
-    function updateSim() {
-      const hours = parseInt(document.getElementById('sim-slider').value);
-      document.getElementById('sim-hours-label').textContent = hours + 'h';
+      var formData = new FormData(form);
+      var data = {};
+      formData.forEach(function(val, key) { data[key] = val; });
 
-      const tarif = simType === 'individuel' ? tarifIndividuel : tarifCollectif;
-      const total = tarif * hours;
-      const eligible = simType === 'individuel';
-      const credit = eligible ? total * 0.5 : 0;
-      const final_ = total - credit;
+      fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(result) {
+        if (result.success) {
+          window.location.href = '/thanks?lang=${locale}';
+        } else {
+          btn.classList.remove('loading');
+          btnText.style.display = 'inline';
+          btnLoading.style.display = 'none';
+          alert(result.error || 'An error occurred. Please try again.');
+        }
+      })
+      .catch(function() {
+        btn.classList.remove('loading');
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+        alert('Network error. Please try again.');
+      });
+    });
 
-      document.getElementById('sim-original').textContent = fmt(total);
-      document.getElementById('sim-final').textContent = fmt(final_);
-
-      if (eligible) {
-        document.getElementById('sim-original').style.textDecoration = 'line-through';
-        document.getElementById('sim-credit-info').textContent = 'Cr\\u00e9dit d\\'imp\\u00f4t de ' + fmt(credit);
-        document.getElementById('sim-credit-badge').innerHTML = '\\u2705 \\u00C9ligible au cr\\u00e9dit d\\'imp\\u00f4t 50%';
-        document.getElementById('sim-credit-badge').style.background = '#d1fae5';
-        document.getElementById('sim-credit-badge').style.color = '#065f46';
-        document.getElementById('sim-hourly').textContent = 'Soit ' + fmt(final_ / hours) + '/h apr\\u00e8s cr\\u00e9dit d\\'imp\\u00f4t';
-      } else {
-        document.getElementById('sim-original').style.textDecoration = 'none';
-        document.getElementById('sim-credit-info').textContent = 'Collectif - pas de cr\\u00e9dit d\\'imp\\u00f4t';
-        document.getElementById('sim-credit-badge').innerHTML = '\\u274C Non \\u00e9ligible au cr\\u00e9dit d\\'imp\\u00f4t';
-        document.getElementById('sim-credit-badge').style.background = '#f1f5f9';
-        document.getElementById('sim-credit-badge').style.color = '#64748b';
-        document.getElementById('sim-hourly').textContent = 'Soit ' + fmt(final_ / hours) + '/h';
-      }
-    }
-
-    // ---- IntersectionObserver for domaine cards ----
-    document.addEventListener('DOMContentLoaded', function() {
-      const cards = document.querySelectorAll('.domaine-card');
-      const observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry, index) {
-          if (entry.isIntersecting) {
-            setTimeout(function() {
-              entry.target.classList.add('visible');
-            }, index * 80);
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.15 });
-
-      cards.forEach(function(card) {
-        observer.observe(card);
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        var target = document.querySelector(a.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
   </script>
 </body>
 </html>`;
+}
 
-  return html;
+// ============================================================================
+// THANK YOU PAGE
+// ============================================================================
+
+export function renderThanksPage(locale: Locale): string {
+  const attrs = htmlAttrs(locale);
+  return `<!DOCTYPE html>
+<html lang="${attrs.lang}" dir="${attrs.dir}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${t(locale, 'thanks.title')} - CallMyProf</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    ${CSS_VARS}
+    ${CSS_BASE}
+    ${CSS_ANIMATIONS}
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background: linear-gradient(135deg, #f8fafc, #fff);
+    }
+    .thanks-card {
+      text-align: center;
+      max-width: 500px;
+      animation: slideUp 0.6s ease both;
+    }
+    .thanks-icon {
+      font-size: 80px;
+      display: block;
+      margin-bottom: 20px;
+      animation: float 3s ease-in-out infinite;
+    }
+    .thanks-card h1 {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 12px;
+    }
+    .thanks-card p {
+      font-size: 16px;
+      color: var(--gray-500);
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .thanks-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    .thanks-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(220,38,38,0.4);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="thanks-card">
+    <span class="thanks-icon">&#9989;</span>
+    <h1>${t(locale, 'thanks.title')}</h1>
+    <p>${t(locale, 'thanks.message')}</p>
+    <a href="/?lang=${locale}" class="thanks-btn">
+      &#127968; ${t(locale, 'thanks.back')}
+    </a>
+  </div>
+</body>
+</html>`;
 }
