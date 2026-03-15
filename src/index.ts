@@ -40,6 +40,8 @@ import { renderGroupClassesListe } from './pages/group-classes-liste';
 import { createGroupClass, updateGroupClassStatus } from './api/group-classes';
 import { renderPayments as renderPaymentsPage } from './pages/payments';
 import { createPayment, updatePaymentStatus } from './api/payments';
+import { handleChat } from './api/chatbot';
+import { verifyWhatsAppWebhook, handleWhatsAppWebhook } from './api/whatsapp';
 import { renderStatistiques } from './pages/statistiques';
 import type { User } from '../shared/types';
 
@@ -275,6 +277,21 @@ export default {
       if (path === '/onboarding' && method === 'GET') {
         const html = await renderOnboarding(env);
         return htmlResponse(html);
+      }
+
+      // Public chatbot API
+      if (path === '/api/chat' && method === 'POST') {
+        return handleChat(env, request);
+      }
+
+      // WhatsApp webhook verification
+      if (path === '/api/webhooks/whatsapp' && method === 'GET') {
+        return verifyWhatsAppWebhook(url);
+      }
+
+      // WhatsApp incoming message webhook
+      if (path === '/api/webhooks/whatsapp' && method === 'POST') {
+        return handleWhatsAppWebhook(env, request);
       }
 
       // Public catalogue API (for onboarding dropdowns)
