@@ -38,6 +38,8 @@ import { renderCalendar } from './pages/calendar';
 import { createSlot, updateSlot, deleteSlot } from './api/calendar';
 import { renderGroupClassesListe } from './pages/group-classes-liste';
 import { createGroupClass, updateGroupClassStatus } from './api/group-classes';
+import { renderPayments as renderPaymentsPage } from './pages/payments';
+import { createPayment, updatePaymentStatus } from './api/payments';
 import { renderStatistiques } from './pages/statistiques';
 import type { User } from '../shared/types';
 
@@ -464,6 +466,25 @@ export default {
         const gcUpdateId = matchPath(path, '/api/group-classes/:id');
         if (gcUpdateId && method === 'PUT') {
           return updateGroupClassStatus(env, gcUpdateId, request);
+        }
+      }
+
+      // ---- Payments ----
+      if (path === '/payments' && method === 'GET') {
+        const html = await renderPaymentsPage(env, url, userName);
+        return htmlResponse(html);
+      }
+
+      // Payment API: create
+      if (path === '/api/payments' && method === 'POST') {
+        return createPayment(env, request);
+      }
+
+      // Payment API: update status (PUT /api/payments/:id)
+      {
+        const paymentUpdateId = matchPath(path, '/api/payments/:id');
+        if (paymentUpdateId && method === 'PUT') {
+          return updatePaymentStatus(env, paymentUpdateId, request);
         }
       }
 
