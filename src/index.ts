@@ -34,6 +34,8 @@ import { renderLanding, renderThanksPage } from './pages/landing';
 import { createLead, updateLeadStatus } from './api/leads';
 import { renderLeadsListe } from './pages/leads-liste';
 import { renderLeadDetail } from './pages/lead-detail';
+import { renderCalendar } from './pages/calendar';
+import { createSlot, updateSlot, deleteSlot } from './api/calendar';
 import { renderStatistiques } from './pages/statistiques';
 import type { User } from '../shared/types';
 
@@ -419,6 +421,28 @@ export default {
         const leadStatusId = matchPath(path, '/api/leads/:id/status');
         if (leadStatusId && method === 'PUT') {
           return updateLeadStatus(env, leadStatusId, request);
+        }
+      }
+
+      // ---- Calendar ----
+      if (path === '/calendar' && method === 'GET') {
+        const html = await renderCalendar(env, url, userName);
+        return htmlResponse(html);
+      }
+
+      // Calendar API: create slot
+      if (path === '/api/calendar/slots' && method === 'POST') {
+        return createSlot(env, request);
+      }
+
+      // Calendar API: update slot (PUT /api/calendar/slots/:id)
+      {
+        const slotUpdateId = matchPath(path, '/api/calendar/slots/:id');
+        if (slotUpdateId && method === 'PUT') {
+          return updateSlot(env, slotUpdateId, request);
+        }
+        if (slotUpdateId && method === 'DELETE') {
+          return deleteSlot(env, slotUpdateId);
         }
       }
 
