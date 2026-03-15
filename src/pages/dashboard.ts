@@ -1,10 +1,9 @@
 /**
- * Soutien Scolaire Caplogy - Dashboard administrateur
- * Stat cards, actions urgentes, derniers cours, derniers avis
+ * CallMyProf - Admin Dashboard
+ * Lead pipeline, stat cards, urgent actions, recent courses, reviews
  */
 
-import { htmlPage, escapeHtml, formatDateFr } from '../../shared/html-utils';
-import { formatPrix } from '../../shared/pricing';
+import { htmlPage, escapeHtml, formatDate } from '../../shared/html-utils';
 import { formatNumber, formatDuree, starsHTML } from '../../shared/utils';
 import type { Env, User } from '../../shared/types';
 
@@ -24,7 +23,7 @@ const DASHBOARD_CSS = `
     margin-bottom: 28px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 30px rgba(13, 56, 101, 0.25);
+    box-shadow: 0 8px 30px rgba(220, 38, 38, 0.25);
   }
 
   @keyframes gradientMove {
@@ -40,7 +39,7 @@ const DASHBOARD_CSS = `
     width: 300px;
     height: 300px;
     border-radius: 50%;
-    background: rgba(109, 203, 221, 0.1);
+    background: rgba(220, 38, 38, 0.08);
     animation: float 6s ease-in-out infinite;
   }
 
@@ -52,7 +51,7 @@ const DASHBOARD_CSS = `
     width: 200px;
     height: 200px;
     border-radius: 50%;
-    background: rgba(109, 203, 221, 0.06);
+    background: rgba(220, 38, 38, 0.04);
     animation: float 8s ease-in-out infinite;
     animation-delay: 2s;
   }
@@ -279,7 +278,7 @@ const DASHBOARD_CSS = `
   }
 
   .mini-table tbody tr:hover {
-    background: rgba(109, 203, 221, 0.04);
+    background: rgba(220, 38, 38, 0.03);
   }
 
   .mini-table .cell-name {
@@ -303,7 +302,7 @@ const DASHBOARD_CSS = `
   }
 
   .avis-card:hover {
-    border-color: var(--secondary);
+    border-color: var(--primary);
     box-shadow: var(--shadow-sm);
   }
 
@@ -324,7 +323,7 @@ const DASHBOARD_CSS = `
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -351,8 +350,8 @@ const DASHBOARD_CSS = `
     font-style: italic;
   }
 
-  .avis-comment::before { content: '\\201C'; font-size: 18px; color: var(--secondary); margin-right: 2px; }
-  .avis-comment::after { content: '\\201D'; font-size: 18px; color: var(--secondary); margin-left: 2px; }
+  .avis-comment::before { content: '\\201C'; font-size: 18px; color: var(--primary); margin-right: 2px; }
+  .avis-comment::after { content: '\\201D'; font-size: 18px; color: var(--primary); margin-left: 2px; }
 
   /* ---- No data state ---- */
   .no-data {
@@ -381,10 +380,13 @@ interface DashboardData {
   totalFamilles: number;
   totalEleves: number;
   coursDuMois: number;
-  caDuMois: number;
-  packagesActifs: number;
-  facturesImpayees: number;
-  packagesExpirantBientot: number;
+  // Lead pipeline
+  leadsNew: number;
+  leadsContacted: number;
+  leadsQualified: number;
+  leadsConverted: number;
+  leadsTotal: number;
+  overdueCallbacks: number;
   derniersCours: Array<{
     id: string;
     titre: string;
@@ -405,20 +407,24 @@ interface DashboardData {
     formateur_prenom: string;
     formateur_nom: string;
   }>;
+  recentLeads: Array<{
+    id: string;
+    prenom: string;
+    nom: string;
+    email: string;
+    statut: string;
+    service_type: string;
+    created_at: string;
+  }>;
 }
 
 async function fetchDashboardData(db: D1Database): Promise<DashboardData> {
-  // Current month boundaries
   const now = new Date();
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const nextMonth = now.getMonth() === 11
     ? `${now.getFullYear() + 1}-01-01`
     : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, '0')}-01`;
 
-  // 30 days from now for expiring packages
-  const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
-  // Run all queries in parallel using batch
   const results = await db.batch([
     // 0: Total formateurs
     db.prepare("SELECT COUNT(*) as c FROM formateurs"),
@@ -432,15 +438,19 @@ async function fetchDashboardData(db: D1Database): Promise<DashboardData> {
     db.prepare("SELECT COUNT(*) as c FROM eleves"),
     // 5: Cours du mois
     db.prepare("SELECT COUNT(*) as c FROM cours WHERE date_cours >= ? AND date_cours < ?").bind(monthStart, nextMonth),
-    // 6: CA du mois (from packages_achetes bought this month)
-    db.prepare("SELECT COALESCE(SUM(montant_paye), 0) as total FROM packages_achetes WHERE date_achat >= ? AND date_achat < ?").bind(monthStart, nextMonth),
-    // 7: Packages actifs
-    db.prepare("SELECT COUNT(*) as c FROM packages_achetes WHERE statut = 'actif'"),
-    // 8: Factures impayees
-    db.prepare("SELECT COUNT(*) as c FROM factures WHERE statut IN ('emise', 'brouillon')"),
-    // 9: Packages expirant dans 30 jours
-    db.prepare("SELECT COUNT(*) as c FROM packages_achetes WHERE statut = 'actif' AND date_expiration <= ? AND date_expiration >= date('now')").bind(in30Days),
-    // 10: Derniers 5 cours
+    // 6: Leads pipeline stats
+    db.prepare(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN statut = 'new' THEN 1 ELSE 0 END) as cnt_new,
+        SUM(CASE WHEN statut = 'contacted' THEN 1 ELSE 0 END) as cnt_contacted,
+        SUM(CASE WHEN statut = 'qualified' THEN 1 ELSE 0 END) as cnt_qualified,
+        SUM(CASE WHEN statut = 'converted' THEN 1 ELSE 0 END) as cnt_converted
+      FROM leads
+    `),
+    // 7: Overdue callbacks
+    db.prepare("SELECT COUNT(*) as c FROM leads WHERE callback_date < datetime('now') AND statut NOT IN ('converted', 'lost')"),
+    // 8: Derniers 5 cours
     db.prepare(`
       SELECT c.id, c.titre, c.date_cours, c.heure_debut, c.duree_minutes, c.type_cours, c.statut,
              f.nom as formateur_nom, f.prenom as formateur_prenom
@@ -449,7 +459,7 @@ async function fetchDashboardData(db: D1Database): Promise<DashboardData> {
       ORDER BY c.date_cours DESC, c.heure_debut DESC
       LIMIT 5
     `),
-    // 11: Derniers 3 avis
+    // 9: Derniers 3 avis
     db.prepare(`
       SELECT a.id, a.note, a.commentaire, a.created_at,
              e.prenom as eleve_prenom,
@@ -461,7 +471,14 @@ async function fetchDashboardData(db: D1Database): Promise<DashboardData> {
       ORDER BY a.created_at DESC
       LIMIT 3
     `),
+    // 10: Recent 5 leads
+    db.prepare(`
+      SELECT id, prenom, nom, email, statut, service_type, created_at
+      FROM leads ORDER BY created_at DESC LIMIT 5
+    `),
   ]);
+
+  const leadStats = results[6].results[0] as any;
 
   return {
     totalFormateurs: (results[0].results[0] as any)?.c ?? 0,
@@ -470,12 +487,15 @@ async function fetchDashboardData(db: D1Database): Promise<DashboardData> {
     totalFamilles: (results[3].results[0] as any)?.c ?? 0,
     totalEleves: (results[4].results[0] as any)?.c ?? 0,
     coursDuMois: (results[5].results[0] as any)?.c ?? 0,
-    caDuMois: (results[6].results[0] as any)?.total ?? 0,
-    packagesActifs: (results[7].results[0] as any)?.c ?? 0,
-    facturesImpayees: (results[8].results[0] as any)?.c ?? 0,
-    packagesExpirantBientot: (results[9].results[0] as any)?.c ?? 0,
-    derniersCours: (results[10].results ?? []) as DashboardData['derniersCours'],
-    derniersAvis: (results[11].results ?? []) as DashboardData['derniersAvis'],
+    leadsTotal: leadStats?.total ?? 0,
+    leadsNew: leadStats?.cnt_new ?? 0,
+    leadsContacted: leadStats?.cnt_contacted ?? 0,
+    leadsQualified: leadStats?.cnt_qualified ?? 0,
+    leadsConverted: leadStats?.cnt_converted ?? 0,
+    overdueCallbacks: (results[7].results[0] as any)?.c ?? 0,
+    derniersCours: (results[8].results ?? []) as DashboardData['derniersCours'],
+    derniersAvis: (results[9].results ?? []) as DashboardData['derniersAvis'],
+    recentLeads: (results[10].results ?? []) as DashboardData['recentLeads'],
   };
 }
 
@@ -485,18 +505,29 @@ async function fetchDashboardData(db: D1Database): Promise<DashboardData> {
 
 function statutBadge(statut: string): string {
   const labels: Record<string, string> = {
-    planifie: 'Planifi\u00e9',
-    confirme: 'Confirm\u00e9',
-    en_cours: 'En cours',
-    termine: 'Termin\u00e9',
-    annule: 'Annul\u00e9',
+    planifie: 'Planned',
+    confirme: 'Confirmed',
+    en_cours: 'In Progress',
+    termine: 'Completed',
+    annule: 'Cancelled',
   };
   return `<span class="badge badge-${statut} badge-dot">${labels[statut] || statut}</span>`;
 }
 
 function typeBadge(type: string): string {
   const icon = type === 'individuel' ? '&#128100;' : '&#128101;';
-  return `<span class="badge badge-${type}">${icon} ${type === 'individuel' ? 'Individuel' : 'Collectif'}</span>`;
+  return `<span class="badge badge-${type}">${icon} ${type === 'individuel' ? 'Individual' : 'Group'}</span>`;
+}
+
+function leadStatusBadge(statut: string): string {
+  const labels: Record<string, string> = {
+    new: '&#127381; New',
+    contacted: '&#128222; Contacted',
+    qualified: '&#11088; Qualified',
+    converted: '&#9989; Converted',
+    lost: '&#10060; Lost',
+  };
+  return `<span class="badge badge-${statut}">${labels[statut] || statut}</span>`;
 }
 
 // ============================================================================
@@ -506,50 +537,48 @@ function typeBadge(type: string): string {
 export async function renderDashboard(env: Env, user: User): Promise<string> {
   const data = await fetchDashboardData(env.DB);
 
-  // Current date string formatted nicely
   const now = new Date();
   const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-  const formattedDate = now.toLocaleDateString('fr-FR', dateOptions);
-  const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+  const formattedDate = now.toLocaleDateString('en-US', dateOptions);
 
   // Alerts
   const alerts: string[] = [];
 
-  if (data.formateursEnAttente > 0) {
+  if (data.leadsNew > 0) {
     alerts.push(`
-      <a href="/formateurs?status=en_attente" class="alert-item warning">
-        <span class="alert-icon">&#128221;</span>
+      <a href="/leads?statut=new" class="alert-item danger">
+        <span class="alert-icon">&#128276;</span>
         <div class="alert-content">
-          <div class="alert-title">Formateurs en attente de validation</div>
-          <div class="alert-desc">Des candidatures attendent votre examen</div>
+          <div class="alert-title">New leads awaiting contact</div>
+          <div class="alert-desc">Call them back within 24h!</div>
         </div>
-        <span class="alert-badge">${data.formateursEnAttente}</span>
+        <span class="alert-badge">${data.leadsNew}</span>
       </a>
     `);
   }
 
-  if (data.facturesImpayees > 0) {
+  if (data.overdueCallbacks > 0) {
     alerts.push(`
-      <a href="/factures?statut=emise" class="alert-item danger">
-        <span class="alert-icon">&#128176;</span>
-        <div class="alert-content">
-          <div class="alert-title">Factures impay&eacute;es</div>
-          <div class="alert-desc">Factures en attente de paiement</div>
-        </div>
-        <span class="alert-badge">${data.facturesImpayees}</span>
-      </a>
-    `);
-  }
-
-  if (data.packagesExpirantBientot > 0) {
-    alerts.push(`
-      <a href="/packages?filter=expiring" class="alert-item info">
+      <a href="/leads" class="alert-item warning">
         <span class="alert-icon">&#9200;</span>
         <div class="alert-content">
-          <div class="alert-title">Packages expirant bient&ocirc;t</div>
-          <div class="alert-desc">Expirent dans les 30 prochains jours</div>
+          <div class="alert-title">Overdue callbacks</div>
+          <div class="alert-desc">Scheduled callbacks that are past due</div>
         </div>
-        <span class="alert-badge">${data.packagesExpirantBientot}</span>
+        <span class="alert-badge">${data.overdueCallbacks}</span>
+      </a>
+    `);
+  }
+
+  if (data.formateursEnAttente > 0) {
+    alerts.push(`
+      <a href="/formateurs?status=en_attente" class="alert-item info">
+        <span class="alert-icon">&#128221;</span>
+        <div class="alert-content">
+          <div class="alert-title">Tutor applications pending</div>
+          <div class="alert-desc">Applications awaiting your review</div>
+        </div>
+        <span class="alert-badge">${data.formateursEnAttente}</span>
       </a>
     `);
   }
@@ -558,8 +587,29 @@ export async function renderDashboard(env: Env, user: User): Promise<string> {
     ? `<div class="alert-list">${alerts.join('')}</div>`
     : `<div class="no-data">
         <span class="no-data-icon">&#9989;</span>
-        Aucune action urgente. Tout est en ordre !
+        No urgent actions. Everything is on track!
       </div>`;
+
+  // Recent leads table
+  const leadsRows = data.recentLeads.length > 0
+    ? data.recentLeads.map(l => `
+      <tr>
+        <td>
+          <a href="/leads/${escapeHtml(l.id)}" class="cell-name" style="color:var(--primary);text-decoration:none;font-weight:600;">
+            ${escapeHtml(l.prenom)} ${escapeHtml(l.nom)}
+          </a>
+        </td>
+        <td>${escapeHtml(l.email)}</td>
+        <td>${leadStatusBadge(l.statut)}</td>
+        <td><span style="font-size:12px;color:var(--gray-400)">${formatDate(l.created_at)}</span></td>
+      </tr>
+    `).join('')
+    : `<tr><td colspan="4">
+        <div class="no-data">
+          <span class="no-data-icon">&#128222;</span>
+          No leads yet. They will appear from the CTA form.
+        </div>
+      </td></tr>`;
 
   // Recent cours table
   const coursRows = data.derniersCours.length > 0
@@ -567,10 +617,10 @@ export async function renderDashboard(env: Env, user: User): Promise<string> {
       <tr>
         <td>
           <a href="/cours/${escapeHtml(c.id)}" class="cell-name" style="color:var(--primary);text-decoration:none;font-weight:600;">
-            ${escapeHtml(c.titre || 'Cours')}
+            ${escapeHtml(c.titre || 'Session')}
           </a>
         </td>
-        <td>${formatDateFr(c.date_cours)}<br><span style="font-size:11px;color:var(--gray-400);">${escapeHtml(c.heure_debut)} (${formatDuree(c.duree_minutes)})</span></td>
+        <td>${formatDate(c.date_cours)}<br><span style="font-size:11px;color:var(--gray-400);">${escapeHtml(c.heure_debut)} (${formatDuree(c.duree_minutes)})</span></td>
         <td>${escapeHtml(c.formateur_prenom)} ${escapeHtml(c.formateur_nom)}</td>
         <td>${typeBadge(c.type_cours)}</td>
         <td>${statutBadge(c.statut)}</td>
@@ -579,7 +629,7 @@ export async function renderDashboard(env: Env, user: User): Promise<string> {
     : `<tr><td colspan="5">
         <div class="no-data">
           <span class="no-data-icon">&#128197;</span>
-          Aucun cours enregistr&eacute;
+          No sessions recorded yet
         </div>
       </td></tr>`;
 
@@ -594,7 +644,7 @@ export async function renderDashboard(env: Env, user: User): Promise<string> {
               <div class="avis-avatar">${initial}</div>
               <div>
                 <div class="avis-name">${escapeHtml(a.eleve_prenom)} &rarr; ${escapeHtml(a.formateur_prenom)} ${escapeHtml(a.formateur_nom)}</div>
-                <div class="avis-date">${formatDateFr(a.created_at)}</div>
+                <div class="avis-date">${formatDate(a.created_at)}</div>
               </div>
             </div>
             <div>${starsHTML(a.note)}</div>
@@ -605,7 +655,7 @@ export async function renderDashboard(env: Env, user: User): Promise<string> {
     }).join('')
     : `<div class="no-data">
         <span class="no-data-icon">&#11088;</span>
-        Aucun avis pour le moment
+        No reviews yet
       </div>`;
 
   const content = `
@@ -615,77 +665,82 @@ export async function renderDashboard(env: Env, user: User): Promise<string> {
         <div class="welcome-text">
           <h1>
             <span class="wave">&#128075;</span>
-            Bonjour, ${escapeHtml(user.prenom)} !
+            Hello, ${escapeHtml(user.prenom)}!
           </h1>
-          <p>Voici un aper&ccedil;u de votre activit&eacute; de soutien scolaire</p>
+          <p>Here's your CallMyProf activity overview</p>
         </div>
         <div class="welcome-date">
           <span class="date-icon">&#128197;</span>
-          ${capitalizedDate}
+          ${formattedDate}
         </div>
       </div>
     </div>
 
     <!-- Stat Cards -->
     <div class="stats-grid">
+      <div class="stat-card red">
+        <div class="stat-icon">&#128222;</div>
+        <div class="stat-value counter-value">${formatNumber(data.leadsTotal)}</div>
+        <div class="stat-label">Total Leads</div>
+        <div class="stat-detail">
+          <span class="stat-detail-item"><span class="dot blue"></span>${data.leadsNew} new</span>
+          <span class="stat-detail-item"><span class="dot orange"></span>${data.leadsContacted} contacted</span>
+          <span class="stat-detail-item"><span class="dot green"></span>${data.leadsConverted} converted</span>
+        </div>
+      </div>
+
       <div class="stat-card blue">
         <div class="stat-icon">&#128104;&zwj;&#127979;</div>
         <div class="stat-value counter-value">${formatNumber(data.totalFormateurs)}</div>
-        <div class="stat-label">Formateurs</div>
+        <div class="stat-label">Tutors</div>
         <div class="stat-detail">
-          <span class="stat-detail-item"><span class="dot green"></span>${data.formateursValides} valid&eacute;s</span>
-          <span class="stat-detail-item"><span class="dot orange"></span>${data.formateursEnAttente} en attente</span>
+          <span class="stat-detail-item"><span class="dot green"></span>${data.formateursValides} active</span>
+          <span class="stat-detail-item"><span class="dot orange"></span>${data.formateursEnAttente} pending</span>
         </div>
       </div>
 
       <div class="stat-card green">
         <div class="stat-icon">&#128104;&zwj;&#128105;&zwj;&#128103;&zwj;&#128102;</div>
         <div class="stat-value counter-value">${formatNumber(data.totalFamilles)}</div>
-        <div class="stat-label">Familles</div>
+        <div class="stat-label">Families</div>
       </div>
 
       <div class="stat-card teal">
         <div class="stat-icon">&#127891;</div>
         <div class="stat-value counter-value">${formatNumber(data.totalEleves)}</div>
-        <div class="stat-label">&Eacute;l&egrave;ves</div>
+        <div class="stat-label">Students</div>
       </div>
 
       <div class="stat-card orange">
         <div class="stat-icon">&#128197;</div>
         <div class="stat-value counter-value">${formatNumber(data.coursDuMois)}</div>
-        <div class="stat-label">Cours ce mois</div>
+        <div class="stat-label">Sessions this month</div>
       </div>
 
       <div class="stat-card purple">
-        <div class="stat-icon">&#128176;</div>
-        <div class="stat-value counter-value">${formatPrix(data.caDuMois)}</div>
-        <div class="stat-label">CA du mois</div>
-      </div>
-
-      <div class="stat-card red">
-        <div class="stat-icon">&#128230;</div>
-        <div class="stat-value counter-value">${formatNumber(data.packagesActifs)}</div>
-        <div class="stat-label">Packages actifs</div>
+        <div class="stat-icon">&#11088;</div>
+        <div class="stat-value counter-value">${formatNumber(data.leadsQualified)}</div>
+        <div class="stat-label">Qualified leads</div>
       </div>
     </div>
 
     <!-- Dashboard Grid: Alerts + Avis -->
     <div class="dashboard-grid">
-      <!-- Actions urgentes -->
+      <!-- Urgent Actions -->
       <div class="content-card" style="animation-delay:0.15s;">
         <div class="content-card-header">
-          <h3>&#9888;&#65039; Actions urgentes</h3>
+          <h3>&#9888;&#65039; Urgent Actions</h3>
         </div>
         <div class="content-card-body">
           ${alertsSection}
         </div>
       </div>
 
-      <!-- Derniers avis -->
+      <!-- Recent Reviews -->
       <div class="content-card" style="animation-delay:0.25s;">
         <div class="content-card-header">
-          <h3>&#11088; Derniers avis</h3>
-          <a href="/avis" class="btn btn-sm btn-outline">Voir tout</a>
+          <h3>&#11088; Recent Reviews</h3>
+          <a href="/avis" class="btn btn-sm btn-outline">View all</a>
         </div>
         <div class="content-card-body">
           <div class="avis-list">
@@ -695,22 +750,47 @@ export async function renderDashboard(env: Env, user: User): Promise<string> {
       </div>
     </div>
 
-    <!-- Derniers cours -->
+    <!-- Recent Leads -->
     <div class="content-card" style="margin-top:24px;animation-delay:0.35s;">
       <div class="content-card-header">
-        <h3>&#128218; Derniers cours</h3>
-        <a href="/cours" class="btn btn-sm btn-outline">Voir tout</a>
+        <h3>&#128222; Recent Leads</h3>
+        <a href="/leads" class="btn btn-sm btn-outline">View all</a>
       </div>
       <div class="content-card-body" style="padding:0;">
         <div style="overflow-x:auto;">
           <table class="mini-table">
             <thead>
               <tr>
-                <th>Cours</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
                 <th>Date</th>
-                <th>Formateur</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${leadsRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    <div class="content-card" style="margin-top:24px;animation-delay:0.45s;">
+      <div class="content-card-header">
+        <h3>&#128218; Recent Sessions</h3>
+        <a href="/cours" class="btn btn-sm btn-outline">View all</a>
+      </div>
+      <div class="content-card-body" style="padding:0;">
+        <div style="overflow-x:auto;">
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Session</th>
+                <th>Date</th>
+                <th>Tutor</th>
                 <th>Type</th>
-                <th>Statut</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -721,50 +801,40 @@ export async function renderDashboard(env: Env, user: User): Promise<string> {
       </div>
       <div class="content-card-footer">
         <a href="/cours/new" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;">
-          &#10133; Planifier un nouveau cours
+          &#10133; Schedule a new session
         </a>
       </div>
     </div>
 
     <!-- Counter animation script -->
     <script>
-      // Animate counter values on page load
       document.addEventListener('DOMContentLoaded', function() {
         var counters = document.querySelectorAll('.counter-value');
         counters.forEach(function(el) {
           var text = el.textContent.trim();
-          // Try to extract a number (remove spaces, EUR, etc.)
           var match = text.replace(/\\s/g, '').match(/^([\\d,\\.]+)/);
           if (!match) return;
           var target = parseFloat(match[1].replace(',', '.'));
           if (isNaN(target) || target === 0) return;
 
-          var isPrice = text.includes('\\u20AC') || text.includes('EUR');
           var duration = 1200;
           var start = performance.now();
 
           function step(now) {
             var elapsed = now - start;
             var progress = Math.min(elapsed / duration, 1);
-            // Ease out cubic
             var eased = 1 - Math.pow(1 - progress, 3);
             var current = Math.round(target * eased);
-
-            if (isPrice) {
-              el.textContent = current.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' \\u20AC';
-            } else {
-              el.textContent = current.toLocaleString('fr-FR');
-            }
+            el.textContent = current.toLocaleString('en-US');
 
             if (progress < 1) {
               requestAnimationFrame(step);
             } else {
-              // Restore exact text
               el.textContent = text;
             }
           }
 
-          el.textContent = isPrice ? '0,00 \\u20AC' : '0';
+          el.textContent = '0';
           requestAnimationFrame(step);
         });
       });
