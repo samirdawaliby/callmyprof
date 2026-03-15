@@ -1283,19 +1283,19 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
       </div>
       <div class="footer-col">
         <h4>${t(locale, 'footer.company')}</h4>
-        <a href="#">${t(locale, 'footer.about')}</a>
-        <a href="#">${t(locale, 'footer.contact')}</a>
-        <a href="#">${t(locale, 'footer.careers')}</a>
+        <a href="/about">${t(locale, 'footer.about')}</a>
+        <a href="/contact">${t(locale, 'footer.contact')}</a>
+        <a href="/onboarding">${t(locale, 'footer.careers')}</a>
       </div>
       <div class="footer-col">
         <h4>${t(locale, 'footer.legal')}</h4>
-        <a href="#">${t(locale, 'footer.terms')}</a>
-        <a href="#">${t(locale, 'footer.privacy')}</a>
+        <a href="/terms">${t(locale, 'footer.terms')}</a>
+        <a href="/privacy">${t(locale, 'footer.privacy')}</a>
       </div>
       <div class="footer-col">
         <h4>${t(locale, 'footer.support')}</h4>
-        <a href="#">${t(locale, 'footer.faq')}</a>
-        <a href="#">${t(locale, 'footer.help')}</a>
+        <a href="/faq">${t(locale, 'footer.faq')}</a>
+        <a href="/contact">${t(locale, 'footer.help')}</a>
       </div>
     </div>
     <div class="footer-bottom">

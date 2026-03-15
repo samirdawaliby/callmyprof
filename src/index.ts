@@ -31,6 +31,11 @@ import { createPackage, updatePackageType } from './api/packages';
 import { renderAvis } from './pages/avis';
 import { toggleAvisVisibility } from './api/avis';
 import { renderLanding, renderThanksPage } from './pages/landing';
+import { renderAboutPage } from './pages/about';
+import { renderContactPage } from './pages/contact';
+import { renderTermsPage } from './pages/terms';
+import { renderPrivacyPage } from './pages/privacy';
+import { renderFaqPage } from './pages/faq';
 import { createLead, updateLeadStatus } from './api/leads';
 import { renderLeadsListe } from './pages/leads-liste';
 import { renderLeadDetail } from './pages/lead-detail';
@@ -260,6 +265,23 @@ export default {
       // Thank you page
       if (path === '/thanks' && method === 'GET') {
         return htmlResponse(renderThanksPage(locale));
+      }
+
+      // Static pages (about, contact, terms, privacy, faq)
+      if (path === '/about' && method === 'GET') {
+        return htmlResponse(renderAboutPage(locale));
+      }
+      if (path === '/contact' && method === 'GET') {
+        return htmlResponse(renderContactPage(locale));
+      }
+      if (path === '/terms' && method === 'GET') {
+        return htmlResponse(renderTermsPage(locale));
+      }
+      if (path === '/privacy' && method === 'GET') {
+        return htmlResponse(renderPrivacyPage(locale));
+      }
+      if (path === '/faq' && method === 'GET') {
+        return htmlResponse(renderFaqPage(locale));
       }
 
       // Lead creation (public CTA form)
