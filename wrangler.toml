@@ -1,0 +1,21 @@
+name = "findmyprof"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+# TODO: Mettre le bon account_id Cloudflare pour FindMyProf
+account_id = "CHANGE_ME"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+# TODO: Creer une nouvelle D1 database pour FindMyProf
+database_name = "findmyprof-db"
+database_id = "CHANGE_ME"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "findmyprof-docs"
+
+[ai]
+binding = "AI"
