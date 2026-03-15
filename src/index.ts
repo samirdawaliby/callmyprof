@@ -36,6 +36,8 @@ import { renderLeadsListe } from './pages/leads-liste';
 import { renderLeadDetail } from './pages/lead-detail';
 import { renderCalendar } from './pages/calendar';
 import { createSlot, updateSlot, deleteSlot } from './api/calendar';
+import { renderGroupClassesListe } from './pages/group-classes-liste';
+import { createGroupClass, updateGroupClassStatus } from './api/group-classes';
 import { renderStatistiques } from './pages/statistiques';
 import type { User } from '../shared/types';
 
@@ -443,6 +445,25 @@ export default {
         }
         if (slotUpdateId && method === 'DELETE') {
           return deleteSlot(env, slotUpdateId);
+        }
+      }
+
+      // ---- Group Classes ----
+      if (path === '/group-classes' && method === 'GET') {
+        const html = await renderGroupClassesListe(env, url, userName);
+        return htmlResponse(html);
+      }
+
+      // Group class API: create
+      if (path === '/api/group-classes' && method === 'POST') {
+        return createGroupClass(env, request);
+      }
+
+      // Group class API: update (PUT /api/group-classes/:id)
+      {
+        const gcUpdateId = matchPath(path, '/api/group-classes/:id');
+        if (gcUpdateId && method === 'PUT') {
+          return updateGroupClassStatus(env, gcUpdateId, request);
         }
       }
 
