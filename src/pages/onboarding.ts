@@ -1,7 +1,7 @@
 /**
- * Soutien Scolaire Caplogy - Onboarding Formateur (Public)
- * Wizard 4 etapes : Infos perso, Competences, Documents, Validation
- * Standalone page (no sidebar), Caplogy design system
+ * CallMyProf - Tutor Onboarding (Public)
+ * 4-step wizard: Personal Info, Skills, Documents & Contract, Review
+ * Standalone page (no sidebar), CallMyProf design system
  */
 
 import type { Env } from '../../shared/types';
@@ -15,7 +15,7 @@ const ONBOARDING_CSS = `
   /* ---- Page wrapper ---- */
   .onboarding-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f0f7ff 0%, #f8fafc 40%, #f0fdf4 100%);
+    background: linear-gradient(135deg, #fef2f2 0%, #f8fafc 40%, #fff7ed 100%);
     position: relative;
     overflow-x: hidden;
   }
@@ -31,7 +31,7 @@ const ONBOARDING_CSS = `
   .bg-shape-1 {
     width: 500px;
     height: 500px;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
     top: -150px;
     right: -100px;
     animation: float 8s ease-in-out infinite;
@@ -39,7 +39,7 @@ const ONBOARDING_CSS = `
   .bg-shape-2 {
     width: 300px;
     height: 300px;
-    background: linear-gradient(135deg, var(--secondary), #10b981);
+    background: linear-gradient(135deg, var(--primary-light), #10b981);
     bottom: -80px;
     left: -50px;
     animation: float 6s ease-in-out infinite;
@@ -48,7 +48,7 @@ const ONBOARDING_CSS = `
   .bg-shape-3 {
     width: 200px;
     height: 200px;
-    background: linear-gradient(135deg, var(--purple), var(--secondary));
+    background: linear-gradient(135deg, var(--purple), var(--primary-light));
     top: 40%;
     left: 10%;
     animation: float 10s ease-in-out infinite;
@@ -125,10 +125,10 @@ const ONBOARDING_CSS = `
     display: none;
   }
   .progress-step.completed::before {
-    background: linear-gradient(90deg, var(--success), var(--secondary));
+    background: linear-gradient(90deg, var(--success), var(--primary-light));
   }
   .progress-step.active::before {
-    background: linear-gradient(90deg, var(--secondary), var(--gray-200));
+    background: linear-gradient(90deg, var(--primary-light), var(--gray-200));
   }
   .step-circle {
     width: 40px;
@@ -146,8 +146,8 @@ const ONBOARDING_CSS = `
     position: relative;
   }
   .progress-step.active .step-circle {
-    border-color: var(--secondary);
-    background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
+    border-color: var(--primary-light);
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
     color: var(--primary-dark);
     box-shadow: 0 0 0 6px rgba(109,203,221,0.2);
     animation: pulse 2s ease-in-out infinite;
@@ -199,7 +199,7 @@ const ONBOARDING_CSS = `
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
   }
   .step-title {
     font-size: 22px;
@@ -236,13 +236,13 @@ const ONBOARDING_CSS = `
     position: relative;
   }
   .photo-upload-zone:hover {
-    border-color: var(--secondary);
+    border-color: var(--primary-light);
     background: rgba(109,203,221,0.05);
     transform: scale(1.05);
   }
   .photo-upload-zone.has-photo {
     border-style: solid;
-    border-color: var(--secondary);
+    border-color: var(--primary-light);
   }
   .photo-upload-zone img {
     width: 100%;
@@ -345,7 +345,7 @@ const ONBOARDING_CSS = `
     border-radius: 12px;
     font-size: 12px;
     font-weight: 700;
-    background: var(--secondary-light);
+    background: var(--primary);
     color: var(--primary-dark);
     margin-bottom: 16px;
     animation: bounceIn 0.4s ease both;
@@ -372,13 +372,13 @@ const ONBOARDING_CSS = `
     overflow: hidden;
   }
   .doc-upload-card:hover {
-    border-color: var(--secondary);
+    border-color: var(--primary-light);
     background: rgba(109,203,221,0.03);
     transform: translateY(-2px);
     box-shadow: var(--shadow-sm);
   }
   .doc-upload-card.dragover {
-    border-color: var(--secondary);
+    border-color: var(--primary-light);
     background: rgba(109,203,221,0.1);
     transform: scale(1.02);
   }
@@ -629,7 +629,7 @@ const ONBOARDING_CSS = `
     line-height: 1.6;
   }
   .cgv-label:hover {
-    border-color: var(--secondary);
+    border-color: var(--primary-light);
     background: rgba(109,203,221,0.03);
   }
   .cgv-label input[type="checkbox"] {
@@ -688,12 +688,12 @@ const ONBOARDING_CSS = `
 
 export async function renderOnboarding(env: Env): Promise<string> {
   return `<!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Devenir formateur - Soutien Scolaire Caplogy</title>
-  <link rel="icon" href="https://www.caplogy.com/logo_C.png">
+  <title>Become a Tutor - CallMyProf</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9E%3C/text%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     ${CSS_VARS}
@@ -713,10 +713,10 @@ export async function renderOnboarding(env: Env): Promise<string> {
     <!-- Header -->
     <div class="onboarding-header">
       <a href="/" class="onboarding-logo">
-        <img src="https://www.caplogy.com/logo_C.png" alt="Caplogy">
-        <span>Soutien Scolaire</span>
+        <span style="font-size:28px">&#128222;</span>
+        <span>CallMyProf</span>
       </a>
-      <span class="onboarding-header-text">Inscription formateur</span>
+      <span class="onboarding-header-text">Tutor Application</span>
     </div>
 
     <!-- Progress bar -->
@@ -724,11 +724,11 @@ export async function renderOnboarding(env: Env): Promise<string> {
       <div class="progress-steps">
         <div class="progress-step active" id="progress-1">
           <div class="step-circle">\ud83d\udc64</div>
-          <span class="step-label">Informations</span>
+          <span class="step-label">Personal Info</span>
         </div>
         <div class="progress-step" id="progress-2">
           <div class="step-circle">\ud83c\udf93</div>
-          <span class="step-label">Comp\u00e9tences</span>
+          <span class="step-label">Skills</span>
         </div>
         <div class="progress-step" id="progress-3">
           <div class="step-circle">\ud83d\udcc1</div>
@@ -736,7 +736,7 @@ export async function renderOnboarding(env: Env): Promise<string> {
         </div>
         <div class="progress-step" id="progress-4">
           <div class="step-circle">\u2705</div>
-          <span class="step-label">Validation</span>
+          <span class="step-label">Review</span>
         </div>
       </div>
     </div>
@@ -746,110 +746,110 @@ export async function renderOnboarding(env: Env): Promise<string> {
 
       <!-- ======== STEP 1: Personal Info ======== -->
       <div class="step-panel active" id="step-1">
-        <div class="step-title">\ud83d\udc64 Vos informations personnelles</div>
-        <div class="step-subtitle">Commencez par nous dire qui vous \u00eates. Ces informations seront visibles par les familles.</div>
+        <div class="step-title">\ud83d\udc64 Your Personal Information</div>
+        <div class="step-subtitle">Tell us about yourself. This information will be visible to families looking for tutors.</div>
 
         <!-- Photo upload -->
         <div class="photo-upload-zone" id="photo-zone" onclick="document.getElementById('photo-input').click()">
           <div class="photo-placeholder">
             <span class="photo-icon">\ud83d\udcf8</span>
-            <span class="photo-text">Ajoutez une photo</span>
+            <span class="photo-text">Add a photo</span>
           </div>
         </div>
         <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="previewPhoto(this)">
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Pr\u00e9nom <span class="required">*</span></label>
-            <input type="text" class="form-input" id="f-prenom" placeholder="Votre pr\u00e9nom" required>
+            <label class="form-label">First Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="f-prenom" placeholder="Your first name" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Nom <span class="required">*</span></label>
-            <input type="text" class="form-input" id="f-nom" placeholder="Votre nom" required>
+            <label class="form-label">Last Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="f-nom" placeholder="Your last name" required>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Email <span class="required">*</span></label>
-            <input type="email" class="form-input" id="f-email" placeholder="votre@email.com" required>
+            <input type="email" class="form-input" id="f-email" placeholder="your@email.com" required>
           </div>
           <div class="form-group">
-            <label class="form-label">T\u00e9l\u00e9phone</label>
-            <input type="tel" class="form-input" id="f-tel" placeholder="06 00 00 00 00">
+            <label class="form-label">Phone</label>
+            <input type="tel" class="form-input" id="f-tel" placeholder="+961 XX XXX XXX">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Ville <span class="required">*</span></label>
-            <input type="text" class="form-input" id="f-ville" placeholder="Votre ville" required>
+            <label class="form-label">City <span class="required">*</span></label>
+            <input type="text" class="form-input" id="f-ville" placeholder="Your city" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Code postal</label>
-            <input type="text" class="form-input" id="f-cp" placeholder="75000" maxlength="5">
+            <label class="form-label">Country</label>
+            <input type="text" class="form-input" id="f-cp" placeholder="Lebanon" maxlength="50">
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Rayon d'action (km)</label>
+          <label class="form-label">Travel radius (km)</label>
           <input type="range" id="f-rayon" min="1" max="50" value="10" style="width:100%;accent-color:var(--primary)"
                  oninput="document.getElementById('rayon-val').textContent=this.value+' km'">
-          <div class="form-hint">Vous vous d\u00e9placez dans un rayon de <strong id="rayon-val">10 km</strong></div>
+          <div class="form-hint">You can travel within <strong id="rayon-val">10 km</strong></div>
         </div>
 
         <div class="step-nav">
           <div></div>
           <button class="btn-next" onclick="goToStep(2)">
-            Suivant
+            Next
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
       </div>
 
-      <!-- ======== STEP 2: Competences ======== -->
+      <!-- ======== STEP 2: Skills ======== -->
       <div class="step-panel" id="step-2">
-        <div class="step-title">\ud83c\udf93 Vos comp\u00e9tences</div>
-        <div class="step-subtitle">S\u00e9lectionnez les mati\u00e8res et th\u00e9matiques que vous pouvez enseigner, puis d\u00e9finissez vos tarifs.</div>
+        <div class="step-title">\ud83c\udf93 Your Skills</div>
+        <div class="step-subtitle">Select the subjects and topics you can teach, then set your rates.</div>
 
-        <div class="selected-count" id="selected-count">\ud83c\udfaf <span id="nb-selected">0</span> th\u00e9matique(s) s\u00e9lectionn\u00e9e(s)</div>
+        <div class="selected-count" id="selected-count">\ud83c\udfaf <span id="nb-selected">0</span> topic(s) selected</div>
 
         <div id="catalogue-tree">
           <div style="text-align:center;padding:40px;color:var(--gray-400)">
             <div class="spinner"></div>
-            <div style="margin-top:12px;font-size:13px">Chargement du catalogue...</div>
+            <div style="margin-top:12px;font-size:13px">Loading catalogue...</div>
           </div>
         </div>
 
-        <div class="form-section-title">\ud83d\udcb6 Tarifs & pr\u00e9f\u00e9rences</div>
+        <div class="form-section-title">\ud83d\udcb6 Rates & Preferences</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Tarif individuel (\u20ac/h)</label>
-            <input type="number" class="form-input" id="f-tarif-ind" placeholder="30" min="10" max="200" step="1">
+            <label class="form-label">Individual rate ($/h)</label>
+            <input type="number" class="form-input" id="f-tarif-ind" placeholder="15" min="5" max="200" step="1">
           </div>
           <div class="form-group">
-            <label class="form-label">Tarif collectif (\u20ac/h)</label>
-            <input type="number" class="form-input" id="f-tarif-col" placeholder="20" min="5" max="200" step="1">
+            <label class="form-label">Group rate ($/h)</label>
+            <input type="number" class="form-input" id="f-tarif-col" placeholder="8" min="3" max="200" step="1">
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Bio / Pr\u00e9sentation</label>
-          <textarea class="form-textarea" id="f-bio" rows="4" placeholder="Pr\u00e9sentez-vous en quelques lignes. Votre exp\u00e9rience, votre approche p\u00e9dagogique, ce qui vous motive\u2026"></textarea>
+          <label class="form-label">Bio / About you</label>
+          <textarea class="form-textarea" id="f-bio" rows="4" placeholder="Describe yourself in a few lines. Your experience, teaching approach, what motivates you..."></textarea>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Ann\u00e9es d'exp\u00e9rience</label>
+            <label class="form-label">Years of experience</label>
             <input type="number" class="form-input" id="f-experience" placeholder="3" min="0" max="50">
           </div>
           <div class="form-group">
-            <label class="form-label">Modes d'enseignement</label>
+            <label class="form-label">Teaching modes</label>
             <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
-              <label class="form-checkbox"><input type="checkbox" id="f-domicile" checked> \ud83c\udfe0 A domicile</label>
-              <label class="form-checkbox"><input type="checkbox" id="f-collectif" checked> \ud83d\udc65 Cours collectifs</label>
-              <label class="form-checkbox"><input type="checkbox" id="f-visio"> \ud83d\udcbb En visio</label>
+              <label class="form-checkbox"><input type="checkbox" id="f-domicile" checked> \ud83c\udfe0 In-person (home)</label>
+              <label class="form-checkbox"><input type="checkbox" id="f-collectif" checked> \ud83d\udc65 Group classes</label>
+              <label class="form-checkbox"><input type="checkbox" id="f-visio"> \ud83d\udcbb Online</label>
             </div>
           </div>
         </div>
@@ -857,100 +857,84 @@ export async function renderOnboarding(env: Env): Promise<string> {
         <div class="step-nav">
           <button class="btn-prev" onclick="goToStep(1)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-            Pr\u00e9c\u00e9dent
+            Previous
           </button>
           <button class="btn-next" onclick="goToStep(3)">
-            Suivant
+            Next
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
       </div>
 
-      <!-- ======== STEP 3: Documents ======== -->
+      <!-- ======== STEP 3: Documents & Contract ======== -->
       <div class="step-panel" id="step-3">
-        <div class="step-title">\ud83d\udcc1 Vos documents</div>
-        <div class="step-subtitle">T\u00e9l\u00e9versez les documents n\u00e9cessaires \u00e0 la validation de votre dossier. Formats accept\u00e9s : PDF, JPG, PNG (max 10 Mo).</div>
+        <div class="step-title">\ud83d\udcc1 Your Documents</div>
+        <div class="step-subtitle">Upload the documents needed to validate your application. Accepted formats: PDF, JPG, PNG (max 10 MB).</div>
 
         <div class="doc-upload-grid">
           <div class="doc-upload-card" data-doc="doc_identite_url" onclick="triggerDocUpload('doc_identite_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_identite_url')" ondragleave="docDragLeave(event)">
             <div class="doc-upload-check">\u2713</div>
             <span class="doc-upload-icon">\ud83c\udd94</span>
-            <div class="doc-upload-label">Pi\u00e8ce d'identit\u00e9</div>
-            <div class="doc-upload-hint">CNI, passeport ou titre de s\u00e9jour</div>
+            <div class="doc-upload-label">ID Document</div>
+            <div class="doc-upload-hint">Passport, national ID, or residence permit</div>
             <div class="doc-filename" id="fname-doc_identite_url"></div>
           </div>
 
           <div class="doc-upload-card" data-doc="doc_diplomes_url" onclick="triggerDocUpload('doc_diplomes_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_diplomes_url')" ondragleave="docDragLeave(event)">
             <div class="doc-upload-check">\u2713</div>
             <span class="doc-upload-icon">\ud83c\udf93</span>
-            <div class="doc-upload-label">Dipl\u00f4mes</div>
-            <div class="doc-upload-hint">Dernier dipl\u00f4me obtenu</div>
+            <div class="doc-upload-label">Diplomas</div>
+            <div class="doc-upload-hint">Your latest degree or certificate</div>
             <div class="doc-filename" id="fname-doc_diplomes_url"></div>
           </div>
 
-          <div class="doc-upload-card" data-doc="doc_siret_url" onclick="triggerDocUpload('doc_siret_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_siret_url')" ondragleave="docDragLeave(event)">
+          <div class="doc-upload-card" data-doc="doc_cv_url" onclick="triggerDocUpload('doc_cv_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_cv_url')" ondragleave="docDragLeave(event)">
             <div class="doc-upload-check">\u2713</div>
-            <span class="doc-upload-icon">\ud83c\udfed</span>
-            <div class="doc-upload-label">Extrait SIRET</div>
-            <div class="doc-upload-hint">Avis de situation INSEE</div>
-            <div class="doc-filename" id="fname-doc_siret_url"></div>
-          </div>
-
-          <div class="doc-upload-card" data-doc="doc_urssaf_url" onclick="triggerDocUpload('doc_urssaf_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_urssaf_url')" ondragleave="docDragLeave(event)">
-            <div class="doc-upload-check">\u2713</div>
-            <span class="doc-upload-icon">\ud83d\udcdc</span>
-            <div class="doc-upload-label">Attestation URSSAF</div>
-            <div class="doc-upload-hint">Attestation de vigilance</div>
-            <div class="doc-filename" id="fname-doc_urssaf_url"></div>
+            <span class="doc-upload-icon">\ud83d\udcdd</span>
+            <div class="doc-upload-label">CV / Resume</div>
+            <div class="doc-upload-hint">Your curriculum vitae</div>
+            <div class="doc-filename" id="fname-doc_cv_url"></div>
           </div>
 
           <div class="doc-upload-card" data-doc="doc_casier_url" onclick="triggerDocUpload('doc_casier_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_casier_url')" ondragleave="docDragLeave(event)">
             <div class="doc-upload-check">\u2713</div>
             <span class="doc-upload-icon">\ud83d\udee1\ufe0f</span>
-            <div class="doc-upload-label">Casier judiciaire (B3)</div>
-            <div class="doc-upload-hint">Obligatoire pour le SAP</div>
+            <div class="doc-upload-label">Criminal Record</div>
+            <div class="doc-upload-hint">Clean criminal record extract (optional)</div>
             <div class="doc-filename" id="fname-doc_casier_url"></div>
-          </div>
-
-          <div class="doc-upload-card" data-doc="doc_rib_url" onclick="triggerDocUpload('doc_rib_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_rib_url')" ondragleave="docDragLeave(event)">
-            <div class="doc-upload-check">\u2713</div>
-            <span class="doc-upload-icon">\ud83c\udfe6</span>
-            <div class="doc-upload-label">RIB</div>
-            <div class="doc-upload-hint">Relev\u00e9 d'identit\u00e9 bancaire</div>
-            <div class="doc-filename" id="fname-doc_rib_url"></div>
-          </div>
-
-          <div class="doc-upload-card" data-doc="doc_cv_url" onclick="triggerDocUpload('doc_cv_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_cv_url')" ondragleave="docDragLeave(event)" style="grid-column: span 2">
-            <div class="doc-upload-check">\u2713</div>
-            <span class="doc-upload-icon">\ud83d\udcdd</span>
-            <div class="doc-upload-label">CV</div>
-            <div class="doc-upload-hint">Votre curriculum vitae</div>
-            <div class="doc-filename" id="fname-doc_cv_url"></div>
           </div>
         </div>
         <input type="file" id="doc-file-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
 
-        <div class="form-section-title">\ud83c\udfe6 Informations bancaires</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">IBAN</label>
-            <input type="text" class="form-input" id="f-iban" placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX">
-            <div class="form-hint">Votre IBAN pour recevoir vos paiements</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">SIRET</label>
-            <input type="text" class="form-input" id="f-siret" placeholder="XXX XXX XXX XXXXX" maxlength="17">
-            <div class="form-hint">Votre num\u00e9ro SIRET (14 chiffres)</div>
-          </div>
+        <div class="form-section-title">\ud83d\udcdd Non-Compete & Contract</div>
+        <div style="background:var(--gray-50);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px;font-size:13px;color:var(--gray-600);line-height:1.6">
+          <p style="margin-bottom:8px"><strong>By joining CallMyProf, you agree to the following:</strong></p>
+          <ul style="padding-left:20px;margin:0">
+            <li>You will not directly contact or solicit students/families introduced through CallMyProf for private tutoring outside the platform.</li>
+            <li>This non-compete clause applies for 12 months after your last session through CallMyProf.</li>
+            <li>CallMyProf retains a commission on each session as specified in the tutor agreement.</li>
+            <li>You agree to maintain professional standards and follow the CallMyProf code of conduct.</li>
+          </ul>
+        </div>
+        <label class="form-checkbox" style="margin-bottom:16px">
+          <input type="checkbox" id="f-non-compete">
+          &#9999;&#65039; I have read and accept the non-compete clause and tutor agreement
+        </label>
+
+        <div class="form-section-title">\ud83c\udfe6 Payment Details</div>
+        <div class="form-group">
+          <label class="form-label">Bank account (IBAN or local account)</label>
+          <input type="text" class="form-input" id="f-iban" placeholder="Your bank account number for payouts">
+          <div class="form-hint">We'll use this to send your tutor payments</div>
         </div>
 
         <div class="step-nav">
           <button class="btn-prev" onclick="goToStep(2)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-            Pr\u00e9c\u00e9dent
+            Previous
           </button>
           <button class="btn-next" onclick="goToStep(4)">
-            Suivant
+            Next
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
@@ -958,33 +942,33 @@ export async function renderOnboarding(env: Env): Promise<string> {
 
       <!-- ======== STEP 4: Review & Submit ======== -->
       <div class="step-panel" id="step-4">
-        <div class="step-title">\u2705 V\u00e9rification & soumission</div>
-        <div class="step-subtitle">V\u00e9rifiez vos informations avant de soumettre votre candidature. Vous pourrez les modifier plus tard.</div>
+        <div class="step-title">\u2705 Review & Submit</div>
+        <div class="step-subtitle">Review your information before submitting your application. You can modify it later.</div>
 
         <div class="review-summary" id="review-summary">
           <!-- Filled dynamically -->
         </div>
 
         <div class="form-section-title">\u270d\ufe0f Signature</div>
-        <p style="font-size:13px;color:var(--gray-500);margin-bottom:8px">Signez ci-dessous pour valider votre inscription :</p>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:8px">Sign below to validate your application:</p>
         <div class="signature-area">
           <canvas class="signature-canvas" id="signature-canvas"></canvas>
-          <span class="signature-placeholder" id="sig-placeholder">Signez ici</span>
-          <button class="signature-clear" onclick="clearSignature()">Effacer</button>
+          <span class="signature-placeholder" id="sig-placeholder">Sign here</span>
+          <button class="signature-clear" onclick="clearSignature()">Clear</button>
         </div>
 
         <label class="cgv-label" style="margin-top:20px">
           <input type="checkbox" id="f-cgv" onchange="checkSubmitReady()">
-          J'accepte les <a href="/cgv" target="_blank" style="color:var(--primary);text-decoration:underline">Conditions G\u00e9n\u00e9rales de Vente</a> et la <a href="/confidentialite" target="_blank" style="color:var(--primary);text-decoration:underline">Politique de confidentialit\u00e9</a> de Caplogy. Je certifie que les informations fournies sont exactes.
+          I accept the <a href="/terms" target="_blank" style="color:var(--primary);text-decoration:underline">Terms of Service</a> and <a href="/privacy" target="_blank" style="color:var(--primary);text-decoration:underline">Privacy Policy</a> of CallMyProf. I certify that the information provided is accurate.
         </label>
 
         <div class="step-nav">
           <button class="btn-prev" onclick="goToStep(3)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-            Pr\u00e9c\u00e9dent
+            Previous
           </button>
           <button class="btn-next btn-submit" id="btn-submit" onclick="submitOnboarding()" disabled>
-            \ud83d\ude80 Soumettre ma candidature
+            \ud83d\ude80 Submit Application
           </button>
         </div>
       </div>
@@ -993,15 +977,15 @@ export async function renderOnboarding(env: Env): Promise<string> {
       <div class="thankyou-panel" id="step-thankyou">
         <span class="thankyou-confetti">\ud83c\udf89</span>
         <span class="thankyou-icon">\ud83c\udf1f</span>
-        <div class="thankyou-title">Merci pour votre candidature !</div>
+        <div class="thankyou-title">Thank you for your application!</div>
         <div class="thankyou-text">
-          Votre dossier est en cours d'examen par notre \u00e9quipe.
-          Vous recevrez un email de confirmation sous 48h.
-          Bienvenue dans l'aventure Caplogy !
+          Your application is being reviewed by our team.
+          You will receive a confirmation email within 48 hours.
+          Welcome to the CallMyProf family!
         </div>
         <span class="thankyou-confetti" style="animation-delay:1s">\ud83c\udf8a</span>
         <div style="margin-top:20px">
-          <a href="/" class="btn-next" style="display:inline-flex;text-decoration:none">Retour \u00e0 l'accueil</a>
+          <a href="/" class="btn-next" style="display:inline-flex;text-decoration:none">Back to Home</a>
         </div>
       </div>
 
@@ -1062,7 +1046,7 @@ export async function renderOnboarding(env: Env): Promise<string> {
         const ville = document.getElementById('f-ville').value.trim();
 
         if (!prenom || !nom || !email || !ville) {
-          alert('Veuillez remplir tous les champs obligatoires (pr\u00e9nom, nom, email, ville)');
+          alert('Please fill in all required fields (first name, last name, email, city)');
           return false;
         }
         if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
@@ -1141,7 +1125,7 @@ export async function renderOnboarding(env: Env): Promise<string> {
         accepte_visio: document.getElementById('f-visio').checked ? 1 : 0,
         thematiques: selectedThematiques,
         iban: document.getElementById('f-iban').value.trim(),
-        siret: document.getElementById('f-siret').value.trim(),
+        non_compete_accepted: document.getElementById('f-non-compete').checked ? 1 : 0,
       };
     }
 
@@ -1167,7 +1151,7 @@ export async function renderOnboarding(env: Env): Promise<string> {
         if (saved.accepte_collectif !== undefined) document.getElementById('f-collectif').checked = !!saved.accepte_collectif;
         if (saved.accepte_visio !== undefined) document.getElementById('f-visio').checked = !!saved.accepte_visio;
         if (saved.iban) document.getElementById('f-iban').value = saved.iban;
-        if (saved.siret) document.getElementById('f-siret').value = saved.siret;
+        if (saved.non_compete_accepted) document.getElementById('f-non-compete').checked = true;
         // Thematiques restored after catalogue loads
         window._savedThematiques = saved.thematiques || [];
       } catch (e) {}
@@ -1182,7 +1166,7 @@ export async function renderOnboarding(env: Env): Promise<string> {
         renderCatalogue();
       } catch (e) {
         document.getElementById('catalogue-tree').innerHTML =
-          '<div style="color:var(--danger);text-align:center;padding:20px">Erreur de chargement du catalogue</div>';
+          '<div style="color:var(--danger);text-align:center;padding:20px">Error loading catalogue</div>';
       }
     }
 
@@ -1406,36 +1390,36 @@ export async function renderOnboarding(env: Env): Promise<string> {
       const nbDocs = document.querySelectorAll('.doc-upload-card.uploaded').length;
       const html = \`
         <div class="review-box">
-          <div class="review-box-title">\\ud83d\\udc64 Informations</div>
+          <div class="review-box-title">\\ud83d\\udc64 Personal Info</div>
           <div class="review-box-content">
-            <div class="review-item"><span class="review-item-label">Nom</span><span class="review-item-value">\${escapeH(d.prenom)} \${escapeH(d.nom)}</span></div>
+            <div class="review-item"><span class="review-item-label">Name</span><span class="review-item-value">\${escapeH(d.prenom)} \${escapeH(d.nom)}</span></div>
             <div class="review-item"><span class="review-item-label">Email</span><span class="review-item-value">\${escapeH(d.email)}</span></div>
-            <div class="review-item"><span class="review-item-label">T\\u00e9l\\u00e9phone</span><span class="review-item-value">\${escapeH(d.telephone || '-')}</span></div>
-            <div class="review-item"><span class="review-item-label">Ville</span><span class="review-item-value">\${escapeH(d.ville)} \${d.code_postal ? '(' + escapeH(d.code_postal) + ')' : ''}</span></div>
-            <div class="review-item"><span class="review-item-label">Rayon</span><span class="review-item-value">\${d.rayon_km} km</span></div>
+            <div class="review-item"><span class="review-item-label">Phone</span><span class="review-item-value">\${escapeH(d.telephone || '-')}</span></div>
+            <div class="review-item"><span class="review-item-label">City</span><span class="review-item-value">\${escapeH(d.ville)} \${d.code_postal ? '(' + escapeH(d.code_postal) + ')' : ''}</span></div>
+            <div class="review-item"><span class="review-item-label">Radius</span><span class="review-item-value">\${d.rayon_km} km</span></div>
           </div>
         </div>
         <div class="review-box">
-          <div class="review-box-title">\\ud83c\\udf93 Comp\\u00e9tences</div>
+          <div class="review-box-title">\\ud83c\\udf93 Skills</div>
           <div class="review-box-content">
-            <div class="review-item"><span class="review-item-label">Th\\u00e9matiques</span><span class="review-item-value">\${d.thematiques.length} s\\u00e9lectionn\\u00e9e(s)</span></div>
-            <div class="review-item"><span class="review-item-label">Tarif individuel</span><span class="review-item-value">\${d.tarif_horaire_individuel ? d.tarif_horaire_individuel + ' \\u20ac/h' : '-'}</span></div>
-            <div class="review-item"><span class="review-item-label">Tarif collectif</span><span class="review-item-value">\${d.tarif_horaire_collectif ? d.tarif_horaire_collectif + ' \\u20ac/h' : '-'}</span></div>
-            <div class="review-item"><span class="review-item-label">Exp\\u00e9rience</span><span class="review-item-value">\${d.experience_annees} an(s)</span></div>
+            <div class="review-item"><span class="review-item-label">Topics</span><span class="review-item-value">\${d.thematiques.length} selected</span></div>
+            <div class="review-item"><span class="review-item-label">Individual rate</span><span class="review-item-value">\${d.tarif_horaire_individuel ? '$' + d.tarif_horaire_individuel + '/h' : '-'}</span></div>
+            <div class="review-item"><span class="review-item-label">Group rate</span><span class="review-item-value">\${d.tarif_horaire_collectif ? '$' + d.tarif_horaire_collectif + '/h' : '-'}</span></div>
+            <div class="review-item"><span class="review-item-label">Experience</span><span class="review-item-value">\${d.experience_annees} year(s)</span></div>
           </div>
         </div>
         <div class="review-box">
-          <div class="review-box-title">\\ud83d\\udcc1 Documents</div>
+          <div class="review-box-title">\\ud83d\\udcc1 Documents & Contract</div>
           <div class="review-box-content">
-            <div class="review-item"><span class="review-item-label">T\\u00e9l\\u00e9vers\\u00e9s</span><span class="review-item-value">\${nbDocs}/7</span></div>
-            <div class="review-item"><span class="review-item-label">SIRET</span><span class="review-item-value">\${escapeH(d.siret || '-')}</span></div>
-            <div class="review-item"><span class="review-item-label">IBAN</span><span class="review-item-value">\${d.iban ? escapeH(d.iban.slice(0,4)) + ' \\u2022\\u2022\\u2022\\u2022 ' + escapeH(d.iban.slice(-4)) : '-'}</span></div>
+            <div class="review-item"><span class="review-item-label">Uploaded</span><span class="review-item-value">\${nbDocs}/4</span></div>
+            <div class="review-item"><span class="review-item-label">Non-compete</span><span class="review-item-value">\${d.non_compete_accepted ? '\\u2705 Accepted' : '\\u274c Not accepted'}</span></div>
+            <div class="review-item"><span class="review-item-label">Bank account</span><span class="review-item-value">\${d.iban ? escapeH(d.iban.slice(0,4)) + ' \\u2022\\u2022\\u2022\\u2022 ' + escapeH(d.iban.slice(-4)) : '-'}</span></div>
           </div>
         </div>
         <div class="review-box">
           <div class="review-box-title">\\u2705 Validation</div>
           <div class="review-box-content" style="text-align:center;color:var(--gray-400)">
-            <p style="margin-bottom:8px">Signez et acceptez les CGV pour finaliser</p>
+            <p style="margin-bottom:8px">Sign and accept the Terms to finalize</p>
             <span style="font-size:32px;animation:float 3s ease-in-out infinite;display:inline-block">\\u270d\\ufe0f</span>
           </div>
         </div>
@@ -1446,13 +1430,13 @@ export async function renderOnboarding(env: Env): Promise<string> {
     // ====== SUBMIT ======
     async function submitOnboarding() {
       if (!formateurId) {
-        alert('Erreur: veuillez compl\\u00e9ter l\\'\\u00e9tape 1 d\\'abord');
+        alert('Error: please complete step 1 first');
         return;
       }
 
       const btn = document.getElementById('btn-submit');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Soumission en cours\\u2026';
+      btn.innerHTML = '<span class="spinner"></span> Submitting\\u2026';
 
       try {
         // Save step 4 data (CGV + signature)
@@ -1497,14 +1481,14 @@ export async function renderOnboarding(env: Env): Promise<string> {
           }
         } else {
           const data = await res.json();
-          alert('Erreur: ' + (data.error || 'Erreur lors de la soumission'));
+          alert('Error: ' + (data.error || 'Submission failed'));
           btn.disabled = false;
-          btn.innerHTML = '\\ud83d\\ude80 Soumettre ma candidature';
+          btn.innerHTML = '\\ud83d\\ude80 Submit Application';
         }
       } catch (e) {
-        alert('Erreur de connexion. Veuillez r\\u00e9essayer.');
+        alert('Connection error. Please try again.');
         btn.disabled = false;
-        btn.innerHTML = '\\ud83d\\ude80 Soumettre ma candidature';
+        btn.innerHTML = '\\ud83d\\ude80 Submit Application';
       }
     }
 
@@ -1512,7 +1496,7 @@ export async function renderOnboarding(env: Env): Promise<string> {
     function showAutosave(state) {
       const el = document.getElementById('autosave-indicator');
       el.className = 'autosave-indicator show ' + state;
-      el.textContent = state === 'saving' ? '\\u23f3 Sauvegarde\\u2026' : '\\u2705 Sauvegard\\u00e9';
+      el.textContent = state === 'saving' ? '\\u23f3 Saving\\u2026' : '\\u2705 Saved';
       setTimeout(() => { el.classList.remove('show'); }, 2000);
     }
   </script>
