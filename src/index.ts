@@ -25,12 +25,7 @@ import { renderCoursDetail } from './pages/cours-detail';
 import { renderCoursForm } from './pages/cours-form';
 import { createCours, updateCoursStatut, terminerCours } from './api/cours';
 import { renderPackages } from './pages/packages';
-import { renderPackageVente } from './pages/package-vente';
 import { createPackage, updatePackageType } from './api/packages';
-import { renderFacturesListe } from './pages/factures-liste';
-import { renderFactureDetail } from './pages/facture-detail';
-import { renderPaiementsFormateurs } from './pages/paiements-formateurs';
-import { generateMonthlyInvoice, updateFactureStatut, generateAvoir, generateAttestationFiscale, generatePaiementsMois, marquerPaiementVire } from './api/factures';
 import { renderAvis } from './pages/avis';
 import { toggleAvisVisibility } from './api/avis';
 import { renderLanding } from './pages/landing';
@@ -472,11 +467,6 @@ export default {
         return htmlResponse(html);
       }
 
-      if (path === '/packages/new' && method === 'GET') {
-        const html = await renderPackageVente(env, userName);
-        return htmlResponse(html);
-      }
-
       if (path === '/api/packages' && method === 'POST') {
         return createPackage(env, request);
       }
@@ -486,74 +476,6 @@ export default {
         const pkgTypeUpdateId = matchPath(path, '/api/packages/types/:id');
         if (pkgTypeUpdateId && method === 'POST') {
           return updatePackageType(env, pkgTypeUpdateId, request);
-        }
-      }
-
-      // ---- Factures ----
-      if (path === '/factures' && method === 'GET') {
-        const html = await renderFacturesListe(env, url);
-        return htmlResponse(html);
-      }
-
-      // Facture API: generate monthly invoice
-      if (path === '/api/factures/generer-mensuelle' && method === 'POST') {
-        return generateMonthlyInvoice(env, request);
-      }
-
-      // Attestation fiscale API
-      if (path === '/api/attestations/generer' && method === 'POST') {
-        return generateAttestationFiscale(env, request);
-      }
-
-      // Parents list API (for the generate invoice modal)
-      if (path === '/api/parents/list' && method === 'GET') {
-        const parentsResult = await env.DB.prepare(
-          'SELECT id, nom, prenom, email FROM parents ORDER BY nom ASC, prenom ASC'
-        ).all<any>();
-        return jsonResponse({ parents: parentsResult?.results || [] });
-      }
-
-      // Facture statut change API (POST /api/factures/:id/statut)
-      {
-        const factureStatutId = matchPath(path, '/api/factures/:id/statut');
-        if (factureStatutId && method === 'POST') {
-          return updateFactureStatut(env, factureStatutId, request);
-        }
-      }
-
-      // Facture avoir API (POST /api/factures/:id/avoir)
-      {
-        const factureAvoirId = matchPath(path, '/api/factures/:id/avoir');
-        if (factureAvoirId && method === 'POST') {
-          return generateAvoir(env, factureAvoirId, request);
-        }
-      }
-
-      // ---- Paiements Formateurs ----
-      if (path === '/paiements-formateurs' && method === 'GET') {
-        const html = await renderPaiementsFormateurs(env, url);
-        return htmlResponse(html);
-      }
-
-      // Paiements formateurs API: generate
-      if (path === '/api/paiements-formateurs/generer' && method === 'POST') {
-        return generatePaiementsMois(env, request);
-      }
-
-      // Paiements formateurs API: mark as vire (POST /api/paiements-formateurs/:id/vire)
-      {
-        const paiementVireId = matchPath(path, '/api/paiements-formateurs/:id/vire');
-        if (paiementVireId && method === 'POST') {
-          return marquerPaiementVire(env, paiementVireId, request);
-        }
-      }
-
-      // Facture detail (must be AFTER /api/factures routes)
-      {
-        const factureId = matchPath(path, '/factures/:id');
-        if (factureId && method === 'GET') {
-          const html = await renderFactureDetail(env, factureId);
-          return htmlResponse(html);
         }
       }
 

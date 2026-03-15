@@ -618,14 +618,6 @@ export async function renderFamilleDetail(env: Env, familleId: string, userName?
           <span class="info-value">\u{1F4CD} ${escapeHtml(parent.ville)} ${escapeHtml(parent.code_postal)}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">URSSAF</span>
-          <span class="info-value">
-            ${parent.urssaf_compte_actif
-              ? '<span class="urssaf-badge active">\u{2705} Compte actif</span>'
-              : '<span class="urssaf-badge inactive">\u{274C} Non inscrit</span>'}
-          </span>
-        </div>
-        <div class="info-item">
           <span class="info-label">Inscrit le</span>
           <span class="info-value">\u{1F4C5} ${formatDateFr(parent.created_at)}</span>
         </div>

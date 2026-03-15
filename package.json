@@ -1,8 +1,8 @@
 {
-  "name": "findmyprof",
+  "name": "callmyprof",
   "version": "0.1.0",
   "private": true,
-  "description": "FindMyProf - Plateforme de mise en relation eleves-tuteurs (FR/EN)",
+  "description": "CallMyProf - International tutoring platform (EN/FR/AR)",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",

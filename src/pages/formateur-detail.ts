@@ -727,10 +727,6 @@ export async function renderFormateurDetail(env: Env, formateurId: string, userN
             <span class="info-value">${f.rayon_km} km</span>
           </div>
           <div class="info-item">
-            <span class="info-label">SIRET</span>
-            <span class="info-value">${escapeHtml(f.siret || '-')}</span>
-          </div>
-          <div class="info-item">
             <span class="info-label">IBAN</span>
             <span class="info-value masked">${maskIban(f.iban)}</span>
           </div>

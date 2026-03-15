@@ -1,6 +1,6 @@
 /**
- * Soutien Scolaire Caplogy - Tarification & Calculs
- * Tarifs, packages, credit d'impot, formatage prix
+ * CallMyProf - Pricing & Calculations
+ * Tarifs, packages, credit d'impot, price formatting
  */
 
 // ============================================================================

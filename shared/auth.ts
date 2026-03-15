@@ -1,6 +1,6 @@
 /**
- * Soutien Scolaire Caplogy - Authentification & Sessions
- * PBKDF2 via Web Crypto API, sessions D1, cookies httpOnly
+ * CallMyProf - Authentication & Sessions
+ * PBKDF2 via Web Crypto API, sessions D1, httpOnly cookies
  */
 
 import type { User, Env } from './types';
@@ -111,7 +111,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
 // ============================================================================
 
 const SESSION_DURATION_HOURS = 24;
-const COOKIE_NAME = 'soutien_session';
+const COOKIE_NAME = 'cmp_session';
 
 /**
  * Cree une session en D1 et retourne le sessionId + la chaine cookie Set-Cookie

@@ -192,8 +192,6 @@ export async function getFormateur(env: Env, id: string): Promise<FormateurDetai
   const documents = [
     { key: 'doc_identite_url', label: "Pi\u00e8ce d'identit\u00e9", url: formateur.doc_identite_url || null, uploaded: !!formateur.doc_identite_url },
     { key: 'doc_diplomes_url', label: "Dipl\u00f4mes", url: formateur.doc_diplomes_url || null, uploaded: !!formateur.doc_diplomes_url },
-    { key: 'doc_siret_url', label: "Extrait SIRET / INSEE", url: formateur.doc_siret_url || null, uploaded: !!formateur.doc_siret_url },
-    { key: 'doc_urssaf_url', label: "Attestation URSSAF", url: formateur.doc_urssaf_url || null, uploaded: !!formateur.doc_urssaf_url },
     { key: 'doc_casier_url', label: "Casier judiciaire (B3)", url: formateur.doc_casier_url || null, uploaded: !!formateur.doc_casier_url },
     { key: 'doc_rib_url', label: "RIB", url: formateur.doc_rib_url || null, uploaded: !!formateur.doc_rib_url },
     { key: 'doc_cv_url', label: "CV", url: formateur.doc_cv_url || null, uploaded: !!formateur.doc_cv_url },

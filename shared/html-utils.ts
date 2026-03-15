@@ -1,8 +1,10 @@
 /**
- * Soutien Scolaire Caplogy - Utilitaires HTML partages
- * Adapte de caplogy-prospector-v2/shared/html-utils.ts
- * Sidebar SSR, CSS design system, animations, composants
+ * CallMyProf - HTML utilities
+ * Sidebar SSR, CSS design system, animations, components
+ * Red + White + Charcoal theme with RTL support
  */
+
+import { type Locale, t, htmlAttrs } from './i18n/index';
 
 // ============================================================================
 // ESCAPE & FORMAT HELPERS
@@ -21,16 +23,28 @@ export function escapeHtml(str: string | undefined | null): string {
 }
 
 /**
- * Formate une date en format francais JJ/MM/AAAA
+ * Format a date according to locale
  */
-export function formatDateFr(dateStr: string | undefined | null): string {
+export function formatDate(dateStr: string | undefined | null, locale: Locale = 'en'): string {
   if (!dateStr) return '-';
   try {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const localeMap: Record<Locale, string> = { en: 'en-US', fr: 'fr-FR', ar: 'ar-LB' };
+    return date.toLocaleDateString(localeMap[locale], { day: '2-digit', month: '2-digit', year: 'numeric' });
   } catch {
     return '-';
   }
+}
+
+/** Backwards compat alias */
+export function formatDateFr(dateStr: string | undefined | null): string {
+  return formatDate(dateStr, 'fr');
+}
+
+/** Format currency amount */
+export function formatCurrency(amount: number, currency = 'USD', locale: Locale = 'en'): string {
+  const localeMap: Record<Locale, string> = { en: 'en-US', fr: 'fr-FR', ar: 'ar-LB' };
+  return new Intl.NumberFormat(localeMap[locale], { style: 'currency', currency }).format(amount);
 }
 
 // ============================================================================
@@ -39,11 +53,11 @@ export function formatDateFr(dateStr: string | undefined | null): string {
 
 export const CSS_VARS = `
   :root {
-    --primary: #0d3865;
-    --primary-dark: #092847;
-    --primary-light: #1a4f8a;
-    --secondary: #6dcbdd;
-    --secondary-light: #a0e4f0;
+    --primary: #DC2626;
+    --primary-dark: #B91C1C;
+    --primary-light: #EF4444;
+    --secondary: #1E293B;
+    --secondary-light: #334155;
     --white: #ffffff;
     --gray-50: #f8fafc;
     --gray-100: #f1f5f9;
@@ -94,7 +108,7 @@ export const CSS_BASE = `
     -moz-osx-font-smoothing: grayscale;
   }
   a { color: var(--primary); text-decoration: none; }
-  a:hover { color: var(--primary-light); }
+  a:hover { color: var(--primary-dark); }
   img { max-width: 100%; height: auto; }
 `;
 
@@ -190,7 +204,7 @@ export const CSS_ANIMATIONS = `
     transition: box-shadow var(--transition-normal);
   }
   .hover-glow:hover {
-    box-shadow: 0 0 20px rgba(109, 203, 221, 0.3);
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
   }
 
   /* ---- Smooth transitions on all interactive elements ---- */
@@ -449,7 +463,7 @@ export const CSS_CARDS = `
   .btn-primary:hover {
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
     color: var(--white);
-    box-shadow: 0 4px 12px rgba(13,56,101,0.3);
+    box-shadow: 0 4px 12px rgba(220,38,38,0.3);
   }
 
   .btn-secondary {
@@ -457,7 +471,7 @@ export const CSS_CARDS = `
     color: var(--primary-dark);
   }
   .btn-secondary:hover {
-    box-shadow: 0 4px 12px rgba(109,203,221,0.4);
+    box-shadow: 0 4px 12px rgba(30,41,59,0.3);
     color: var(--primary-dark);
   }
 
@@ -577,7 +591,7 @@ export const CSS_TABLE = `
   }
 
   tbody tr:hover {
-    background: rgba(109, 203, 221, 0.06);
+    background: rgba(220, 38, 38, 0.04);
   }
 
   tbody td {
@@ -725,7 +739,7 @@ export const CSS_FORMS = `
   .form-select:focus,
   .form-textarea:focus {
     border-color: var(--secondary);
-    box-shadow: 0 0 0 3px rgba(109, 203, 221, 0.15);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
   }
 
   .form-input::placeholder {
@@ -836,7 +850,7 @@ export const CSS_FORMS = `
   }
   .filter-bar .search-input:focus {
     border-color: var(--secondary);
-    box-shadow: 0 0 0 3px rgba(109, 203, 221, 0.15);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
     background-color: var(--white);
   }
 
@@ -856,7 +870,7 @@ export const CSS_FORMS = `
   }
   .filter-bar .filter-select:focus {
     border-color: var(--secondary);
-    box-shadow: 0 0 0 3px rgba(109, 203, 221, 0.15);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
   }
 
   /* ---- Upload zone ---- */
@@ -871,11 +885,11 @@ export const CSS_FORMS = `
   }
   .upload-zone:hover {
     border-color: var(--secondary);
-    background: rgba(109, 203, 221, 0.05);
+    background: rgba(220, 38, 38, 0.05);
   }
   .upload-zone.dragover {
     border-color: var(--secondary);
-    background: rgba(109, 203, 221, 0.1);
+    background: rgba(220, 38, 38, 0.08);
     transform: scale(1.01);
   }
   .upload-zone .upload-icon {
@@ -1025,32 +1039,38 @@ export interface SidebarSection {
   items: SidebarItem[];
 }
 
-export const SIDEBAR_SECTIONS: SidebarSection[] = [
-  {
-    title: 'Gestion',
-    items: [
-      { key: 'dashboard', label: 'Dashboard', icon: '\u{1F4CA}', href: '/dashboard' },
-      { key: 'formateurs', label: 'Formateurs', icon: '\u{1F468}\u{200D}\u{1F3EB}', href: '/formateurs' },
-      { key: 'familles', label: '\u{00C9}l\u{00E8}ves & Familles', icon: '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F466}', href: '/familles' },
-      { key: 'catalogue', label: 'Catalogue', icon: '\u{1F4DA}', href: '/catalogue' },
-    ]
-  },
-  {
-    title: 'Op\u{00E9}rations',
-    items: [
-      { key: 'cours', label: 'Cours & Planning', icon: '\u{1F4C5}', href: '/cours' },
-      { key: 'packages', label: 'Packages', icon: '\u{1F4E6}', href: '/packages' },
-      { key: 'factures', label: 'Facturation', icon: '\u{1F4B0}', href: '/factures' },
-    ]
-  },
-  {
-    title: 'Outils',
-    items: [
-      { key: 'avis', label: 'Avis', icon: '\u{2B50}', href: '/avis' },
-      { key: 'statistiques', label: 'Statistiques', icon: '\u{1F4C8}', href: '/statistiques' },
-    ]
-  },
-];
+/** Build sidebar sections with i18n */
+export function getSidebarSections(locale: Locale): SidebarSection[] {
+  return [
+    {
+      title: t(locale, 'sidebar.management'),
+      items: [
+        { key: 'dashboard', label: t(locale, 'sidebar.dashboard'), icon: '\u{1F4CA}', href: '/dashboard' },
+        { key: 'leads', label: t(locale, 'sidebar.leads'), icon: '\u{1F4DE}', href: '/leads' },
+        { key: 'formateurs', label: t(locale, 'sidebar.tutors'), icon: '\u{1F468}\u{200D}\u{1F3EB}', href: '/formateurs' },
+        { key: 'familles', label: t(locale, 'sidebar.students'), icon: '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F466}', href: '/familles' },
+        { key: 'catalogue', label: t(locale, 'sidebar.catalogue'), icon: '\u{1F4DA}', href: '/catalogue' },
+      ]
+    },
+    {
+      title: t(locale, 'sidebar.operations'),
+      items: [
+        { key: 'cours', label: t(locale, 'sidebar.classes'), icon: '\u{1F4C5}', href: '/cours' },
+        { key: 'group-classes', label: t(locale, 'sidebar.group_classes'), icon: '\u{1F465}', href: '/group-classes' },
+        { key: 'packages', label: t(locale, 'sidebar.packages'), icon: '\u{1F4E6}', href: '/packages' },
+        { key: 'payments', label: t(locale, 'sidebar.payments'), icon: '\u{1F4B3}', href: '/payments' },
+      ]
+    },
+    {
+      title: t(locale, 'sidebar.tools'),
+      items: [
+        { key: 'avis', label: t(locale, 'sidebar.reviews'), icon: '\u{2B50}', href: '/avis' },
+        { key: 'statistiques', label: t(locale, 'sidebar.stats'), icon: '\u{1F4C8}', href: '/statistiques' },
+        { key: 'chatbot', label: t(locale, 'sidebar.chatbot'), icon: '\u{1F916}', href: '/chatbot-config' },
+      ]
+    },
+  ];
+}
 
 // ============================================================================
 // CSS SIDEBAR
@@ -1065,7 +1085,7 @@ export const CSS_SIDEBAR = `
   /* ---- Sidebar ---- */
   .sidebar {
     width: 260px;
-    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(180deg, var(--secondary) 0%, #0F172A 100%);
     color: var(--white);
     position: fixed;
     top: 0;
@@ -1166,7 +1186,7 @@ export const CSS_SIDEBAR = `
   .sidebar-link.active {
     color: var(--white);
     background: rgba(255,255,255,0.1);
-    border-left-color: var(--secondary);
+    border-left-color: var(--primary);
     font-weight: 600;
   }
 
@@ -1183,7 +1203,7 @@ export const CSS_SIDEBAR = `
   }
 
   .sidebar-link.future::after {
-    content: 'Bient\u{00F4}t';
+    content: 'Soon';
     font-size: 9px;
     background: rgba(255,255,255,0.12);
     padding: 2px 6px;
@@ -1248,7 +1268,7 @@ export const CSS_SIDEBAR = `
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: var(--primary);
+    background: var(--secondary);
     color: var(--white);
     border: none;
     font-size: 18px;
@@ -1308,6 +1328,58 @@ export const CSS_SIDEBAR = `
   @media (max-width: 1100px) and (min-width: 769px) {
     .sidebar { width: 220px; }
     .main-content { margin-left: 220px; }
+    [dir="rtl"] .main-content { margin-left: 0; margin-right: 220px; }
+  }
+
+  /* ---- RTL Support ---- */
+  [dir="rtl"] .sidebar {
+    left: auto;
+    right: 0;
+    border-right: none;
+    border-left: 1px solid rgba(255,255,255,0.06);
+  }
+  [dir="rtl"] .main-content {
+    margin-left: 0;
+    margin-right: 260px;
+  }
+  [dir="rtl"] .sidebar-link {
+    border-left: none;
+    border-right: 3px solid transparent;
+  }
+  [dir="rtl"] .sidebar-link.active {
+    border-left-color: transparent;
+    border-right-color: var(--primary);
+  }
+  [dir="rtl"] .sidebar-toggle {
+    left: auto;
+    right: 16px;
+  }
+  [dir="rtl"] .page-header {
+    direction: rtl;
+  }
+  [dir="rtl"] thead th {
+    text-align: right;
+  }
+  [dir="rtl"] .form-select {
+    background-position: left 12px center;
+    padding-right: 14px;
+    padding-left: 36px;
+  }
+  [dir="rtl"] .filter-bar .search-input {
+    background-position: right 12px center;
+    padding-left: 14px;
+    padding-right: 38px;
+  }
+  @media (max-width: 768px) {
+    [dir="rtl"] .sidebar {
+      transform: translateX(100%);
+    }
+    [dir="rtl"] .sidebar.open {
+      transform: translateX(0);
+    }
+    [dir="rtl"] .main-content {
+      margin-right: 0;
+    }
   }
 `;
 
@@ -1316,13 +1388,12 @@ export const CSS_SIDEBAR = `
 // ============================================================================
 
 /**
- * Genere le <head> HTML commun avec tous les styles integres
+ * Generate the common HTML <head> with all styles inlined
  */
 export function htmlHead(title: string, extraCss = ''): string {
   return `<meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} - Soutien Scolaire Caplogy</title>
-  <link rel="icon" href="https://www.caplogy.com/logo_C.png">
+  <title>${title} - CallMyProf</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     ${CSS_VARS}
@@ -1338,10 +1409,10 @@ export function htmlHead(title: string, extraCss = ''): string {
 }
 
 /**
- * Genere la sidebar HTML avec navigation
+ * Generate sidebar HTML with navigation
  */
-export function htmlSidebar(activePage: string, userName?: string): string {
-  const sections = SIDEBAR_SECTIONS.map(section => {
+export function htmlSidebar(activePage: string, userName?: string, locale: Locale = 'en'): string {
+  const sections = getSidebarSections(locale).map(section => {
     const items = section.items.map(item => {
       const isActive = item.key === activePage ? ' active' : '';
       const isFuture = item.future ? ' future' : '';
@@ -1362,29 +1433,29 @@ ${items}
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <a href="/dashboard" class="sidebar-logo">
-        <img src="https://www.caplogy.com/logo_C.png" alt="Caplogy">
-        <span>Soutien Scolaire</span>
+        <span style="font-size:24px">&#128222;</span>
+        <span>CallMyProf</span>
       </a>
       <div class="sidebar-user">
         <span class="sidebar-user-dot"></span>
-        Bonjour, ${userName ? escapeHtml(userName.split(' ')[0]) : 'Anonyme'}
+        ${userName ? escapeHtml(userName.split(' ')[0]) : 'Admin'}
       </div>
     </div>
     <nav class="sidebar-nav">
 ${sections}
     </nav>
     <div class="sidebar-footer">
-      <span>Soutien Scolaire Caplogy v1</span>
+      <span>CallMyProf v1</span>
       <a href="/logout" class="sidebar-logout">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        D\u{00E9}connexion
+        ${t(locale, 'nav.logout')}
       </a>
     </div>
   </aside>`;
 }
 
 /**
- * Wrapper complet pour une page avec sidebar
+ * Full page wrapper with sidebar
  */
 export function htmlPage(options: {
   title: string;
@@ -1392,15 +1463,18 @@ export function htmlPage(options: {
   extraCss?: string;
   content: string;
   userName?: string;
+  locale?: Locale;
 }): string {
+  const locale = options.locale || 'en';
+  const attrs = htmlAttrs(locale);
   return `<!DOCTYPE html>
-<html lang="fr">
+<html lang="${attrs.lang}" dir="${attrs.dir}">
 <head>
   ${htmlHead(options.title, options.extraCss || '')}
 </head>
 <body>
   <div class="app-layout">
-    ${htmlSidebar(options.activePage, options.userName)}
+    ${htmlSidebar(options.activePage, options.userName, locale)}
     <main class="main-content">
       <div class="page-inner">
         ${options.content}
