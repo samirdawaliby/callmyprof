@@ -32,6 +32,8 @@ import { renderAvis } from './pages/avis';
 import { toggleAvisVisibility } from './api/avis';
 import { renderLanding, renderThanksPage } from './pages/landing';
 import { createLead, updateLeadStatus } from './api/leads';
+import { renderLeadsListe } from './pages/leads-liste';
+import { renderLeadDetail } from './pages/lead-detail';
 import { renderStatistiques } from './pages/statistiques';
 import type { User } from '../shared/types';
 
@@ -398,6 +400,20 @@ export default {
       }
 
       // ---- Leads (admin) ----
+      if (path === '/leads' && method === 'GET') {
+        const html = await renderLeadsListe(env, url, userName);
+        return htmlResponse(html);
+      }
+
+      // Lead detail page
+      {
+        const leadDetailId = matchPath(path, '/leads/:id');
+        if (leadDetailId && method === 'GET') {
+          const html = await renderLeadDetail(env, leadDetailId, userName);
+          return htmlResponse(html);
+        }
+      }
+
       // Lead status update API (PUT /api/leads/:id/status)
       {
         const leadStatusId = matchPath(path, '/api/leads/:id/status');
