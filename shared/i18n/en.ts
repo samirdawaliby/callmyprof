@@ -87,6 +87,13 @@ export const en: Record<string, string> = {
   // ---- Testimonials ----
   'testimonials.title': 'What Our Students Say',
 
+  // ---- SEO ----
+  'seo.title': 'CallMyProf - Find Your Perfect Tutor | Affordable Private Tutoring',
+  'seo.description': 'Affordable private tutoring from $15/hour. Expert tutors in Math, Science, Languages, Music and more. We call you within 24h. Book your free consultation now!',
+  'seo.og_title': 'CallMyProf - Affordable Private Tutoring',
+  'seo.og_description': 'Find your perfect tutor from $15/hour. Qualified tutors, flexible scheduling, proven results.',
+  'pricing.most_popular': 'Most Popular',
+
   // ---- Become a tutor ----
   'tutor_cta.title': 'Are You a Tutor?',
   'tutor_cta.subtitle': 'Join our community and start earning. Set your own schedule.',

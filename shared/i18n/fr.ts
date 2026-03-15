@@ -87,6 +87,13 @@ export const fr: Record<string, string> = {
   // ---- Testimonials ----
   'testimonials.title': 'Ce Que Disent Nos \u00c9l\u00e8ves',
 
+  // ---- SEO ----
+  'seo.title': 'CallMyProf - Trouvez Votre Prof Idéal | Soutien Scolaire Abordable',
+  'seo.description': 'Soutien scolaire abordable à partir de 15$/heure. Professeurs experts en maths, sciences, langues, musique et plus. On vous rappelle sous 24h.',
+  'seo.og_title': 'CallMyProf - Soutien Scolaire Abordable',
+  'seo.og_description': 'Trouvez votre prof idéal à partir de 15$/heure. Professeurs qualifiés, horaires flexibles, résultats prouvés.',
+  'pricing.most_popular': 'Le Plus Populaire',
+
   // ---- Become a tutor ----
   'tutor_cta.title': 'Vous \u00cates Professeur ?',
   'tutor_cta.subtitle': 'Rejoignez notre communaut\u00e9 et commencez \u00e0 enseigner. D\u00e9finissez vos horaires.',

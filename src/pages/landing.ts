@@ -884,8 +884,34 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CallMyProf - ${t(locale, 'hero.title')}</title>
-  <meta name="description" content="${t(locale, 'hero.subtitle', { price: startPrice })}">
+  <title>${t(locale, 'seo.title')}</title>
+  <meta name="description" content="${t(locale, 'seo.description')}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://callmyprof.com${locale !== 'en' ? '?lang=' + locale : ''}">
+  <meta name="theme-color" content="#DC2626">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="CallMyProf">
+  <meta property="og:title" content="${t(locale, 'seo.og_title')}">
+  <meta property="og:description" content="${t(locale, 'seo.og_description')}">
+  <meta property="og:url" content="https://callmyprof.com${locale !== 'en' ? '?lang=' + locale : ''}">
+  <meta property="og:locale" content="${locale === 'ar' ? 'ar_LB' : locale === 'fr' ? 'fr_FR' : 'en_US'}">
+  ${locale !== 'en' ? '<meta property="og:locale:alternate" content="en_US">' : ''}
+  ${locale !== 'fr' ? '<meta property="og:locale:alternate" content="fr_FR">' : ''}
+  ${locale !== 'ar' ? '<meta property="og:locale:alternate" content="ar_LB">' : ''}
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${t(locale, 'seo.og_title')}">
+  <meta name="twitter:description" content="${t(locale, 'seo.og_description')}">
+
+  <!-- Alternate languages -->
+  <link rel="alternate" hreflang="en" href="https://callmyprof.com?lang=en">
+  <link rel="alternate" hreflang="fr" href="https://callmyprof.com?lang=fr">
+  <link rel="alternate" hreflang="ar" href="https://callmyprof.com?lang=ar">
+  <link rel="alternate" hreflang="x-default" href="https://callmyprof.com">
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     ${CSS_VARS}
@@ -1064,7 +1090,7 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
     <div class="pricing-grid">
       <!-- Individual -->
       <div class="pricing-card featured">
-        <span class="pricing-badge">&#11088; Most Popular</span>
+        <span class="pricing-badge">&#11088; ${t(locale, 'pricing.most_popular')}</span>
         <span class="pricing-icon">&#128100;</span>
         <h4>${t(locale, 'pricing.individual_title')}</h4>
         <p class="pricing-desc">${t(locale, 'pricing.individual_desc')}</p>
@@ -1171,6 +1197,44 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
   <a href="https://wa.me/MESSAGE" class="whatsapp-widget" title="${t(locale, 'whatsapp.tooltip')}" target="_blank" rel="noopener">
     &#128172;
   </a>
+
+  <!-- STRUCTURED DATA (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": "CallMyProf",
+    "url": "https://callmyprof.com",
+    "description": "${t(locale, 'seo.description').replace(/"/g, '\\"')}",
+    "logo": "https://callmyprof.com/logo.png",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer service",
+      "availableLanguage": ["English", "French", "Arabic"]
+    },
+    "areaServed": {
+      "@type": "GeoCircle",
+      "geoMidpoint": { "@type": "GeoCoordinates", "latitude": 33.89, "longitude": 35.50 },
+      "geoRadius": "50000"
+    },
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Tutoring Services",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": { "@type": "Service", "name": "Individual Tutoring" },
+          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "15", "priceCurrency": "USD", "unitCode": "HUR" }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": { "@type": "Service", "name": "Group Classes" },
+          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "8", "priceCurrency": "USD", "unitCode": "HUR" }
+        }
+      ]
+    }
+  }
+  </script>
 
   <!-- SCRIPTS -->
   <script>

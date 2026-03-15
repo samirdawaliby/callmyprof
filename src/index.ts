@@ -4,7 +4,7 @@
  * Toutes les routes : publiques + admin avec authentification
  */
 
-import { requireAuth, getSessionIdFromRequest, deleteSession } from '../shared/auth';
+import { requireAuth, getSessionIdFromRequest, deleteSession, hashPassword } from '../shared/auth';
 import { htmlResponse, jsonResponse, redirectResponse, errorResponse } from '../shared/utils';
 import { htmlPage } from '../shared/html-utils';
 import { detectLocale, langCookieHeader } from '../shared/i18n/index';
@@ -225,6 +225,20 @@ export default {
           timestamp: new Date().toISOString(),
           environment: env.ENVIRONMENT || 'production',
         });
+      }
+
+      // Setup: create admin user (only if no users exist)
+      if (path === '/setup' && method === 'GET') {
+        const count = await env.DB.prepare('SELECT COUNT(*) as c FROM users').first<{ c: number }>();
+        if (count && count.c > 0) {
+          return jsonResponse({ error: 'Admin already exists. Access /login' }, 403);
+        }
+        const passwordHash = await hashPassword('admin123');
+        const id = crypto.randomUUID().replace(/-/g, '');
+        await env.DB.prepare(
+          "INSERT INTO users (id, email, password_hash, role, nom, prenom) VALUES (?, ?, ?, 'admin', 'Admin', 'CallMyProf')"
+        ).bind(id, 'admin@callmyprof.com', passwordHash).run();
+        return jsonResponse({ success: true, message: 'Admin created. Login: admin@callmyprof.com / admin123. CHANGE PASSWORD IMMEDIATELY.' });
       }
 
       // Locale detection (used by public pages)

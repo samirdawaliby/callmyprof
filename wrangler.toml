@@ -1,7 +1,7 @@
 name = "callmyprof"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
-account_id = "bc9bdfa814d313ad361e1120f2d57af9"
+account_id = "f2899fca523652c5c37ac4e10ab3024b"
 
 [vars]
 ENVIRONMENT = "production"
@@ -9,7 +9,7 @@ ENVIRONMENT = "production"
 [[d1_databases]]
 binding = "DB"
 database_name = "callmyprof-db"
-database_id = "CHANGE_ME"
+database_id = "b213d583-778a-4a61-87eb-a34095570235"
 
 [[r2_buckets]]
 binding = "R2"
