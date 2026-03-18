@@ -47,6 +47,9 @@ export function renderTermsPage(locale: Locale): string {
       <h2>9. ${t(locale, 'terms.s9_title')}</h2>
       <p>${t(locale, 'terms.s9_text')}</p>
       <p><a href="mailto:legal@callmyprof.com">legal@callmyprof.com</a></p>
+
+      <h2>10. ${t(locale, 'terms.s10_title')}</h2>
+      <p>${t(locale, 'terms.s10_text')}</p>
     `,
   });
 }

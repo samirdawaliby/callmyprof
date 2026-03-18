@@ -137,6 +137,18 @@ function serviceIcon(type: string): string {
   return `<span class="service-pill">${icons[type] || ''} ${type}</span>`;
 }
 
+function utmBadge(source: string | null): string {
+  if (!source) return '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(34,197,94,0.1);color:#22c55e;font-weight:700;">Organic</span>';
+  const colors: Record<string, string> = {
+    tiktok: 'background:rgba(0,0,0,0.08);color:#000',
+    instagram: 'background:rgba(225,48,108,0.1);color:#E1306C',
+    facebook: 'background:rgba(24,119,242,0.1);color:#1877F2',
+    google: 'background:rgba(66,133,244,0.1);color:#4285F4',
+  };
+  const style = colors[source.toLowerCase()] || 'background:rgba(100,116,139,0.1);color:#64748b';
+  return `<span style="font-size:12px;padding:3px 10px;border-radius:12px;${style};font-weight:700;">${source}</span>`;
+}
+
 // ============================================================================
 // RENDER
 // ============================================================================
@@ -227,6 +239,7 @@ export async function renderLeadsListe(env: Env, url: URL, userName?: string): P
           <td>${escapeHtml(lead.telephone)}<br><span style="font-size:11px;color:var(--gray-400)">${escapeHtml(lead.country_code)}</span></td>
           <td>${serviceIcon(lead.service_type)}</td>
           <td>${statusBadge(lead.statut)}</td>
+          <td>${utmBadge((lead as any).utm_source)}</td>
           <td>${callbackHtml}</td>
           <td><span style="font-size:12px;color:var(--gray-400)">${formatDate(lead.created_at)}</span></td>
           <td>
@@ -294,6 +307,7 @@ export async function renderLeadsListe(env: Env, url: URL, userName?: string): P
             <th>Phone</th>
             <th>Service</th>
             <th>Status</th>
+            <th>Source</th>
             <th>Callback</th>
             <th>Created</th>
             <th>Actions</th>

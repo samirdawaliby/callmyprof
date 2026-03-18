@@ -36,6 +36,7 @@ import { renderContactPage } from './pages/contact';
 import { renderTermsPage } from './pages/terms';
 import { renderPrivacyPage } from './pages/privacy';
 import { renderFaqPage } from './pages/faq';
+import { sendEmail, testEmail, sessionReminderEmail } from '../shared/email';
 import { createLead, updateLeadStatus } from './api/leads';
 import { renderLeadsListe } from './pages/leads-liste';
 import { renderLeadDetail } from './pages/lead-detail';
@@ -48,6 +49,12 @@ import { createPayment, updatePaymentStatus } from './api/payments';
 import { handleChat } from './api/chatbot';
 import { verifyWhatsAppWebhook, handleWhatsAppWebhook } from './api/whatsapp';
 import { renderStatistiques } from './pages/statistiques';
+import { renderSessions } from './pages/sessions';
+import { renderBookingPage, renderBookingExpired } from './pages/booking';
+import { renderSessionPage, renderSessionExpired } from './pages/session';
+import { renderStudentPortal, renderStudentAccessDenied } from './pages/student-portal';
+import { generateStudentKey } from './api/student';
+import { sendBookingInvite, submitBooking } from './api/booking';
 import type { User } from '../shared/types';
 
 // ============================================================================
@@ -65,6 +72,8 @@ export interface Env {
   PAYPAL_SECRET?: string;
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_ID?: string;
+  RESEND_API_KEY?: string;
+  DAILY_API_KEY?: string;
 }
 
 // ============================================================================
@@ -320,6 +329,140 @@ export default {
         return handleChat(env, request);
       }
 
+      // Public booking page (GET /book/:token)
+      if (path.startsWith('/book/') && method === 'GET') {
+        const token = path.split('/book/')[1];
+        if (token) {
+          // Look up token to get lead info
+          const tokenRow = await env.DB.prepare(
+            "SELECT bt.*, l.prenom, l.preferred_language, l.detected_locale FROM booking_tokens bt JOIN leads l ON l.id = bt.lead_id WHERE bt.token = ? AND bt.used = 0 AND bt.expires_at > datetime('now')"
+          ).bind(token).first<{ lead_id: string; prenom: string; preferred_language: string; detected_locale: string }>();
+
+          if (!tokenRow) {
+            return new Response(renderBookingExpired(locale), { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+          }
+
+          const bookingLocale = (tokenRow.preferred_language || tokenRow.detected_locale || 'en') as 'en' | 'fr' | 'ar';
+          return new Response(
+            renderBookingPage(token, tokenRow.prenom, bookingLocale),
+            { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        }
+      }
+
+      // Submit booking (public API)
+      if (path === '/api/booking' && method === 'POST') {
+        return submitBooking(env, request);
+      }
+
+      // Video session page (public - embedded iframe)
+      // GET /session/:bookingId?t=token
+      if (path.startsWith('/session/') && method === 'GET') {
+        const bookingId = path.split('/session/')[1];
+        if (bookingId) {
+          const booking = await env.DB.prepare(
+            "SELECT b.*, l.prenom FROM bookings b LEFT JOIN leads l ON l.id = b.lead_id WHERE b.id = ?"
+          ).bind(bookingId).first<{ id: string; lead_id: string; booking_date: string; booking_time: string; video_provider: string; video_room_url: string; video_host_url: string; video_room_name: string; prenom: string }>();
+
+          if (!booking || !booking.video_room_url) {
+            return new Response(renderSessionExpired(), { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+          }
+
+          const queryToken = url.searchParams.get('t') || undefined;
+          const isHost = url.searchParams.get('role') === 'host';
+
+          return new Response(
+            renderSessionPage({
+              bookingId: booking.id,
+              provider: (booking.video_provider || 'jitsi') as 'daily' | 'jitsi',
+              roomUrl: isHost && booking.video_host_url ? booking.video_host_url : booking.video_room_url,
+              token: queryToken,
+              studentName: booking.prenom,
+              date: booking.booking_date,
+              time: booking.booking_time,
+            }),
+            { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        }
+      }
+
+      // Demo session pages (for testing - no DB required)
+      if (path === '/session-demo/daily' && method === 'GET') {
+        return new Response(
+          renderSessionPage({
+            bookingId: 'demo-daily',
+            provider: 'daily',
+            roomUrl: 'https://callmyprof.daily.co/cmp-test-20260318',
+            token: url.searchParams.get('t') || undefined,
+            studentName: 'Demo Student',
+            date: '2026-03-19',
+            time: '14:00',
+          }),
+          { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+        );
+      }
+
+      if (path === '/session-demo/jitsi' && method === 'GET') {
+        return new Response(
+          renderSessionPage({
+            bookingId: 'demo-jitsi',
+            provider: 'jitsi',
+            roomUrl: 'https://meet.jit.si/callmyprof-demo-test-20260318',
+            studentName: 'Demo Student',
+            date: '2026-03-19',
+            time: '14:00',
+          }),
+          { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+        );
+      }
+
+      // Student portal (public, magic-link authenticated)
+      // GET /student/:leadId?key=xxx
+      if (path.startsWith('/student/') && method === 'GET') {
+        const leadId = path.split('/student/')[1];
+        if (leadId) {
+          const lead = await env.DB.prepare(
+            "SELECT id, prenom, nom, email, telephone, country_code, preferred_language, detected_locale FROM leads WHERE id = ?"
+          ).bind(leadId).first<{ id: string; prenom: string; nom: string; email: string; telephone: string; country_code: string; preferred_language: string; detected_locale: string }>();
+
+          if (!lead) {
+            return new Response(renderStudentAccessDenied(), { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+          }
+
+          const expectedKey = await generateStudentKey(lead.id, lead.email);
+          const providedKey = url.searchParams.get('key') || '';
+
+          if (providedKey !== expectedKey) {
+            return new Response(renderStudentAccessDenied(), { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+          }
+
+          const now = new Date().toISOString().split('T')[0];
+          const bookings = await env.DB.prepare(
+            "SELECT id, booking_date, booking_time, video_provider, video_room_url, statut FROM bookings WHERE lead_id = ? ORDER BY booking_date ASC, booking_time ASC"
+          ).bind(leadId).all<{ id: string; booking_date: string; booking_time: string; video_provider: string; video_room_url: string; statut: string }>();
+
+          const allBookings = bookings.results || [];
+          const upcoming = allBookings.filter(b => b.booking_date >= now);
+          const past = allBookings.filter(b => b.booking_date < now).reverse();
+
+          return new Response(
+            renderStudentPortal({
+              leadId: lead.id,
+              prenom: lead.prenom,
+              nom: lead.nom,
+              email: lead.email,
+              telephone: lead.telephone,
+              country_code: lead.country_code,
+              preferred_language: lead.preferred_language || lead.detected_locale || 'en',
+              accessKey: expectedKey,
+              upcomingSessions: upcoming,
+              pastSessions: past,
+            }),
+            { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        }
+      }
+
       // WhatsApp webhook verification
       if (path === '/api/webhooks/whatsapp' && method === 'GET') {
         return verifyWhatsAppWebhook(url);
@@ -388,6 +531,22 @@ export default {
       }
 
       const userName = `${user.prenom} ${user.nom}`;
+
+      // ---- Test Email (admin only) ----
+      // Usage: POST /api/test-email { "to": "email@example.com", "lang": "fr" }
+      if (path === '/api/test-email' && method === 'POST') {
+        const body = await request.json() as { to?: string; lang?: string };
+        const to = body.to || user.email;
+        const lang = body.lang || 'en';
+        const template = testEmail(lang);
+        const result = await sendEmail(env, {
+          to,
+          subject: template.subject,
+          html: template.html,
+          locale: lang,
+        });
+        return jsonResponse(result);
+      }
 
       // ---- Dashboard ----
       if (path === '/dashboard' && method === 'GET') {
@@ -479,6 +638,20 @@ export default {
         if (leadStatusId && method === 'PUT') {
           return updateLeadStatus(env, leadStatusId, request);
         }
+      }
+
+      // Send booking email to lead (POST /api/leads/:id/send-booking)
+      {
+        const sendBookingId = matchPath(path, '/api/leads/:id/send-booking');
+        if (sendBookingId && method === 'POST') {
+          return sendBookingInvite(env, sendBookingId);
+        }
+      }
+
+      // ---- Sessions (video) ----
+      if (path === '/sessions' && method === 'GET') {
+        const html = await renderSessions(env, userName);
+        return htmlResponse(html);
       }
 
       // ---- Calendar ----
@@ -787,6 +960,62 @@ export default {
   </div>
 </body>
 </html>`, 500);
+    }
+  },
+
+  // ============================================================================
+  // CRON: Session reminders (every 15 minutes)
+  // Sends email reminders for sessions starting in ~1 hour
+  // ============================================================================
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    const now = new Date();
+    const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
+    const todayStr = now.toISOString().split('T')[0];
+
+    // Find bookings today where time is ~1h from now (within 15min window)
+    const bookings = await env.DB.prepare(`
+      SELECT b.id, b.booking_date, b.booking_time, b.reminder_sent,
+             l.prenom, l.email, l.preferred_language, l.detected_locale
+      FROM bookings b
+      JOIN leads l ON l.id = b.lead_id
+      WHERE b.booking_date = ?
+        AND b.reminder_sent IS NULL
+        AND l.email IS NOT NULL
+    `).bind(todayStr).all<{
+      id: string; booking_date: string; booking_time: string; reminder_sent: string | null;
+      prenom: string; email: string; preferred_language: string; detected_locale: string;
+    }>();
+
+    for (const booking of (bookings.results || [])) {
+      const sessionTime = new Date(`${booking.booking_date}T${booking.booking_time}:00`);
+      const diffMs = sessionTime.getTime() - now.getTime();
+
+      // Send reminder if session is 45-75 min away
+      if (diffMs > 45 * 60 * 1000 && diffMs < 75 * 60 * 1000) {
+        const lang = booking.preferred_language || booking.detected_locale || 'en';
+        const sessionUrl = `https://callmyprof.com/session/${booking.id}`;
+        const reminder = sessionReminderEmail({
+          prenom: booking.prenom,
+          date: booking.booking_date,
+          time: booking.booking_time,
+          sessionUrl,
+          lang,
+        });
+
+        await sendEmail(env, {
+          to: booking.email,
+          subject: reminder.subject,
+          html: reminder.html,
+          locale: lang,
+        });
+
+        // Mark as sent
+        await env.DB.prepare(
+          "UPDATE bookings SET reminder_sent = datetime('now') WHERE id = ?"
+        ).bind(booking.id).run();
+
+        console.log(`Reminder sent for booking ${booking.id} to ${booking.email}`);
+      }
     }
   },
 };

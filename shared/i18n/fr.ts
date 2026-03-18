@@ -10,14 +10,14 @@ export const fr: Record<string, string> = {
 
   // ---- Hero ----
   'hero.title': 'Trouvez Votre Prof Id\u00e9al',
-  'hero.subtitle': 'Soutien scolaire abordable \u00e0 partir de {{price}}/heure',
-  'hero.cta': 'D\u00e9marrer - Consultation Gratuite',
+  'hero.subtitle': 'Cours d\'essai GRATUIT \u2022 Soutien scolaire \u00e0 partir de {{price}}/heure',
+  'hero.cta': 'R\u00e9servez Votre Cours d\'Essai GRATUIT',
   'hero.trust_1': 'On vous rappelle sous 24h',
   'hero.trust_2': 'Sans engagement',
   'hero.trust_3': 'Professeurs qualifi\u00e9s',
 
   // ---- CTA Form ----
-  'form.title': 'Demandez un Rappel Gratuit',
+  'form.title': 'R\u00e9servez Votre Cours d\'Essai Gratuit',
   'form.first_name': 'Pr\u00e9nom',
   'form.last_name': 'Nom',
   'form.email': 'Email',
@@ -26,14 +26,23 @@ export const fr: Record<string, string> = {
   'form.subject_placeholder': 'Choisir une mati\u00e8re...',
   'form.level': 'Niveau de l\'\u00e9l\u00e8ve',
   'form.level_placeholder': 'Choisir le niveau...',
+  'form.preferred_language': 'Langue pr\u00e9f\u00e9r\u00e9e pour les cours',
+  'form.lang_en': 'Anglais',
+  'form.lang_fr': 'Fran\u00e7ais',
+  'form.lang_ar': 'Arabe',
+  'form.lang_es': 'Espagnol',
+  'form.lang_de': 'Allemand',
   'form.schedule': 'Horaires pr\u00e9f\u00e9r\u00e9s',
   'form.schedule_placeholder': 'ex: Soirs de semaine, samedi matin...',
   'form.service_type': 'Type de service',
   'form.individual': 'Individuel',
   'form.group': 'Collectif',
   'form.online': 'En ligne',
-  'form.submit': 'Demander un rappel',
+  'form.submit': 'R\u00e9server mon cours d\'essai gratuit',
   'form.submitting': 'Envoi en cours...',
+  'form.spots_left': 'Testez un cours collectif gratuit \u2022 En groupe, on progresse plus vite !',
+  'form.free_badge': 'GRATUIT',
+  'form.no_commitment': 'Sans engagement \u2022 Sans carte bancaire',
 
   // ---- Levels ----
   'level.elementary': '\u00c9cole primaire',
@@ -126,6 +135,12 @@ export const fr: Record<string, string> = {
 
   // ---- WhatsApp ----
   'whatsapp.tooltip': 'Discutez avec nous sur WhatsApp',
+
+  // ---- Discord ----
+  'discord.tooltip': 'Rejoignez notre communaut\u00e9',
+  'discord.popup_title': 'Rejoignez la communaut\u00e9 !',
+  'discord.popup_text': 'Entraidez-vous entre \u00e9l\u00e8ves, posez vos questions et \u00e9changez avec nos professeurs. Ensemble, on progresse plus vite !',
+  'discord.popup_cta': 'Rejoindre le Discord',
 
   // ---- Onboarding (tutor) ----
   'onboarding.title': 'Devenir Professeur',
@@ -259,6 +274,8 @@ export const fr: Record<string, string> = {
   'terms.s8_text': 'CallMyProf ne saurait \u00eatre tenu responsable de tout dommage indirect ou cons\u00e9cutif r\u00e9sultant de l\'utilisation de nos services.',
   'terms.s9_title': 'Contact',
   'terms.s9_text': 'Pour toute question sur ces conditions, contactez-nous \u00e0 :',
+  'terms.s10_title': 'Droit applicable',
+  'terms.s10_text': 'Ces conditions sont r\u00e9gies par le droit commercial international applicable. CallMyProf est une marque exploit\u00e9e par Capleb SAL.',
 
   // ---- Privacy ----
   'privacy.page_title': 'Politique de Confidentialit\u00e9',

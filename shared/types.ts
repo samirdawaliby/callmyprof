@@ -19,6 +19,8 @@ export interface Env {
   PAYPAL_SECRET?: string;
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_ID?: string;
+  RESEND_API_KEY?: string;
+  DAILY_API_KEY?: string;
 }
 
 // ============================================
@@ -89,6 +91,7 @@ export interface Lead {
   converted_parent_id?: string;
   country?: string;
   detected_locale: string;
+  preferred_language?: string;
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;
@@ -385,5 +388,34 @@ export interface ChatMessage {
   conversation_id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  created_at: string;
+}
+
+// ============================================
+// Video (Daily.co + Jitsi fallback)
+// ============================================
+
+export type VideoProvider = 'daily' | 'jitsi';
+
+export interface VideoRoom {
+  provider: VideoProvider;
+  room_name: string;
+  room_url: string;
+  host_url?: string;        // Daily.co owner link (admin)
+  expires_at?: string;       // Auto-expire after session
+  daily_room_id?: string;    // Daily.co room ID for management
+}
+
+export interface Booking {
+  id: string;
+  lead_id: string;
+  booking_date: string;
+  booking_time: string;
+  statut: string;
+  notes?: string;
+  video_provider?: VideoProvider;
+  video_room_url?: string;
+  video_host_url?: string;
+  video_room_name?: string;
   created_at: string;
 }

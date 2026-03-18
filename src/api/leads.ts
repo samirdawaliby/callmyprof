@@ -5,7 +5,10 @@
 
 import { generateId } from '../../shared/utils';
 import { jsonResponse, errorResponse } from '../../shared/utils';
+import { sendEmail, leadConfirmationEmail, adminNewLeadEmail } from '../../shared/email';
 import type { Env, Lead } from '../../shared/types';
+
+const ADMIN_EMAIL = 'contact@callmyprof.com';
 
 // ============================================================================
 // CREATE LEAD (public - from CTA form)
@@ -31,15 +34,15 @@ export async function createLead(env: Env, request: Request): Promise<Response> 
   const telephone = (data.telephone || '').trim();
   const countryCode = (data.country_code || '+1').trim();
 
-  // Validation
-  if (!prenom || !nom) {
-    return errorResponse('Name is required.');
-  }
-  if (!email || !email.includes('@')) {
-    return errorResponse('Valid email is required.');
+  // Validation (only first name + phone required for simplified form)
+  if (!prenom) {
+    return errorResponse('First name is required.');
   }
   if (!telephone) {
     return errorResponse('Phone number is required.');
+  }
+  if (email && !email.includes('@')) {
+    return errorResponse('Please enter a valid email address.');
   }
 
   const id = generateId();
@@ -50,10 +53,10 @@ export async function createLead(env: Env, request: Request): Promise<Response> 
       INSERT INTO leads (
         id, nom, prenom, email, telephone, country_code,
         domaine_id, subject_description, level, preferred_schedule,
-        service_type, statut, country, detected_locale,
+        service_type, statut, country, detected_locale, preferred_language,
         utm_source, utm_medium, utm_campaign,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       nom,
@@ -68,12 +71,48 @@ export async function createLead(env: Env, request: Request): Promise<Response> 
       data.service_type || 'individual',
       data.country || null,
       data.detected_locale || 'en',
+      data.preferred_language || data.detected_locale || 'en',
       data.utm_source || null,
       data.utm_medium || null,
       data.utm_campaign || null,
       now,
       now
     ).run();
+
+    // Send confirmation email to the lead (non-blocking, only if email provided)
+    const lang = data.preferred_language || data.detected_locale || 'en';
+    if (email) {
+      const confirmEmail = leadConfirmationEmail({
+        prenom,
+        subject: data.subject_description || undefined,
+        serviceType: data.service_type || 'individual',
+        lang,
+      });
+      sendEmail(env, {
+        to: email,
+        subject: confirmEmail.subject,
+        html: confirmEmail.html,
+        locale: lang,
+      }).catch(err => console.error('Lead confirmation email error:', err));
+    }
+
+    // Send admin notification (non-blocking)
+    const adminEmail = adminNewLeadEmail({
+      prenom,
+      nom,
+      email,
+      telephone,
+      countryCode,
+      subject: data.subject_description || undefined,
+      serviceType: data.service_type || 'individual',
+      locale: lang,
+    });
+    sendEmail(env, {
+      to: ADMIN_EMAIL,
+      subject: adminEmail.subject,
+      html: adminEmail.html,
+      locale: 'fr',
+    }).catch(err => console.error('Admin notification email error:', err));
 
     return jsonResponse({ success: true, id });
   } catch (error) {

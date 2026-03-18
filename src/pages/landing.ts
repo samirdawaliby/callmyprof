@@ -212,6 +212,33 @@ const LANDING_CSS = `
     animation: slideUp 0.6s ease 0.2s both;
     color: var(--gray-900);
     text-align: left;
+    position: relative;
+  }
+  .form-free-badge {
+    position: absolute;
+    top: -14px;
+    right: 20px;
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 12px rgba(22,163,74,0.4);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  [dir="rtl"] .form-free-badge { right: auto; left: 20px; }
+  .form-urgency {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: center;
+    animation: pulse 3s ease-in-out infinite;
   }
   [dir="rtl"] .cta-form-card { text-align: right; }
   .cta-form-card h3 {
@@ -827,6 +854,151 @@ const LANDING_CSS = `
     box-shadow: 0 6px 24px rgba(37,211,102,0.5);
     color: #fff;
   }
+
+  /* ---- Discord Widget ---- */
+  .discord-widget {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    z-index: 99;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #5865F2;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(88,101,242,0.4);
+    transition: all 0.3s;
+    cursor: pointer;
+    border: none;
+  }
+  [dir="rtl"] .discord-widget { right: auto; left: 24px; }
+  [dir="rtl"] .whatsapp-widget { bottom: 24px; }
+  .discord-widget:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(88,101,242,0.5);
+    color: #fff;
+  }
+  .discord-popup {
+    position: fixed;
+    bottom: 90px;
+    right: 88px;
+    z-index: 100;
+    width: 320px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    padding: 0;
+    overflow: hidden;
+    animation: slideUp 0.3s ease both;
+    display: none;
+  }
+  [dir="rtl"] .discord-popup { right: auto; left: 88px; }
+  .discord-popup.open { display: block; }
+  .discord-popup-header {
+    background: linear-gradient(135deg, #5865F2, #7289DA);
+    padding: 20px;
+    color: #fff;
+    position: relative;
+  }
+  .discord-popup-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  [dir="rtl"] .discord-popup-close { right: auto; left: 12px; }
+  .discord-popup-close:hover { background: rgba(255,255,255,0.3); }
+  .discord-popup-header h4 {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .discord-popup-body {
+    padding: 20px;
+  }
+  .discord-popup-body p {
+    font-size: 14px;
+    color: var(--gray-600);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .discord-popup-features {
+    list-style: none;
+    margin-bottom: 20px;
+  }
+  .discord-popup-features li {
+    font-size: 13px;
+    color: var(--gray-700);
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .discord-popup-features li span {
+    font-size: 16px;
+  }
+  .discord-popup-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background: #5865F2;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .discord-popup-cta:hover {
+    background: #4752C4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(88,101,242,0.4);
+    color: #fff;
+  }
+  .discord-online {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.85;
+  }
+  .discord-online-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #57F287;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @media (max-width: 480px) {
+    .discord-popup { width: calc(100vw - 48px); right: 24px; bottom: 90px; }
+    [dir="rtl"] .discord-popup { left: 24px; right: auto; }
+  }
 `;
 
 // ============================================================================
@@ -1007,6 +1179,27 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
   <link rel="alternate" hreflang="ar" href="https://callmyprof.com?lang=ar">
   <link rel="alternate" hreflang="x-default" href="https://callmyprof.com">
 
+  <!-- Google Analytics 4 (replace G-XXXXXXXXXX with your Measurement ID) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+
+  <!-- Meta Pixel (replace PIXEL_ID with your Facebook Pixel ID) -->
+  <script>
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', 'PIXEL_ID');
+    fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     ${CSS_VARS}
@@ -1064,27 +1257,19 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
 
       <!-- CTA FORM -->
       <div class="cta-form-card">
+        <div class="form-free-badge">&#127881; ${t(locale, 'form.free_badge')}</div>
         <h3>${t(locale, 'form.title')}</h3>
-        <p class="form-sub">${t(locale, 'hero.trust_1')}</p>
+        <p class="form-sub">${t(locale, 'form.no_commitment')}</p>
+        <div class="form-urgency">&#128101; ${t(locale, 'form.spots_left')}</div>
         <form id="ctaForm" method="POST" action="/api/leads">
           <input type="hidden" name="detected_locale" value="${locale}">
           <input type="hidden" name="country" value="${country}">
           <input type="hidden" name="service_type" value="individual" id="service_type_input">
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>${t(locale, 'form.first_name')} *</label>
-              <input type="text" name="prenom" required placeholder="${t(locale, 'form.first_name')}">
-            </div>
-            <div class="form-group">
-              <label>${t(locale, 'form.last_name')} *</label>
-              <input type="text" name="nom" required placeholder="${t(locale, 'form.last_name')}">
-            </div>
-          </div>
+          <input type="hidden" name="preferred_language" value="${locale}">
 
           <div class="form-group">
-            <label>${t(locale, 'form.email')} *</label>
-            <input type="email" name="email" required placeholder="email@example.com">
+            <label>${t(locale, 'form.first_name')} *</label>
+            <input type="text" name="prenom" required placeholder="${t(locale, 'form.first_name')}">
           </div>
 
           <div class="form-group">
@@ -1095,6 +1280,11 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
               </select>
               <input type="tel" name="telephone" required placeholder="123 456 789">
             </div>
+          </div>
+
+          <div class="form-group">
+            <label>${t(locale, 'form.email')}</label>
+            <input type="email" name="email" placeholder="email@example.com">
           </div>
 
           <div class="form-row">
@@ -1111,26 +1301,6 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
                 <option value="">${t(locale, 'form.level_placeholder')}</option>
                 ${levelOptions}
               </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>${t(locale, 'form.schedule')}</label>
-            <input type="text" name="preferred_schedule" placeholder="${t(locale, 'form.schedule_placeholder')}">
-          </div>
-
-          <div class="form-group">
-            <label>${t(locale, 'form.service_type')}</label>
-            <div class="service-type-row">
-              <button type="button" class="service-type-btn active" data-type="individual" onclick="selectServiceType(this)">
-                ${t(locale, 'form.individual')}
-              </button>
-              <button type="button" class="service-type-btn" data-type="group" onclick="selectServiceType(this)">
-                ${t(locale, 'form.group')}
-              </button>
-              <button type="button" class="service-type-btn" data-type="online" onclick="selectServiceType(this)">
-                ${t(locale, 'form.online')}
-              </button>
             </div>
           </div>
 
@@ -1303,6 +1473,36 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
     </div>
   </footer>
 
+  <!-- DISCORD WIDGET + POPUP -->
+  <div class="discord-popup" id="discordPopup">
+    <div class="discord-popup-header">
+      <button class="discord-popup-close" onclick="document.getElementById('discordPopup').classList.remove('open')">&times;</button>
+      <h4>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        ${t(locale, 'discord.popup_title')}
+      </h4>
+      <div class="discord-online">
+        <span class="discord-online-dot"></span>
+        12 ${locale === 'fr' ? 'en ligne' : locale === 'ar' ? '\u0645\u062a\u0635\u0644' : 'online'}
+      </div>
+    </div>
+    <div class="discord-popup-body">
+      <p>${t(locale, 'discord.popup_text')}</p>
+      <ul class="discord-popup-features">
+        <li><span>&#128218;</span> ${locale === 'fr' ? 'Aide aux devoirs entre \u00e9l\u00e8ves' : locale === 'ar' ? '\u0645\u0633\u0627\u0639\u062f\u0629 \u0641\u064a \u0627\u0644\u0648\u0627\u062c\u0628\u0627\u062a' : 'Homework help from peers'}</li>
+        <li><span>&#127891;</span> ${locale === 'fr' ? 'Sessions Q&A avec les profs' : locale === 'ar' ? '\u062c\u0644\u0633\u0627\u062a \u0623\u0633\u0626\u0644\u0629 \u0645\u0639 \u0627\u0644\u0645\u0639\u0644\u0645\u064a\u0646' : 'Q&A sessions with tutors'}</li>
+        <li><span>&#128640;</span> ${locale === 'fr' ? 'Ressources et astuces gratuites' : locale === 'ar' ? '\u0645\u0648\u0627\u0631\u062f \u0648\u0646\u0635\u0627\u0626\u062d \u0645\u062c\u0627\u0646\u064a\u0629' : 'Free resources & study tips'}</li>
+      </ul>
+      <a href="https://discord.gg/VOTRE_INVITE" class="discord-popup-cta" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        ${t(locale, 'discord.popup_cta')}
+      </a>
+    </div>
+  </div>
+  <button class="discord-widget" id="discordBtn" title="${t(locale, 'discord.tooltip')}" onclick="document.getElementById('discordPopup').classList.toggle('open')">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+  </button>
+
   <!-- WHATSAPP WIDGET -->
   <a href="https://wa.me/MESSAGE" class="whatsapp-widget" title="${t(locale, 'whatsapp.tooltip')}" target="_blank" rel="noopener">
     &#128172;
@@ -1378,6 +1578,9 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
       .then(function(res) { return res.json(); })
       .then(function(result) {
         if (result.success) {
+          // Track conversion events
+          if (typeof gtag === 'function') gtag('event', 'generate_lead', { event_category: 'engagement', event_label: 'trial_lesson' });
+          if (typeof fbq === 'function') fbq('track', 'Lead');
           window.location.href = '/thanks?lang=${locale}';
         } else {
           btn.classList.remove('loading');

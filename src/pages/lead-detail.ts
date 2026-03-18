@@ -3,7 +3,7 @@
  * View lead info, change status, schedule callbacks, convert to student
  */
 
-import type { Env, Lead } from '../../shared/types';
+import type { Env, Lead, Booking } from '../../shared/types';
 import { htmlPage, escapeHtml, formatDate } from '../../shared/html-utils';
 import { getLead } from '../api/leads';
 
@@ -206,6 +206,43 @@ const PAGE_CSS = `
     color: var(--gray-400);
     font-size: 14px;
   }
+
+  /* Video room card */
+  .video-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .video-badge.daily { background: #eff6ff; color: #1e40af; border: 1px solid #93c5fd; }
+  .video-badge.jitsi { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+
+  .video-link-box {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+  }
+  .video-link-box a {
+    color: var(--primary);
+    font-size: 12px;
+    word-break: break-all;
+    text-decoration: none;
+  }
+  .video-link-box a:hover { text-decoration: underline; }
+  .video-link-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 `;
 
 // ============================================================================
@@ -254,6 +291,12 @@ export async function renderLeadDetail(env: Env, leadId: string, userName?: stri
     domaineName = domaine?.nom_en || domaine?.nom || '';
   }
 
+  // Get bookings for this lead (with video info)
+  const bookings = await env.DB.prepare(
+    'SELECT * FROM bookings WHERE lead_id = ? ORDER BY booking_date DESC, booking_time DESC'
+  ).bind(leadId).all<Booking>();
+  const leadBookings = bookings.results || [];
+
   const content = `
     <a href="/leads" class="back-link">&#8592; Back to Leads</a>
 
@@ -266,7 +309,7 @@ export async function renderLeadDetail(env: Env, leadId: string, userName?: stri
           <span>&#9993; ${escapeHtml(lead.email)}</span>
           <span>&#128222; ${escapeHtml(lead.country_code)} ${escapeHtml(lead.telephone)}</span>
           <span>&#127760; ${escapeHtml(lead.country || 'N/A')}</span>
-          <span>&#128483; ${escapeHtml(lead.detected_locale || 'en')}</span>
+          <span>&#128483; ${escapeHtml(lead.preferred_language || lead.detected_locale || 'en')}</span>
         </div>
       </div>
       <div class="lead-actions">
@@ -308,6 +351,10 @@ export async function renderLeadDetail(env: Env, leadId: string, userName?: stri
             <div class="info-row">
               <span class="info-label">Level</span>
               <span class="info-value">${escapeHtml(lead.level || '-')}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Preferred Language</span>
+              <span class="info-value">${escapeHtml(({'en':'English','fr':'Fran\u00e7ais','ar':'\u0639\u0631\u0628\u064a','es':'Espa\u00f1ol','de':'Deutsch'} as Record<string,string>)[lead.preferred_language || ''] || lead.preferred_language || '-')}</span>
             </div>
             <div class="info-row">
               <span class="info-label">Preferred Schedule</span>
@@ -357,6 +404,50 @@ export async function renderLeadDetail(env: Env, leadId: string, userName?: stri
           </div>
         </div>
 
+        <!-- Send Booking Email -->
+        <div class="detail-card" style="margin-bottom:20px">
+          <div class="detail-card-header">&#9993; Send Booking Email</div>
+          <div class="detail-card-body">
+            <p style="font-size:13px;color:var(--gray-600);margin-bottom:12px">
+              Send an email to <strong>${escapeHtml(lead.email)}</strong> with a link to book a free consultation call.
+            </p>
+            <button class="btn btn-sm btn-primary" style="width:100%;background:linear-gradient(135deg,#DC2626,#ef4444);border:none" onclick="sendBookingEmail()" id="emailBtn">
+              &#128232; Send Booking Invite
+            </button>
+            <div id="emailResult" style="margin-top:10px;display:none;padding:10px;border-radius:8px;font-size:13px;text-align:center"></div>
+          </div>
+        </div>
+
+        <!-- Video Sessions -->
+        ${leadBookings.length > 0 ? `
+        <div class="detail-card" style="margin-bottom:20px">
+          <div class="detail-card-header">&#127909; Video Sessions</div>
+          <div class="detail-card-body">
+            ${leadBookings.map(b => `
+              <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--gray-100)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <strong style="font-size:14px">${escapeHtml(b.booking_date)} ${escapeHtml(b.booking_time)}</strong>
+                  ${b.video_provider ? `<span class="video-badge ${b.video_provider}">${b.video_provider === 'daily' ? '&#127909; Daily.co' : '&#128249; Jitsi'}</span>` : ''}
+                </div>
+                ${b.video_host_url ? `
+                  <div class="video-link-box">
+                    <div class="video-link-label">&#128101; Admin / Tutor Link</div>
+                    <a href="${escapeHtml(b.video_host_url)}" target="_blank">${escapeHtml(b.video_host_url).slice(0, 60)}...</a>
+                  </div>
+                ` : ''}
+                ${b.video_room_url ? `
+                  <div class="video-link-box" style="margin-top:6px">
+                    <div class="video-link-label">&#127891; Student Link</div>
+                    <a href="${escapeHtml(b.video_room_url)}" target="_blank">${escapeHtml(b.video_room_url).slice(0, 60)}...</a>
+                  </div>
+                ` : ''}
+                ${!b.video_provider ? `<p style="color:var(--gray-400);font-size:13px;text-align:center;margin:8px 0 0">No video room created</p>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
+
         <!-- Schedule Callback -->
         <div class="detail-card">
           <div class="detail-card-header">&#128197; Schedule Callback</div>
@@ -374,6 +465,38 @@ export async function renderLeadDetail(env: Env, leadId: string, userName?: stri
     </div>
 
     <script>
+      function sendBookingEmail() {
+        var btn = document.getElementById('emailBtn');
+        var result = document.getElementById('emailResult');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+        fetch('/api/leads/${lead.id}/send-booking', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          result.style.display = 'block';
+          if (data.success) {
+            result.style.background = '#f0fdf4';
+            result.style.color = '#166534';
+            result.innerHTML = '&#9989; Email sent! Booking link:<br><a href="' + data.bookingUrl + '" target="_blank" style="color:#DC2626;word-break:break-all">' + data.bookingUrl + '</a>';
+            btn.textContent = '&#9989; Sent';
+          } else {
+            result.style.background = '#fef2f2';
+            result.style.color = '#991b1b';
+            result.textContent = data.error || 'Failed to send email';
+            btn.disabled = false;
+            btn.innerHTML = '&#128232; Retry';
+          }
+        })
+        .catch(function() {
+          result.style.display = 'block';
+          result.style.background = '#fef2f2';
+          result.style.color = '#991b1b';
+          result.textContent = 'Network error';
+          btn.disabled = false;
+          btn.innerHTML = '&#128232; Retry';
+        });
+      }
+
       function updateStatus(newStatus) {
         if (!confirm('Change status to ' + newStatus + '?')) return;
         fetch('/api/leads/${lead.id}/status', {

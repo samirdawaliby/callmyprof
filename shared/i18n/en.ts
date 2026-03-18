@@ -10,14 +10,14 @@ export const en: Record<string, string> = {
 
   // ---- Hero ----
   'hero.title': 'Find Your Perfect Tutor',
-  'hero.subtitle': 'Affordable private tutoring from {{price}}/hour',
-  'hero.cta': 'Get Started - Free Consultation',
+  'hero.subtitle': 'FREE trial lesson \u2022 Affordable tutoring from {{price}}/hour',
+  'hero.cta': 'Book Your FREE Trial Lesson',
   'hero.trust_1': 'We call you within 24h',
   'hero.trust_2': 'No commitment',
   'hero.trust_3': 'Qualified tutors',
 
   // ---- CTA Form ----
-  'form.title': 'Request a Free Callback',
+  'form.title': 'Book Your Free Trial Lesson',
   'form.first_name': 'First Name',
   'form.last_name': 'Last Name',
   'form.email': 'Email',
@@ -26,14 +26,23 @@ export const en: Record<string, string> = {
   'form.subject_placeholder': 'Select a subject...',
   'form.level': 'Student Level',
   'form.level_placeholder': 'Select level...',
+  'form.preferred_language': 'Preferred Language for Classes',
+  'form.lang_en': 'English',
+  'form.lang_fr': 'French',
+  'form.lang_ar': 'Arabic',
+  'form.lang_es': 'Spanish',
+  'form.lang_de': 'German',
   'form.schedule': 'Preferred Schedule',
   'form.schedule_placeholder': 'e.g., Weekday evenings, Saturday mornings...',
   'form.service_type': 'Service Type',
   'form.individual': 'Individual',
   'form.group': 'Group',
   'form.online': 'Online',
-  'form.submit': 'Request a Callback',
+  'form.submit': 'Book My Free Trial Lesson',
   'form.submitting': 'Sending...',
+  'form.spots_left': 'Try a free group class \u2022 Learning together is better!',
+  'form.free_badge': 'FREE',
+  'form.no_commitment': 'No commitment \u2022 No credit card required',
 
   // ---- Levels ----
   'level.elementary': 'Elementary School',
@@ -126,6 +135,12 @@ export const en: Record<string, string> = {
 
   // ---- WhatsApp ----
   'whatsapp.tooltip': 'Chat with us on WhatsApp',
+
+  // ---- Discord ----
+  'discord.tooltip': 'Join our community',
+  'discord.popup_title': 'Join the community!',
+  'discord.popup_text': 'Help each other, ask questions, and connect with our tutors. Together, we learn faster!',
+  'discord.popup_cta': 'Join Discord',
 
   // ---- Onboarding (tutor) ----
   'onboarding.title': 'Become a Tutor',
@@ -259,6 +274,8 @@ export const en: Record<string, string> = {
   'terms.s8_text': 'CallMyProf is not liable for any indirect, incidental, or consequential damages arising from the use of our services.',
   'terms.s9_title': 'Contact',
   'terms.s9_text': 'For questions about these terms, contact us at:',
+  'terms.s10_title': 'Governing Law',
+  'terms.s10_text': 'These terms are governed by applicable international commercial law. CallMyProf is a registered brand operated by Capleb SAL.',
 
   // ---- Privacy ----
   'privacy.page_title': 'Privacy Policy',

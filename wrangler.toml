@@ -23,3 +23,7 @@ bucket_name = "callmyprof-docs"
 
 [ai]
 binding = "AI"
+
+# Cron trigger: every 15 minutes to check for session reminders
+[triggers]
+crons = ["*/15 * * * *"]

@@ -1056,6 +1056,7 @@ export function getSidebarSections(locale: Locale): SidebarSection[] {
       title: t(locale, 'sidebar.operations'),
       items: [
         { key: 'cours', label: t(locale, 'sidebar.classes'), icon: '\u{1F4C5}', href: '/cours' },
+        { key: 'sessions', label: 'Sessions', icon: '\u{1F3A5}', href: '/sessions' },
         { key: 'group-classes', label: t(locale, 'sidebar.group_classes'), icon: '\u{1F465}', href: '/group-classes' },
         { key: 'packages', label: t(locale, 'sidebar.packages'), icon: '\u{1F4E6}', href: '/packages' },
         { key: 'payments', label: t(locale, 'sidebar.payments'), icon: '\u{1F4B3}', href: '/payments' },
