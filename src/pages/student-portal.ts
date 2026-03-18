@@ -326,7 +326,7 @@ export function renderStudentPortal(data: StudentData): string {
     <div class="support-links">
       <a href="mailto:contact@callmyprof.com" class="support-link">&#9993; Email</a>
       <a href="https://callmyprof.com/faq" class="support-link">&#10067; FAQ</a>
-      <a href="https://discord.gg/callmyprof" class="support-link discord">&#128172; Discord</a>
+      <a href="https://discord.gg/Bpf6ACbWAG" class="support-link discord">&#128172; Discord</a>
     </div>
   </div>
 
