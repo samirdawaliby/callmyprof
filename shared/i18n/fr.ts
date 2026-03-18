@@ -84,17 +84,21 @@ export const fr: Record<string, string> = {
 
   // ---- Subjects ----
   'subjects.title': 'Que Souhaitez-Vous Apprendre ?',
-  'domain.scolaire': 'Soutien Scolaire',
-  'domain.langues': 'Langues',
-  'domain.musique': 'Musique',
-  'domain.informatique': 'Informatique',
-  'domain.arts': 'Arts',
-  'domain.sport': 'Sport & Fitness',
-  'domain.concours': 'Pr\u00e9pa Concours',
-  'domain.accompagnement': 'Accompagnement Sp\u00e9cifique',
+  'domain.maths': 'Math\u00e9matiques (Alg\u00e8bre, Calcul, G\u00e9om\u00e9trie)',
+  'domain.sciences': 'Sciences (Physique, Chimie, Biologie)',
+  'domain.langues': 'Langues (Anglais, Fran\u00e7ais, Arabe, Espagnol)',
+  'domain.informatique': 'Informatique (Programmation, R\u00e9seaux, Cyber)',
+  'domain.ia': 'IA & Data Science (Machine Learning, Python)',
+  'domain.concours': 'Pr\u00e9pa Examens (Bac, Brevet, Concours)',
+  'domain.business': 'Business (Comptabilit\u00e9, \u00c9conomie, Marketing)',
+  'domain.accompagnement': 'Accompagnement (M\u00e9thodologie, Orientation)',
 
-  // ---- Testimonials ----
-  'testimonials.title': 'Ce Que Disent Nos \u00c9l\u00e8ves',
+  // ---- Community / Live Chat ----
+  'testimonials.title': 'Notre Communaut\u00e9 en Direct',
+  'community.subtitle': 'Rejoignez une communaut\u00e9 active o\u00f9 \u00e9l\u00e8ves et professeurs s\'entraident chaque jour.',
+  'community.online': 'en ligne maintenant',
+  'community.messages': 'messages aujourd\'hui',
+  'community.channel': 'aide-maths',
 
   // ---- SEO ----
   'seo.title': 'CallMyProf - Trouvez Votre Prof Idéal | Soutien Scolaire Abordable',

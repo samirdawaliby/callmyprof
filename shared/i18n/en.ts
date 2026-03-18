@@ -84,17 +84,21 @@ export const en: Record<string, string> = {
 
   // ---- Subjects ----
   'subjects.title': 'What Would You Like to Learn?',
-  'domain.scolaire': 'Academic Support',
-  'domain.langues': 'Languages',
-  'domain.musique': 'Music',
-  'domain.informatique': 'Computer Science',
-  'domain.arts': 'Arts',
-  'domain.sport': 'Sports & Fitness',
-  'domain.concours': 'Exam Prep',
-  'domain.accompagnement': 'Special Needs',
+  'domain.maths': 'Mathematics (Algebra, Calculus, Statistics)',
+  'domain.sciences': 'Sciences (Physics, Chemistry, Biology)',
+  'domain.langues': 'Languages (English, French, Arabic, Spanish)',
+  'domain.informatique': 'Computer Science (Programming, Networks, Cyber)',
+  'domain.ia': 'AI & Data Science (Machine Learning, Python)',
+  'domain.concours': 'Exam Prep (SAT, ACT, University Entrance)',
+  'domain.business': 'Business (Accounting, Economics, Marketing)',
+  'domain.accompagnement': 'Coaching (Study Skills, Career Guidance)',
 
-  // ---- Testimonials ----
-  'testimonials.title': 'What Our Students Say',
+  // ---- Community / Live Chat ----
+  'testimonials.title': 'Our Community, Live',
+  'community.subtitle': 'Join an active community where students and tutors help each other every day.',
+  'community.online': 'online now',
+  'community.messages': 'messages today',
+  'community.channel': 'chemistry-help',
 
   // ---- SEO ----
   'seo.title': 'CallMyProf - Find Your Perfect Tutor | Affordable Private Tutoring',

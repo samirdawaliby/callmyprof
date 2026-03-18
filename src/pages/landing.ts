@@ -674,45 +674,205 @@ const LANDING_CSS = `
     .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
   }
 
-  /* ---- Testimonials ---- */
-  .testimonials-bg {
+  /* ---- Live Community Chat ---- */
+  .community-bg {
     background: var(--gray-50);
   }
-  .testimonials-grid {
+  .community-layout {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
   }
-  .testimonial-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 28px;
-    border: 1px solid var(--gray-100);
-  }
-  .testimonial-stars {
-    color: #f59e0b;
-    font-size: 16px;
-    letter-spacing: 2px;
-    margin-bottom: 12px;
-  }
-  .testimonial-text {
-    font-size: 14px;
-    color: var(--gray-700);
-    line-height: 1.7;
-    margin-bottom: 16px;
-    font-style: italic;
-  }
-  .testimonial-author {
-    font-size: 13px;
-    font-weight: 600;
+  .community-text h3 {
+    font-size: 28px;
+    font-weight: 800;
     color: var(--gray-900);
+    margin-bottom: 12px;
+    line-height: 1.2;
   }
-  .testimonial-role {
+  .community-text p {
+    font-size: 15px;
+    color: var(--gray-500);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+  .community-stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .community-stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-700);
+  }
+  .community-stat .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .live-chat-window {
+    background: #1e1f22;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    max-height: 420px;
+    display: flex;
+    flex-direction: column;
+  }
+  .live-chat-header {
+    background: #2b2d31;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .live-chat-header .channel-hash {
+    color: #80848e;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .live-chat-header .channel-name {
+    color: #f2f3f5;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .live-chat-header .channel-topic {
+    color: #80848e;
     font-size: 12px;
-    color: var(--gray-400);
+    margin-left: auto;
   }
-  @media (max-width: 768px) {
-    .testimonials-grid { grid-template-columns: 1fr; }
+  .live-chat-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: #383a40 transparent;
+  }
+  .chat-msg {
+    display: flex;
+    gap: 12px;
+    animation: chatSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    position: relative;
+  }
+  .chat-msg.new-msg {
+    animation: chatSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both, chatGlow 1.5s ease-out both;
+  }
+  @keyframes chatSlideIn {
+    from { opacity: 0; transform: translateX(-20px) translateY(6px); }
+    to { opacity: 1; transform: translateX(0) translateY(0); }
+  }
+  [dir="rtl"] .chat-msg { animation-name: chatSlideInRTL; }
+  [dir="rtl"] .chat-msg.new-msg { animation-name: chatSlideInRTL, chatGlow; }
+  @keyframes chatSlideInRTL {
+    from { opacity: 0; transform: translateX(20px) translateY(6px); }
+    to { opacity: 1; transform: translateX(0) translateY(0); }
+  }
+  @keyframes chatGlow {
+    0% { background: rgba(88,101,242,0.15); border-radius: 12px; }
+    100% { background: transparent; }
+  }
+  .chat-msg.hidden { display: none; }
+  .chat-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    font-weight: 700;
+    color: #fff;
+  }
+  .chat-avatar.student { background: #5865f2; }
+  .chat-avatar.prof { background: #57f287; }
+  .chat-avatar.parent { background: #fee75c; color: #1e1f22; }
+  .chat-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .chat-author {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chat-author .name { color: #f2f3f5; }
+  .chat-author .badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .chat-author .badge.prof-badge { background: #248046; color: #fff; }
+  .chat-author .badge.student-badge { background: #5865f2; color: #fff; }
+  .chat-author .time {
+    font-size: 11px;
+    color: #80848e;
+    font-weight: 400;
+  }
+  .chat-text {
+    font-size: 14px;
+    color: #dbdee1;
+    line-height: 1.5;
+  }
+  .chat-reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    background: #2b2d31;
+    border: 1px solid #383a40;
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 13px;
+    color: #dbdee1;
+  }
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #2b2d31;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 12px;
+    color: #80848e;
+    transition: opacity 0.3s ease;
+  }
+  .typing-dots {
+    display: flex;
+    gap: 3px;
+  }
+  .typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #80848e;
+    animation: typingBounce 1.4s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-4px); }
+  }
+  @media (max-width: 900px) {
+    .community-layout { grid-template-columns: 1fr; }
+    .live-chat-window { max-height: 380px; }
   }
 
   /* ---- Tutor CTA ---- */
@@ -1007,52 +1167,48 @@ const LANDING_CSS = `
 
 function getSubjects() {
   return [
-    { icon: '&#128218;', key: 'domain.scolaire' },
+    { icon: '&#128202;', key: 'domain.maths' },
+    { icon: '&#128300;', key: 'domain.sciences' },
     { icon: '&#127760;', key: 'domain.langues' },
-    { icon: '&#127925;', key: 'domain.musique' },
     { icon: '&#128187;', key: 'domain.informatique' },
-    { icon: '&#127912;', key: 'domain.arts' },
-    { icon: '&#9917;', key: 'domain.sport' },
+    { icon: '&#129302;', key: 'domain.ia' },
     { icon: '&#127891;', key: 'domain.concours' },
+    { icon: '&#128188;', key: 'domain.business' },
     { icon: '&#129504;', key: 'domain.accompagnement' },
   ];
 }
 
 // ============================================================================
-// TESTIMONIALS DATA
+// LIVE CHAT MESSAGES DATA - simulates active community
 // ============================================================================
 
-const TESTIMONIALS = [
-  {
-    text_en: 'My son went from a C to an A in math in just two months. The tutor was incredibly patient and knowledgeable.',
-    text_fr: 'Mon fils est pass\u00e9 de 10 \u00e0 16 en maths en deux mois. Le professeur \u00e9tait incroyablement patient.',
-    text_ar: '\u0627\u0628\u0646\u064A \u0627\u0646\u062A\u0642\u0644 \u0645\u0646 \u0639\u0644\u0627\u0645\u0629 \u0645\u062A\u0648\u0633\u0637\u0629 \u0625\u0644\u0649 \u0639\u0644\u0627\u0645\u0629 \u0645\u0645\u062A\u0627\u0632\u0629 \u0641\u064A \u0634\u0647\u0631\u064A\u0646 \u0641\u0642\u0637',
-    author: 'Sarah M.',
-    role_en: 'Parent',
-    role_fr: 'Parent',
-    role_ar: '\u0648\u0644\u064A \u0623\u0645\u0631',
-    note: 5,
-  },
-  {
-    text_en: 'The group classes are amazing value. My daughter loves the collaborative environment and her grades improved.',
-    text_fr: 'Les cours collectifs sont d\'un excellent rapport qualit\u00e9-prix. Ma fille adore et ses notes ont augment\u00e9.',
-    text_ar: '\u0627\u0644\u062F\u0631\u0648\u0633 \u0627\u0644\u062C\u0645\u0627\u0639\u064A\u0629 \u0630\u0627\u062A \u0642\u064A\u0645\u0629 \u0645\u0645\u062A\u0627\u0632\u0629. \u0627\u0628\u0646\u062A\u064A \u062A\u062D\u0628 \u0627\u0644\u0628\u064A\u0626\u0629 \u0627\u0644\u062A\u0639\u0627\u0648\u0646\u064A\u0629',
-    author: 'Ahmed K.',
-    role_en: 'Parent',
-    role_fr: 'Parent',
-    role_ar: '\u0648\u0644\u064A \u0623\u0645\u0631',
-    note: 5,
-  },
-  {
-    text_en: 'I was struggling with English for years. CallMyProf matched me with the perfect tutor and now I feel confident.',
-    text_fr: 'Je galérais en anglais depuis des ann\u00e9es. CallMyProf m\'a trouv\u00e9 le prof parfait et je me sens confiant.',
-    text_ar: '\u0643\u0646\u062A \u0623\u0639\u0627\u0646\u064A \u0645\u0639 \u0627\u0644\u0625\u0646\u062C\u0644\u064A\u0632\u064A\u0629 \u0644\u0633\u0646\u0648\u0627\u062A. CallMyProf \u0648\u062C\u062F \u0644\u064A \u0627\u0644\u0645\u0639\u0644\u0645 \u0627\u0644\u0645\u062B\u0627\u0644\u064A',
-    author: 'Lina R.',
-    role_en: 'Student, 16',
-    role_fr: '\u00c9l\u00e8ve, 16 ans',
-    role_ar: '\u0637\u0627\u0644\u0628\u0629\u060C 16 \u0633\u0646\u0629',
-    note: 5,
-  },
+// Unique conversations per language for authenticity
+const CHAT_FR = [
+  { role: 'student', name: 'Lina', avatar: 'L', text: 'Salut ! Quelqu\'un peut m\'expliquer les \u00e9quations du second degr\u00e9 ? J\'ai un exam demain \ud83d\ude2d', time: '14:32' },
+  { role: 'student', name: 'Youssef', avatar: 'Y', text: 'La formule du discriminant : b\u00b2 - 4ac. Si c\'est positif = 2 solutions \u2705', time: '14:33' },
+  { role: 'prof', name: 'Prof. Sarah', avatar: 'S', text: 'Exactement Youssef ! \ud83d\udc4f Lina, j\'ai mis 3 exercices corrig\u00e9s dans #ressources. Tu vas g\u00e9rer ton exam !', time: '14:34', reaction: '\u2764\ufe0f 4' },
+  { role: 'student', name: 'Lina', avatar: 'L', text: 'Merci Prof. Sarah !! \u2764\ufe0f C\'est tellement plus clair maintenant', time: '14:35' },
+  { role: 'parent', name: 'Mme Dupont', avatar: 'D', text: 'Mon fils est pass\u00e9 de 8 \u00e0 15 en maths depuis qu\'il est dans ce groupe. Merci \u00e0 tous les profs ! \ud83d\ude4f', time: '14:36', reaction: '\ud83d\udc4d 7' },
+  { role: 'student', name: 'Omar', avatar: 'O', text: 'Quelqu\'un a des conseils pour r\u00e9viser le Bac de physique ? Je suis stress\u00e9 \ud83d\ude05', time: '14:37' },
+  { role: 'prof', name: 'Prof. Marc', avatar: 'P', text: 'Omar ! On fait un cours collectif GRATUIT vendredi soir sur la m\u00e9canique. Inscris-toi ici \u27a1\ufe0f #cours-collectifs \ud83d\ude80', time: '14:38', reaction: '\ud83d\ude80 5' },
+];
+const CHAT_EN = [
+  { role: 'student', name: 'Emily', avatar: 'E', text: 'Can anyone help me with organic chemistry? The naming conventions are killing me \ud83d\ude35', time: '3:15 PM' },
+  { role: 'student', name: 'James', avatar: 'J', text: 'I had the same issue! Start with the longest carbon chain, then name the branches alphabetically', time: '3:16 PM' },
+  { role: 'prof', name: 'Prof. David', avatar: 'D', text: 'Great advice James! \ud83c\udf1f Emily, I just uploaded a cheat sheet in #resources with all IUPAC rules. Check it out!', time: '3:17 PM', reaction: '\ud83d\udd25 6' },
+  { role: 'student', name: 'Emily', avatar: 'E', text: 'Omg that cheat sheet is amazing!! Thank you Prof. David \ud83d\ude4f', time: '3:18 PM' },
+  { role: 'parent', name: 'Mrs. Johnson', avatar: 'J', text: 'My daughter\'s grades went from B- to A+ since joining this community. Best decision ever! \u2b50', time: '3:19 PM', reaction: '\u2764\ufe0f 9' },
+  { role: 'student', name: 'Amir', avatar: 'A', text: 'Hey is anyone prepping for the SAT math section? Want to form a study group \ud83d\udcda', time: '3:20 PM' },
+  { role: 'prof', name: 'Prof. Lisa', avatar: 'L', text: 'Amir, perfect timing! FREE SAT prep group class this Saturday at 10 AM. Sign up in #group-classes \ud83d\ude80', time: '3:21 PM', reaction: '\ud83d\udcaf 4' },
+];
+const CHAT_AR = [
+  { role: 'student', name: '\u0641\u0627\u0637\u0645\u0629', avatar: '\u0641', text: '\u0645\u0631\u062d\u0628\u0627! \u0645\u062d\u062a\u0627\u062c\u0629 \u0645\u0633\u0627\u0639\u062f\u0629 \u0628\u0627\u0644\u0628\u0631\u0645\u062c\u0629 \u0628\u0644\u063a\u0629 Python. \u0643\u064a\u0641 \u0623\u0633\u062a\u062e\u062f\u0645 \u0627\u0644\u062d\u0644\u0642\u0627\u062a\u061f \ud83d\ude2d', time: '16:45' },
+  { role: 'student', name: '\u062e\u0627\u0644\u062f', avatar: '\u062e', text: 'for i in range(10) \u0647\u064a \u0627\u0644\u0623\u0633\u0627\u0633. \u062c\u0631\u0651\u0628\u064a \u062a\u0643\u062a\u0628\u064a \u0643\u0648\u062f \u0628\u0633\u064a\u0637 \u0648\u0623\u0631\u0633\u0644\u064a\u0647 \u0647\u0646\u0627 \u2705', time: '16:46' },
+  { role: 'prof', name: '\u0623\u0633\u062a\u0627\u0630 \u0633\u0627\u0645\u064a', avatar: '\u0633', text: '\u0623\u062d\u0633\u0646\u062a \u062e\u0627\u0644\u062f! \ud83d\udc4f \u0641\u0627\u0637\u0645\u0629\u060c \u062d\u0637\u0651\u064a\u062a \u0634\u0631\u062d \u0643\u0627\u0645\u0644 \u0645\u0639 \u0623\u0645\u062b\u0644\u0629 \u0641\u064a #\u0627\u0644\u0645\u0648\u0627\u0631\u062f. \u0627\u0644\u0628\u0631\u0645\u062c\u0629 \u0633\u0647\u0644\u0629 \u0645\u0639 \u0627\u0644\u0645\u0645\u0627\u0631\u0633\u0629!', time: '16:47', reaction: '\u2764\ufe0f 5' },
+  { role: 'student', name: '\u0641\u0627\u0637\u0645\u0629', avatar: '\u0641', text: '\u0634\u0643\u0631\u064b\u0627 \u0623\u0633\u062a\u0627\u0630 \u0633\u0627\u0645\u064a!! \u2764\ufe0f \u0627\u0644\u0634\u0631\u062d \u0648\u0627\u0636\u062d \u062c\u062f\u064b\u0627', time: '16:48' },
+  { role: 'parent', name: '\u0623\u0645 \u0639\u0644\u064a', avatar: '\u0623', text: '\u0627\u0628\u0646\u064a \u062a\u062d\u0633\u0651\u0646 \u0643\u062b\u064a\u0631 \u0628\u0627\u0644\u0631\u064a\u0627\u0636\u064a\u0627\u062a \u0628\u0641\u0636\u0644 \u0647\u0630\u0627 \u0627\u0644\u0645\u062c\u062a\u0645\u0639. \u0634\u0643\u0631\u064b\u0627 \u0644\u0643\u0644 \u0627\u0644\u0645\u0639\u0644\u0645\u064a\u0646! \ud83d\ude4f', time: '16:49', reaction: '\ud83d\udc4d 8' },
+  { role: 'student', name: '\u0639\u0645\u0631', avatar: '\u0639', text: '\u0647\u0644 \u0641\u064a \u062f\u0631\u0633 \u0645\u062c\u0627\u0646\u064a \u0639\u0646 \u0627\u0644\u0623\u0645\u0646 \u0627\u0644\u0633\u064a\u0628\u0631\u0627\u0646\u064a\u061f \u0628\u062f\u064a \u0623\u062a\u0639\u0644\u0645 \ud83d\udcbb', time: '16:50' },
+  { role: 'prof', name: '\u0623\u0633\u062a\u0627\u0630 \u0633\u0627\u0645\u064a', avatar: '\u0633', text: '\u0639\u0645\u0631! \u062f\u0631\u0633 \u062c\u0645\u0627\u0639\u064a \u0645\u062c\u0627\u0646\u064a \u0639\u0646 \u0623\u0633\u0627\u0633\u064a\u0627\u062a \u0627\u0644\u0623\u0645\u0646 \u0627\u0644\u0633\u064a\u0628\u0631\u0627\u0646\u064a \u064a\u0648\u0645 \u0627\u0644\u0633\u0628\u062a. \u0633\u062c\u0651\u0644 \u0641\u064a #\u062f\u0631\u0648\u0633-\u062c\u0645\u0627\u0639\u064a\u0629 \ud83d\ude80', time: '16:51', reaction: '\ud83d\ude80 6' },
 ];
 
 // ============================================================================
@@ -1128,15 +1284,23 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
   ];
   const levelOptions = levels.map(l => `<option value="${l.value}">${l.label}</option>`).join('');
 
-  const testimonialCards = TESTIMONIALS.map(tm => {
-    const text = locale === 'ar' ? tm.text_ar : locale === 'fr' ? tm.text_fr : tm.text_en;
-    const role = locale === 'ar' ? tm.role_ar : locale === 'fr' ? tm.role_fr : tm.role_en;
-    const stars = '\u2605'.repeat(tm.note);
-    return `<div class="testimonial-card card">
-      <div class="testimonial-stars">${stars}</div>
-      <p class="testimonial-text">&ldquo;${text}&rdquo;</p>
-      <div class="testimonial-author">${tm.author}</div>
-      <div class="testimonial-role">${role}</div>
+  // Pick chat messages for current locale
+  const chatList = locale === 'ar' ? CHAT_AR : locale === 'fr' ? CHAT_FR : CHAT_EN;
+  const badgeLabel = locale === 'fr' ? 'PROF' : locale === 'ar' ? '\u0623\u0633\u062a\u0627\u0630' : 'TUTOR';
+  const chatMessagesHtml = chatList.map((msg, i) => {
+    const badgeHtml = msg.role === 'prof' ? `<span class="badge prof-badge">${badgeLabel}</span>` : '';
+    const reactionHtml = (msg as any).reaction ? `<div class="chat-reaction">${(msg as any).reaction}</div>` : '';
+    return `<div class="chat-msg${i > 2 ? ' hidden' : ''}" style="animation-delay: ${i * 0.15}s">
+      <div class="chat-avatar ${msg.role}">${msg.avatar}</div>
+      <div class="chat-content">
+        <div class="chat-author">
+          <span class="name">${msg.name}</span>
+          ${badgeHtml}
+          <span class="time">${msg.time}</span>
+        </div>
+        <div class="chat-text">${msg.text}</div>
+        ${reactionHtml}
+      </div>
     </div>`;
   }).join('');
 
@@ -1424,12 +1588,39 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
     </div>
   </section>
 
-  <!-- TESTIMONIALS -->
-  <section class="testimonials-bg" id="testimonials">
+  <!-- COMMUNITY LIVE CHAT -->
+  <section class="community-bg" id="community">
     <div class="section">
       <h2 class="section-title">${t(locale, 'testimonials.title')}</h2>
-      <div class="testimonials-grid">
-        ${testimonialCards}
+      <div class="community-layout">
+        <div class="community-text">
+          <h3>${locale === 'fr' ? 'L\'entraide en action, en ce moment m\u00eame' : locale === 'ar' ? '\u0627\u0644\u062a\u0639\u0627\u0648\u0646 \u064a\u062d\u062f\u062b \u0627\u0644\u0622\u0646' : 'Peer support happening right now'}</h3>
+          <p>${t(locale, 'community.subtitle')}</p>
+          <div class="community-stats">
+            <div class="community-stat">
+              <span class="dot"></span>
+              <span>23 ${t(locale, 'community.online')}</span>
+            </div>
+            <div class="community-stat">
+              <span>&#128172;</span>
+              <span>147 ${t(locale, 'community.messages')}</span>
+            </div>
+          </div>
+        </div>
+        <div class="live-chat-window">
+          <div class="live-chat-header">
+            <span class="channel-hash">#</span>
+            <span class="channel-name">${t(locale, 'community.channel')}</span>
+            <span class="channel-topic">CallMyProf</span>
+          </div>
+          <div class="live-chat-body" id="liveChatBody">
+            ${chatMessagesHtml}
+          </div>
+          <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+            <span>${locale === 'fr' ? 'Prof. Marc est en train d\'\u00e9crire...' : locale === 'ar' ? '\u0627\u0644\u0623\u0633\u062a\u0627\u0630 \u0633\u0627\u0645\u064a \u064a\u0643\u062a\u0628...' : 'Prof. Lisa is typing...'}</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1605,6 +1796,52 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
+
+    // Live chat animation - reveal messages progressively with effects
+    (function() {
+      var chatBody = document.getElementById('liveChatBody');
+      var typing = document.getElementById('typingIndicator');
+      var idx = 0;
+      var allMsgs;
+
+      function getHidden() { return document.querySelectorAll('.chat-msg.hidden'); }
+
+      function revealNext() {
+        var hidden = getHidden();
+        if (idx >= hidden.length || hidden.length === 0) {
+          // Hide typing, wait, then loop
+          if (typing) typing.style.opacity = '0';
+          setTimeout(function() {
+            allMsgs = document.querySelectorAll('.chat-msg');
+            for (var i = 3; i < allMsgs.length; i++) {
+              allMsgs[i].classList.add('hidden');
+              allMsgs[i].classList.remove('new-msg');
+            }
+            idx = 0;
+            if (typing) typing.style.opacity = '1';
+            setTimeout(revealNext, 2500);
+          }, 6000);
+          return;
+        }
+        // Show typing indicator briefly before message
+        if (typing) typing.style.opacity = '1';
+        setTimeout(function() {
+          var msg = getHidden()[0];
+          if (msg) {
+            msg.classList.remove('hidden');
+            msg.classList.add('new-msg');
+            if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+          }
+          // Briefly hide typing after message appears
+          if (typing) typing.style.opacity = '0.4';
+          setTimeout(function() { if (typing) typing.style.opacity = '1'; }, 800);
+          idx++;
+          setTimeout(revealNext, 2800 + Math.random() * 1200);
+        }, 1200 + Math.random() * 800);
+      }
+      // Start after initial view
+      setTimeout(revealNext, 2500);
+    })();
   </script>
 </body>
 </html>`;
