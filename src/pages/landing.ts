@@ -1477,6 +1477,57 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
     </div>
   </section>
 
+  <!-- PRICING (moved up - first thing after hero) -->
+  <section class="section" id="pricing">
+    <h2 class="section-title">${t(locale, 'pricing.title')}</h2>
+    <div class="pricing-grid" style="grid-template-columns: repeat(2, 1fr); max-width: 800px; margin: 0 auto;">
+
+      <!-- Group - Best value -->
+      <div class="pricing-card featured">
+        <span class="pricing-badge">&#128293; ${t(locale, 'pricing.best_value')}</span>
+        <span class="pricing-icon">&#128101;</span>
+        <h4>${t(locale, 'pricing.group_title')}</h4>
+        <p class="pricing-desc">${t(locale, 'pricing.group_desc')}</p>
+        <div class="pricing-price">${t(locale, 'pricing.from')}</div>
+        <div class="pricing-amount">${currency.symbol}15</div>
+        <div class="pricing-unit">${t(locale, 'pricing.per_session')}</div>
+        <ul class="pricing-features">
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f1')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f2')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f3')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f4')}</li>
+        </ul>
+        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
+          ${t(locale, 'hero.cta')}
+        </button>
+      </div>
+
+      <!-- Individual -->
+      <div class="pricing-card">
+        <span class="pricing-icon">&#128100;</span>
+        <h4>${t(locale, 'pricing.individual_title')}</h4>
+        <p class="pricing-desc">${t(locale, 'pricing.individual_desc')}</p>
+        <div class="pricing-price">${t(locale, 'pricing.single_session')}</div>
+        <div class="pricing-amount">${currency.symbol}30</div>
+        <div class="pricing-unit">${t(locale, 'pricing.per_session')}</div>
+        <div style="margin: 12px 0; padding: 10px; background: rgba(220,38,38,0.08); border-radius: 8px; text-align: center;">
+          <span style="font-size: 13px; color: #DC2626; font-weight: 700;">${t(locale, 'pricing.package_deal')}</span><br>
+          <span style="font-size: 20px; font-weight: 800; color: #DC2626;">${currency.symbol}25</span>
+          <span style="font-size: 13px; color: #64748b;">${t(locale, 'pricing.per_session_x10')}</span>
+        </div>
+        <ul class="pricing-features">
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f1')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f2')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f3')}</li>
+        </ul>
+        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
+          ${t(locale, 'hero.cta')}
+        </button>
+      </div>
+
+    </div>
+  </section>
+
   <!-- IMAGE STRIP -->
   <div class="image-strip">
     <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=75&auto=format" alt="Classroom" loading="lazy">
@@ -1523,67 +1574,6 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
       <h2 class="section-title">${t(locale, 'subjects.title')}</h2>
       <div class="subjects-grid">
         ${subjectCards}
-      </div>
-    </div>
-  </section>
-
-  <!-- PRICING -->
-  <section class="section" id="pricing">
-    <h2 class="section-title">${t(locale, 'pricing.title')}</h2>
-    <div class="pricing-grid">
-      <!-- Individual -->
-      <div class="pricing-card featured">
-        <span class="pricing-badge">&#11088; ${t(locale, 'pricing.most_popular')}</span>
-        <span class="pricing-icon">&#128100;</span>
-        <h4>${t(locale, 'pricing.individual_title')}</h4>
-        <p class="pricing-desc">${t(locale, 'pricing.individual_desc')}</p>
-        <div class="pricing-price">${t(locale, 'pricing.from')}</div>
-        <div class="pricing-amount">${currency.symbol}15</div>
-        <div class="pricing-unit">${t(locale, 'pricing.per_hour')}</div>
-        <ul class="pricing-features">
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f1')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f2')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f3')}</li>
-        </ul>
-        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
-          ${t(locale, 'hero.cta')}
-        </button>
-      </div>
-
-      <!-- Group -->
-      <div class="pricing-card">
-        <span class="pricing-icon">&#128101;</span>
-        <h4>${t(locale, 'pricing.group_title')}</h4>
-        <p class="pricing-desc">${t(locale, 'pricing.group_desc')}</p>
-        <div class="pricing-price">${t(locale, 'pricing.from')}</div>
-        <div class="pricing-amount">${currency.symbol}8</div>
-        <div class="pricing-unit">${t(locale, 'pricing.per_hour')}</div>
-        <ul class="pricing-features">
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f1')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f2')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f3')}</li>
-        </ul>
-        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
-          ${t(locale, 'hero.cta')}
-        </button>
-      </div>
-
-      <!-- Online -->
-      <div class="pricing-card">
-        <span class="pricing-icon">&#128187;</span>
-        <h4>${t(locale, 'pricing.online_title')}</h4>
-        <p class="pricing-desc">${t(locale, 'pricing.online_desc')}</p>
-        <div class="pricing-price">${t(locale, 'pricing.from')}</div>
-        <div class="pricing-amount">${currency.symbol}12</div>
-        <div class="pricing-unit">${t(locale, 'pricing.per_hour')}</div>
-        <ul class="pricing-features">
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.online_f1')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.online_f2')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.online_f3')}</li>
-        </ul>
-        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
-          ${t(locale, 'hero.cta')}
-        </button>
       </div>
     </div>
   </section>

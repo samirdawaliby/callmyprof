@@ -1065,9 +1065,9 @@ export function getSidebarSections(locale: Locale): SidebarSection[] {
     {
       title: t(locale, 'sidebar.tools'),
       items: [
+        { key: 'calendar', label: 'Calendar', icon: '\u{1F4C6}', href: '/calendar' },
         { key: 'avis', label: t(locale, 'sidebar.reviews'), icon: '\u{2B50}', href: '/avis' },
         { key: 'statistiques', label: t(locale, 'sidebar.stats'), icon: '\u{1F4C8}', href: '/statistiques' },
-        { key: 'chatbot', label: t(locale, 'sidebar.chatbot'), icon: '\u{1F916}', href: '/chatbot-config' },
       ]
     },
   ];
