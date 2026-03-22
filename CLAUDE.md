@@ -5,7 +5,7 @@
 - **Database** : Cloudflare D1 (SQLite distribue)
 - **Storage** : Cloudflare R2 (documents, photos, PDFs)
 - **IA** : Cloudflare Workers AI (OCR, matching)
-- **Paiements** : Stripe (a integrer)
+- **Paiements** : Checkout.com (cartes Visa/MC/Amex/Apple Pay) + PayPal
 
 ## Architecture
 - UN SEUL WORKER (`soutien-scolaire-admin`) qui sert tout : pages publiques + admin SSR
@@ -54,6 +54,50 @@ export function renderMyPage(data: MyData, userName: string): string {
 - Numerotation sequentielle FAC-AAAA-NNNN
 - "TVA non applicable, art. 293 B du CGI"
 - Attestation fiscale annuelle avant le 31 mars N+1
+
+## Paiements (Checkout.com + PayPal)
+
+### Architecture
+- **Gateway adapters** : `src/api/payment-gateways/` — factory pattern with `PaymentAdapter` interface
+  - `checkout.ts` — Checkout.com Frames (inline card form) + REST API for payment processing
+  - `paypal.ts` — PayPal Orders API v2, OAuth2 auth, redirect checkout
+  - `index.ts` — `getPaymentAdapter('checkout' | 'paypal', env)` factory
+- **Payment page** : `src/pages/payment-checkout.ts` — SSR page with embedded Checkout.com Frames (Stripe-like inline card fields) + PayPal button below
+- **DB migration** : `migrations/0008_payment_gateways.sql`
+
+### Routes (public, no auth)
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/pay/:type/:id` | GET | Payment selection page (type = `package` or `payment`) |
+| `/api/payment/create-session` | POST | Creates PayPal redirect session |
+| `/api/payment/process-card` | POST | Processes Checkout.com Frames card token |
+| `/api/webhooks/checkout` | POST | Checkout.com webhook |
+| `/api/webhooks/paypal` | POST | PayPal webhook |
+| `/payment/success` | GET | Success page |
+| `/payment/cancelled` | GET | Cancelled page |
+
+### Environment secrets (Cloudflare Workers secrets)
+- `CHECKOUT_SECRET_KEY` — Checkout.com secret API key
+- `CHECKOUT_WEBHOOK_SECRET` — Checkout.com webhook HMAC secret
+- `PAYPAL_CLIENT_ID` — PayPal REST app client ID
+- `PAYPAL_SECRET` — PayPal REST app secret
+
+### Environment vars (wrangler.toml)
+- `CHECKOUT_PUBLIC_KEY` — Checkout.com public key (used in Frames JS on client)
+- `PAYPAL_SANDBOX` — "true" for sandbox mode
+
+### Payment flow
+1. Admin creates package for student → gets `payment_url` (`/pay/package/{id}`)
+2. Share URL with parent
+3. Parent sees inline card form (Checkout.com Frames) or PayPal button
+4. Card: Frames tokenizes → `/api/payment/process-card` charges via Checkout.com API (with 3DS support)
+5. PayPal: `/api/payment/create-session` creates order → redirect to PayPal → webhook confirms
+6. Webhooks update `payments` or `packages_achetes` tables
+
+### Test cards (Checkout.com sandbox)
+- Visa: `4242 4242 4242 4242`, Expiry: any future, CVV: `100`
+- Mastercard: `5436 0310 3060 6378`, CVV: `257`
+- 3DS test: `4543 4740 0224 9996`, CVV: `956`
 
 ## Fichiers de reference (autres projets)
 - `caplogy-prospector-v2/shared/html-utils.ts` → sidebar + layout

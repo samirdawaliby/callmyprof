@@ -13,10 +13,12 @@ export interface Env {
   R2: R2Bucket;
   AI: Ai;
   ENVIRONMENT: string;
-  STRIPE_SECRET_KEY?: string;
-  STRIPE_WEBHOOK_SECRET?: string;
+  CHECKOUT_SECRET_KEY?: string;
+  CHECKOUT_PUBLIC_KEY?: string;
+  CHECKOUT_WEBHOOK_SECRET?: string;
   PAYPAL_CLIENT_ID?: string;
   PAYPAL_SECRET?: string;
+  PAYPAL_SANDBOX?: string;
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_ID?: string;
   RESEND_API_KEY?: string;
@@ -43,7 +45,7 @@ export type StatutLead = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost
 
 export type ServiceType = 'individual' | 'group' | 'online';
 
-export type PaymentMethod = 'stripe' | 'paypal' | 'cash' | 'bank_transfer';
+export type PaymentMethod = 'checkout' | 'paypal' | 'cash' | 'bank_transfer';
 
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
@@ -260,6 +262,9 @@ export interface PackageAchete {
   statut: StatutPackage;
   stripe_payment_id?: string;
   paypal_payment_id?: string;
+  payment_gateway?: string;
+  payment_session_id?: string;
+  payment_transaction_id?: string;
   created_at: string;
 }
 
@@ -333,6 +338,10 @@ export interface Payment {
   method: PaymentMethod;
   stripe_payment_id?: string;
   paypal_payment_id?: string;
+  payment_gateway?: string;
+  payment_session_id?: string;
+  payment_transaction_id?: string;
+  payment_gateway_data?: string;
   statut: PaymentStatus;
   created_at: string;
 }

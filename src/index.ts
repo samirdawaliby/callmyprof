@@ -46,6 +46,8 @@ import { renderGroupClassesListe } from './pages/group-classes-liste';
 import { createGroupClass, updateGroupClassStatus } from './api/group-classes';
 import { renderPayments as renderPaymentsPage } from './pages/payments';
 import { createPayment, updatePaymentStatus } from './api/payments';
+import { renderPaymentSelection, renderPaymentSuccess, renderPaymentCancelled } from './pages/payment-checkout';
+import { getPaymentAdapter, type PaymentGateway } from './api/payment-gateways';
 import { handleChat } from './api/chatbot';
 import { verifyWhatsAppWebhook, handleWhatsAppWebhook } from './api/whatsapp';
 import { renderStatistiques } from './pages/statistiques';
@@ -66,10 +68,12 @@ export interface Env {
   R2: R2Bucket;
   AI: Ai;
   ENVIRONMENT: string;
-  STRIPE_SECRET_KEY?: string;
-  STRIPE_WEBHOOK_SECRET?: string;
+  CHECKOUT_SECRET_KEY?: string;
+  CHECKOUT_PUBLIC_KEY?: string;
+  CHECKOUT_WEBHOOK_SECRET?: string;
   PAYPAL_CLIENT_ID?: string;
   PAYPAL_SECRET?: string;
+  PAYPAL_SANDBOX?: string;
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_ID?: string;
   RESEND_API_KEY?: string;
@@ -215,6 +219,60 @@ function pathStartsWith(pathname: string, prefix: string): string | null {
     return pathname.slice(prefix.length);
   }
   return null;
+}
+
+// ============================================================================
+// PAYMENT WEBHOOK PROCESSOR
+// ============================================================================
+
+async function processPaymentWebhook(
+  db: D1Database,
+  referenceId: string,
+  transactionId: string,
+  sessionId: string,
+  gateway: string,
+  rawData: Record<string, unknown>
+) {
+  // Try to match against packages_achetes first
+  const pkg = await db.prepare(
+    `SELECT id FROM packages_achetes WHERE id = ? OR payment_session_id = ?`
+  ).bind(referenceId, sessionId).first<{ id: string }>();
+
+  if (pkg) {
+    await db.prepare(`
+      UPDATE packages_achetes
+      SET payment_gateway = ?,
+          payment_session_id = ?,
+          payment_transaction_id = ?
+      WHERE id = ?
+    `).bind(gateway, sessionId, transactionId, pkg.id).run();
+
+    console.log(`Package ${pkg.id} payment confirmed via ${gateway}`);
+    return;
+  }
+
+  // Try payments table
+  const payment = await db.prepare(
+    `SELECT id FROM payments WHERE id = ? OR payment_session_id = ?`
+  ).bind(referenceId, sessionId).first<{ id: string }>();
+
+  if (payment) {
+    await db.prepare(`
+      UPDATE payments
+      SET statut = 'completed',
+          method = ?,
+          payment_gateway = ?,
+          payment_session_id = ?,
+          payment_transaction_id = ?,
+          payment_gateway_data = ?
+      WHERE id = ?
+    `).bind(gateway, gateway, sessionId, transactionId, JSON.stringify(rawData), payment.id).run();
+
+    console.log(`Payment ${payment.id} confirmed via ${gateway}`);
+    return;
+  }
+
+  console.warn(`Webhook received but no matching record for reference: ${referenceId}`);
 }
 
 // ============================================================================
@@ -471,6 +529,318 @@ export default {
       // WhatsApp incoming message webhook
       if (path === '/api/webhooks/whatsapp' && method === 'POST') {
         return handleWhatsAppWebhook(env, request);
+      }
+
+      // ==================================================================
+      // PAYMENT GATEWAY ROUTES (public - no auth required)
+      // ==================================================================
+
+      // Payment selection page: GET /pay/:referenceType/:referenceId
+      if (path.startsWith('/pay/') && method === 'GET') {
+        const parts = path.split('/');
+        // /pay/package/abc123 or /pay/payment/abc123
+        if (parts.length === 4) {
+          const refType = parts[2] as 'package' | 'payment';
+          const refId = parts[3];
+
+          // Look up the reference to get amount/currency/description
+          let amount = 0;
+          let currency = 'EUR';
+          let description = '';
+
+          if (refType === 'package') {
+            const pkg = await env.DB.prepare(
+              `SELECT pa.montant_paye, pa.currency, pt.nom as package_nom, pt.nb_heures
+               FROM packages_achetes pa
+               JOIN package_types pt ON pt.id = pa.package_type_id
+               WHERE pa.id = ? AND pa.payment_session_id IS NULL`
+            ).bind(refId).first<{ montant_paye: number; currency: string; package_nom: string; nb_heures: number }>();
+
+            if (!pkg) {
+              return htmlResponse(renderPaymentCancelled(locale));
+            }
+
+            amount = Math.round(pkg.montant_paye * 100);
+            currency = pkg.currency || 'EUR';
+            description = `${pkg.package_nom} - ${pkg.nb_heures}h`;
+          } else {
+            const payment = await env.DB.prepare(
+              `SELECT amount, currency, description FROM payments WHERE id = ? AND statut = 'pending'`
+            ).bind(refId).first<{ amount: number; currency: string; description: string }>();
+
+            if (!payment) {
+              return htmlResponse(renderPaymentCancelled(locale));
+            }
+
+            amount = Math.round(payment.amount * 100);
+            currency = payment.currency || 'EUR';
+            description = payment.description || 'Payment';
+          }
+
+          return htmlResponse(renderPaymentSelection({
+            referenceId: refId,
+            referenceType: refType,
+            amount,
+            currency,
+            description,
+            publicKey: env.CHECKOUT_PUBLIC_KEY || '',
+            locale,
+          }));
+        }
+      }
+
+      // Create payment session API: POST /api/payment/create-session
+      if (path === '/api/payment/create-session' && method === 'POST') {
+        try {
+          const body = await request.json() as {
+            reference_id: string;
+            reference_type: 'package' | 'payment';
+            gateway: PaymentGateway;
+          };
+
+          const { reference_id, reference_type, gateway } = body;
+          if (!reference_id || !gateway) {
+            return errorResponse('Missing reference_id or gateway');
+          }
+
+          // Look up amount/currency
+          let amount = 0;
+          let currency = 'EUR';
+          let customerEmail = '';
+          let customerName = '';
+          let description = '';
+
+          if (reference_type === 'package') {
+            const pkg = await env.DB.prepare(
+              `SELECT pa.montant_paye, pa.currency, pt.nom, pt.nb_heures,
+                      p.email, p.prenom, p.nom as parent_nom
+               FROM packages_achetes pa
+               JOIN package_types pt ON pt.id = pa.package_type_id
+               LEFT JOIN parents p ON p.id = pa.parent_id
+               WHERE pa.id = ?`
+            ).bind(reference_id).first<{
+              montant_paye: number; currency: string; nom: string; nb_heures: number;
+              email: string; prenom: string; parent_nom: string;
+            }>();
+
+            if (!pkg) return errorResponse('Package not found', 404);
+
+            amount = Math.round(pkg.montant_paye * 100);
+            currency = pkg.currency || 'EUR';
+            customerEmail = pkg.email || '';
+            customerName = `${pkg.prenom || ''} ${pkg.parent_nom || ''}`.trim();
+            description = `CallMyProf - ${pkg.nom} (${pkg.nb_heures}h)`;
+          } else {
+            const payment = await env.DB.prepare(
+              `SELECT p.amount, p.currency, p.description,
+                      pa.email, pa.prenom, pa.nom
+               FROM payments p
+               LEFT JOIN parents pa ON pa.id = p.parent_id
+               WHERE p.id = ? AND p.statut = 'pending'`
+            ).bind(reference_id).first<{
+              amount: number; currency: string; description: string;
+              email: string; prenom: string; nom: string;
+            }>();
+
+            if (!payment) return errorResponse('Payment not found', 404);
+
+            amount = Math.round(payment.amount * 100);
+            currency = payment.currency || 'EUR';
+            customerEmail = payment.email || '';
+            customerName = `${payment.prenom || ''} ${payment.nom || ''}`.trim();
+            description = payment.description || 'CallMyProf Payment';
+          }
+
+          const baseUrl = new URL(request.url).origin;
+          const adapter = getPaymentAdapter(gateway, env);
+
+          const result = await adapter.createCheckout({
+            referenceId: reference_id,
+            amount,
+            currency: currency.toUpperCase(),
+            customerEmail,
+            customerName: customerName || 'Client',
+            description,
+            successUrl: `${baseUrl}/payment/success?ref=${reference_id}&type=${reference_type}&gateway=${gateway}`,
+            cancelUrl: `${baseUrl}/payment/cancelled`,
+          });
+
+          // Save session ID
+          if (reference_type === 'package') {
+            await env.DB.prepare(
+              `UPDATE packages_achetes SET payment_gateway = ?, payment_session_id = ? WHERE id = ?`
+            ).bind(gateway, result.sessionId, reference_id).run();
+          } else {
+            await env.DB.prepare(
+              `UPDATE payments SET payment_gateway = ?, payment_session_id = ?, method = ? WHERE id = ?`
+            ).bind(gateway, result.sessionId, gateway, reference_id).run();
+          }
+
+          return jsonResponse({ redirectUrl: result.redirectUrl });
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.error('Payment session error:', errMsg);
+          return jsonResponse({ error: errMsg }, 500);
+        }
+      }
+
+      // Process card payment with Checkout.com token (from Frames)
+      if (path === '/api/payment/process-card' && method === 'POST') {
+        try {
+          const body = await request.json() as {
+            token: string;
+            reference_id: string;
+            reference_type: 'package' | 'payment';
+          };
+
+          if (!body.token || !body.reference_id) {
+            return jsonResponse({ error: 'Missing token or reference_id' }, 400);
+          }
+
+          // Look up amount/currency
+          let amount = 0;
+          let currency = 'EUR';
+          let customerEmail = '';
+          let description = '';
+
+          if (body.reference_type === 'package') {
+            const pkg = await env.DB.prepare(
+              `SELECT pa.montant_paye, pa.currency, pt.nom, pt.nb_heures,
+                      p.email
+               FROM packages_achetes pa
+               JOIN package_types pt ON pt.id = pa.package_type_id
+               LEFT JOIN parents p ON p.id = pa.parent_id
+               WHERE pa.id = ?`
+            ).bind(body.reference_id).first<{
+              montant_paye: number; currency: string; nom: string; nb_heures: number; email: string;
+            }>();
+            if (!pkg) return jsonResponse({ error: 'Package not found' }, 404);
+            amount = Math.round(pkg.montant_paye * 100);
+            currency = pkg.currency || 'EUR';
+            customerEmail = pkg.email || '';
+            description = `CallMyProf - ${pkg.nom} (${pkg.nb_heures}h)`;
+          } else {
+            const payment = await env.DB.prepare(
+              `SELECT p.amount, p.currency, p.description, pa.email
+               FROM payments p LEFT JOIN parents pa ON pa.id = p.parent_id
+               WHERE p.id = ? AND p.statut = 'pending'`
+            ).bind(body.reference_id).first<{
+              amount: number; currency: string; description: string; email: string;
+            }>();
+            if (!payment) return jsonResponse({ error: 'Payment not found' }, 404);
+            amount = Math.round(payment.amount * 100);
+            currency = payment.currency || 'EUR';
+            customerEmail = payment.email || '';
+            description = payment.description || 'CallMyProf Payment';
+          }
+
+          // Request payment from Checkout.com using the token
+          const checkoutRes = await fetch('https://api.sandbox.checkout.com/payments', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${env.CHECKOUT_SECRET_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              source: {
+                type: 'token',
+                token: body.token,
+              },
+              amount,
+              currency: currency.toUpperCase(),
+              reference: body.reference_id,
+              description,
+              customer: customerEmail ? { email: customerEmail } : undefined,
+              metadata: { reference_id: body.reference_id, reference_type: body.reference_type },
+              '3ds': { enabled: true },
+              success_url: `${new URL(request.url).origin}/payment/success?ref=${body.reference_id}`,
+              failure_url: `${new URL(request.url).origin}/payment/cancelled`,
+            }),
+          });
+
+          const checkoutData = await checkoutRes.json() as {
+            id: string;
+            status: string;
+            approved?: boolean;
+            _links?: { redirect?: { href: string } };
+          };
+
+          if (!checkoutRes.ok) {
+            console.error('Checkout.com payment error:', JSON.stringify(checkoutData));
+            return jsonResponse({ error: 'Payment declined' }, 400);
+          }
+
+          // If 3DS redirect is needed
+          if (checkoutData._links?.redirect?.href) {
+            // Save session info
+            if (body.reference_type === 'package') {
+              await env.DB.prepare(
+                `UPDATE packages_achetes SET payment_gateway = 'checkout', payment_session_id = ? WHERE id = ?`
+              ).bind(checkoutData.id, body.reference_id).run();
+            } else {
+              await env.DB.prepare(
+                `UPDATE payments SET payment_gateway = 'checkout', payment_session_id = ?, method = 'checkout' WHERE id = ?`
+              ).bind(checkoutData.id, body.reference_id).run();
+            }
+            return jsonResponse({ redirectUrl: checkoutData._links.redirect.href });
+          }
+
+          // Payment approved directly (no 3DS)
+          if (checkoutData.approved || checkoutData.status === 'Authorized' || checkoutData.status === 'Captured') {
+            await processPaymentWebhook(env.DB, body.reference_id, checkoutData.id, checkoutData.id, 'checkout', checkoutData as unknown as Record<string, unknown>);
+            return jsonResponse({ success: true });
+          }
+
+          return jsonResponse({ error: 'Payment not approved' }, 400);
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.error('Process card error:', errMsg);
+          return jsonResponse({ error: errMsg }, 500);
+        }
+      }
+
+      // Payment success page
+      if (path === '/payment/success' && method === 'GET') {
+        return htmlResponse(renderPaymentSuccess(locale));
+      }
+
+      // Payment cancelled page
+      if (path === '/payment/cancelled' && method === 'GET') {
+        return htmlResponse(renderPaymentCancelled(locale));
+      }
+
+      // Checkout.com webhook: POST /api/webhooks/checkout
+      if (path === '/api/webhooks/checkout' && method === 'POST') {
+        try {
+          const adapter = getPaymentAdapter('checkout', env);
+          const payload = await adapter.verifyWebhook(request, env.CHECKOUT_WEBHOOK_SECRET || '');
+
+          if (payload.status === 'paid' && payload.referenceId) {
+            await processPaymentWebhook(env.DB, payload.referenceId, payload.transactionId, payload.sessionId, 'checkout', payload.rawData);
+          }
+
+          return jsonResponse({ received: true });
+        } catch (err) {
+          console.error('Checkout webhook error:', err);
+          return jsonResponse({ received: true });
+        }
+      }
+
+      // PayPal webhook: POST /api/webhooks/paypal
+      if (path === '/api/webhooks/paypal' && method === 'POST') {
+        try {
+          const adapter = getPaymentAdapter('paypal', env);
+          const payload = await adapter.verifyWebhook(request, '');
+
+          if (payload.status === 'paid' && payload.referenceId) {
+            await processPaymentWebhook(env.DB, payload.referenceId, payload.transactionId, payload.sessionId, 'paypal', payload.rawData);
+          }
+
+          return jsonResponse({ received: true });
+        } catch (err) {
+          console.error('PayPal webhook error:', err);
+          return jsonResponse({ received: true });
+        }
       }
 
       // Public catalogue API (for onboarding dropdowns)

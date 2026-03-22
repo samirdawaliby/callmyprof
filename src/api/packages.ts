@@ -276,7 +276,10 @@ export async function createPackage(env: Env, request: Request): Promise<Respons
     ).run();
   }
 
-  return jsonResponse({ success: true, id: packageId, facture_reference: reference }, 201);
+  // Return payment URL so admin can share it with the parent
+  const paymentUrl = `/pay/package/${packageId}`;
+
+  return jsonResponse({ success: true, id: packageId, facture_reference: reference, payment_url: paymentUrl }, 201);
 }
 
 // ============================================================================
