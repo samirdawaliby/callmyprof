@@ -670,8 +670,11 @@ const LANDING_CSS = `
     background: var(--primary-dark);
     border-color: var(--primary-dark);
   }
-  @media (max-width: 768px) {
-    .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+  @media (max-width: 1024px) {
+    .pricing-grid { grid-template-columns: repeat(2, 1fr) !important; max-width: 600px !important; margin: 0 auto !important; }
+  }
+  @media (max-width: 600px) {
+    .pricing-grid { grid-template-columns: 1fr !important; max-width: 380px !important; }
   }
 
   /* ---- Live Community Chat ---- */
@@ -1477,51 +1480,81 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
     </div>
   </section>
 
-  <!-- PRICING (moved up - first thing after hero) -->
+  <!-- PRICING — Credit Packs -->
   <section class="section" id="pricing">
     <h2 class="section-title">${t(locale, 'pricing.title')}</h2>
-    <div class="pricing-grid" style="grid-template-columns: repeat(2, 1fr); max-width: 800px; margin: 0 auto;">
+    <p style="text-align:center;color:var(--gray-500);font-size:15px;margin:-10px auto 28px;max-width:520px">
+      ${t(locale, 'pricing.subtitle')}
+    </p>
+    <div class="pricing-grid" style="grid-template-columns: repeat(4, 1fr); max-width: 1050px; margin: 0 auto;">
 
-      <!-- Group - Best value -->
-      <div class="pricing-card featured">
-        <span class="pricing-badge">&#128293; ${t(locale, 'pricing.best_value')}</span>
-        <span class="pricing-icon">&#128101;</span>
-        <h4>${t(locale, 'pricing.group_title')}</h4>
-        <p class="pricing-desc">${t(locale, 'pricing.group_desc')}</p>
-        <div class="pricing-price">${t(locale, 'pricing.from')}</div>
-        <div class="pricing-amount">${currency.symbol}15</div>
-        <div class="pricing-unit">${t(locale, 'pricing.per_session')}</div>
+      <!-- Trial — 3 credits -->
+      <div class="pricing-card">
+        <span class="pricing-icon">&#127919;</span>
+        <h4>${t(locale, 'pricing.trial_name')}</h4>
+        <p class="pricing-desc">${t(locale, 'pricing.trial_desc')}</p>
+        <div class="pricing-amount">${currency.symbol}29</div>
+        <div class="pricing-unit">3 ${t(locale, 'pricing.credits')} &middot; ${currency.symbol}9.67${t(locale, 'pricing.per_credit')}</div>
         <ul class="pricing-features">
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f1')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f2')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f3')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.group_f4')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.trial_f1')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.trial_f2')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.trial_f3')}</li>
         </ul>
         <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
-          ${t(locale, 'hero.cta')}
+          ${t(locale, 'pricing.start_trial')}
         </button>
       </div>
 
-      <!-- Individual -->
-      <div class="pricing-card">
-        <span class="pricing-icon">&#128100;</span>
-        <h4>${t(locale, 'pricing.individual_title')}</h4>
-        <p class="pricing-desc">${t(locale, 'pricing.individual_desc')}</p>
-        <div class="pricing-price">${t(locale, 'pricing.single_session')}</div>
-        <div class="pricing-amount">${currency.symbol}30</div>
-        <div class="pricing-unit">${t(locale, 'pricing.per_session')}</div>
-        <div style="margin: 12px 0; padding: 10px; background: rgba(220,38,38,0.08); border-radius: 8px; text-align: center;">
-          <span style="font-size: 13px; color: #DC2626; font-weight: 700;">${t(locale, 'pricing.package_deal')}</span><br>
-          <span style="font-size: 20px; font-weight: 800; color: #DC2626;">${currency.symbol}25</span>
-          <span style="font-size: 13px; color: #64748b;">${t(locale, 'pricing.per_session_x10')}</span>
-        </div>
+      <!-- Standard — 10 credits (Most Popular) -->
+      <div class="pricing-card featured">
+        <span class="pricing-badge">&#11088; ${t(locale, 'pricing.most_popular')}</span>
+        <span class="pricing-icon">&#128218;</span>
+        <h4>${t(locale, 'pricing.standard_name')}</h4>
+        <p class="pricing-desc">${t(locale, 'pricing.standard_desc')}</p>
+        <div class="pricing-amount">${currency.symbol}89</div>
+        <div class="pricing-unit">10 ${t(locale, 'pricing.credits')} &middot; ${currency.symbol}8.90${t(locale, 'pricing.per_credit')}</div>
         <ul class="pricing-features">
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f1')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f2')}</li>
-          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.individual_f3')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.standard_f1')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.standard_f2')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.standard_f3')}</li>
         </ul>
         <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
-          ${t(locale, 'hero.cta')}
+          ${t(locale, 'pricing.buy_now')}
+        </button>
+      </div>
+
+      <!-- Intensive — 25 credits (Best Value) -->
+      <div class="pricing-card featured">
+        <span class="pricing-badge">&#128293; ${t(locale, 'pricing.best_value')}</span>
+        <span class="pricing-icon">&#128640;</span>
+        <h4>${t(locale, 'pricing.intensive_name')}</h4>
+        <p class="pricing-desc">${t(locale, 'pricing.intensive_desc')}</p>
+        <div class="pricing-amount">${currency.symbol}199</div>
+        <div class="pricing-unit">25 ${t(locale, 'pricing.credits')} &middot; ${currency.symbol}7.96${t(locale, 'pricing.per_credit')}</div>
+        <ul class="pricing-features">
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.intensive_f1')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.intensive_f2')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.intensive_f3')}</li>
+        </ul>
+        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
+          ${t(locale, 'pricing.buy_now')}
+        </button>
+      </div>
+
+      <!-- Annual — 50 credits -->
+      <div class="pricing-card">
+        <span class="pricing-icon">&#127942;</span>
+        <h4>${t(locale, 'pricing.annual_name')}</h4>
+        <p class="pricing-desc">${t(locale, 'pricing.annual_desc')}</p>
+        <div class="pricing-amount">${currency.symbol}349</div>
+        <div class="pricing-unit">50 ${t(locale, 'pricing.credits')} &middot; ${currency.symbol}6.98${t(locale, 'pricing.per_credit')}</div>
+        <ul class="pricing-features">
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.annual_f1')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.annual_f2')}</li>
+          <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.annual_f3')}</li>
+        </ul>
+        <button class="pricing-cta" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'})">
+          ${t(locale, 'pricing.buy_now')}
         </button>
       </div>
 
@@ -1714,13 +1747,23 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
       "itemListElement": [
         {
           "@type": "Offer",
-          "itemOffered": { "@type": "Service", "name": "Individual Tutoring" },
-          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "15", "priceCurrency": "USD", "unitCode": "HUR" }
+          "itemOffered": { "@type": "Service", "name": "Credit Pack - Trial (3 credits)" },
+          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "29", "priceCurrency": "USD" }
         },
         {
           "@type": "Offer",
-          "itemOffered": { "@type": "Service", "name": "Group Classes" },
-          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "8", "priceCurrency": "USD", "unitCode": "HUR" }
+          "itemOffered": { "@type": "Service", "name": "Credit Pack - Standard (10 credits)" },
+          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "89", "priceCurrency": "USD" }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": { "@type": "Service", "name": "Credit Pack - Intensive (25 credits)" },
+          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "199", "priceCurrency": "USD" }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": { "@type": "Service", "name": "Credit Pack - Annual (50 credits)" },
+          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "349", "priceCurrency": "USD" }
         }
       ]
     }

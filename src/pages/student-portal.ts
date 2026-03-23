@@ -13,6 +13,21 @@ interface StudentBooking {
   statut: string;
 }
 
+interface CreditBalance {
+  available_credits: number;
+  reserved_credits: number;
+  total_credits: number;
+  lifetime_credits: number;
+  lifetime_spent: number;
+  nearest_expiry?: string;
+  purchases: Array<{
+    credits_remaining: number;
+    expires_at: string;
+    pack_name: string;
+    status: string;
+  }>;
+}
+
 interface StudentData {
   leadId: string;
   prenom: string;
@@ -24,6 +39,7 @@ interface StudentData {
   accessKey: string;
   upcomingSessions: StudentBooking[];
   pastSessions: StudentBooking[];
+  credits?: CreditBalance;
 }
 
 const PORTAL_CSS = `
@@ -194,6 +210,107 @@ const PORTAL_CSS = `
   .support-link.discord { border-color: #5865F2; color: #5865F2; }
   .support-link.discord:hover { background: #5865F2; color: #fff; }
 
+  /* ---- Credit Wallet ---- */
+  .wallet-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 16px;
+    padding: 24px;
+    color: #fff;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .wallet-card::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .wallet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .wallet-title {
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .wallet-balance {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .wallet-balance-label {
+    font-size: 14px;
+    opacity: 0.6;
+  }
+  .wallet-stats {
+    display: flex;
+    gap: 20px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .wallet-stat {
+    display: flex;
+    flex-direction: column;
+  }
+  .wallet-stat-value {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .wallet-stat-label {
+    font-size: 11px;
+    opacity: 0.5;
+    margin-top: 2px;
+  }
+  .wallet-expiry {
+    margin-top: 12px;
+    font-size: 12px;
+    padding: 6px 12px;
+    background: rgba(220,38,38,0.2);
+    border-radius: 8px;
+    display: inline-block;
+  }
+  .wallet-buy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background: #DC2626;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .wallet-buy-btn:hover { background: #b91c1c; transform: translateY(-1px); }
+  .wallet-purchases {
+    margin-top: 12px;
+  }
+  .wallet-purchase {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px;
+  }
+  .wallet-purchase:last-child { border-bottom: none; }
+  .wallet-purchase-name { opacity: 0.8; }
+  .wallet-purchase-credits { font-weight: 700; }
+  .wallet-purchase-expiry { font-size: 11px; opacity: 0.5; }
+
   .empty-state {
     text-align: center;
     padding: 40px 20px;
@@ -215,6 +332,66 @@ const PORTAL_CSS = `
 `;
 
 const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderWalletWidget(credits: CreditBalance, isFr: boolean, isAr: boolean): string {
+  const walletLabel = isFr ? 'Mon Portefeuille' : isAr ? '\u0645\u062d\u0641\u0638\u062a\u064a' : 'My Wallet';
+  const availLabel = isFr ? 'Disponibles' : isAr ? '\u0645\u062a\u0627\u062d' : 'Available';
+  const reservedLabel = isFr ? 'Reserves' : isAr ? '\u0645\u062d\u062c\u0648\u0632' : 'Reserved';
+  const usedLabel = isFr ? 'Utilises' : isAr ? '\u0645\u0633\u062a\u062e\u062f\u0645' : 'Used';
+  const buyLabel = isFr ? 'Acheter des credits' : isAr ? '\u0634\u0631\u0627\u0621 \u0631\u0635\u064a\u062f' : 'Buy Credits';
+  const expiryLabel = isFr ? 'Expire le' : isAr ? '\u064a\u0646\u062a\u0647\u064a \u0641\u064a' : 'Expires';
+
+  const activePurchases = credits.purchases.filter(p => p.status === 'active' && p.credits_remaining > 0);
+
+  let purchasesHtml = '';
+  for (const p of activePurchases) {
+    const expDate = new Date(p.expires_at);
+    const expStr = expDate.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+    purchasesHtml += `
+      <div class="wallet-purchase">
+        <span class="wallet-purchase-name">${p.pack_name}</span>
+        <span class="wallet-purchase-credits">${p.credits_remaining} cr</span>
+        <span class="wallet-purchase-expiry">${expiryLabel} ${expStr}</span>
+      </div>`;
+  }
+
+  let expiryWarning = '';
+  if (credits.nearest_expiry) {
+    const expDate = new Date(credits.nearest_expiry);
+    const now = new Date();
+    const daysLeft = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysLeft <= 30 && daysLeft > 0) {
+      const daysText = isFr ? `${daysLeft} jours restants` : isAr ? `${daysLeft} \u064a\u0648\u0645 \u0645\u062a\u0628\u0642\u064a` : `${daysLeft} days remaining`;
+      expiryWarning = `<div class="wallet-expiry">&#9888;&#65039; ${daysText}</div>`;
+    }
+  }
+
+  return `
+    <div class="wallet-card">
+      <div class="wallet-header">
+        <div class="wallet-title">&#128176; ${walletLabel}</div>
+        <a href="https://callmyprof.com/#pricing" class="wallet-buy-btn">+ ${buyLabel}</a>
+      </div>
+      <div class="wallet-balance">${credits.available_credits}</div>
+      <div class="wallet-balance-label">${availLabel}</div>
+      ${expiryWarning}
+      <div class="wallet-stats">
+        <div class="wallet-stat">
+          <span class="wallet-stat-value">${credits.reserved_credits}</span>
+          <span class="wallet-stat-label">${reservedLabel}</span>
+        </div>
+        <div class="wallet-stat">
+          <span class="wallet-stat-value">${credits.lifetime_spent}</span>
+          <span class="wallet-stat-label">${usedLabel}</span>
+        </div>
+        <div class="wallet-stat">
+          <span class="wallet-stat-value">${credits.lifetime_credits}</span>
+          <span class="wallet-stat-label">Total</span>
+        </div>
+      </div>
+      ${activePurchases.length > 0 ? `<div class="wallet-purchases">${purchasesHtml}</div>` : ''}
+    </div>`;
+}
 
 export function renderStudentPortal(data: StudentData): string {
   const initials = (data.prenom[0] || '') + (data.nom[0] || '');
@@ -297,6 +474,8 @@ export function renderStudentPortal(data: StudentData): string {
       <h1>&#128075; ${isFr ? 'Bonjour' : isAr ? '\u0645\u0631\u062d\u0628\u0627' : 'Hi'} ${data.prenom}!</h1>
       <p>${welcomeText}</p>
     </div>
+
+    ${data.credits ? renderWalletWidget(data.credits, isFr, isAr) : ''}
 
     <div class="section-title">&#127909; ${upcomingLabel}</div>
     ${upcomingHtml}
