@@ -50,6 +50,8 @@ import { renderPaymentSelection, renderPaymentSuccess, renderPaymentCancelled } 
 import { getPaymentAdapter, type PaymentGateway } from './api/payment-gateways';
 import { handleChat } from './api/chatbot';
 import { matchFormateurs } from './api/matching';
+import { getPacks, getBalance, getTransactions, purchasePack, enrollInSession, cancelEnrollment, expireCredits, sendCreditExpiryWarnings } from './api/credits';
+import { checkThresholds, deadlineCheck, markNoShows, handleTutorNoShow } from './api/thresholds';
 import { verifyWhatsAppWebhook, handleWhatsAppWebhook } from './api/whatsapp';
 import { renderStatistiques } from './pages/statistiques';
 import { renderSessions } from './pages/sessions';
@@ -386,6 +388,32 @@ export default {
       // Public chatbot API
       if (path === '/api/chat' && method === 'POST') {
         return handleChat(env, request);
+      }
+
+      // ---- Credits System (public APIs) ----
+      if (path === '/api/packs' && method === 'GET') {
+        return getPacks(env);
+      }
+      if (path === '/api/credits/purchase' && method === 'POST') {
+        return purchasePack(env, request);
+      }
+      if (path === '/api/credits/enroll' && method === 'POST') {
+        return enrollInSession(env, request);
+      }
+      if (path === '/api/credits/cancel' && method === 'POST') {
+        return cancelEnrollment(env, request);
+      }
+      {
+        const balanceStudentId = matchPath(path, '/api/credits/balance/:id');
+        if (balanceStudentId && method === 'GET') {
+          return getBalance(env, balanceStudentId);
+        }
+      }
+      {
+        const txnStudentId = matchPath(path, '/api/credits/transactions/:id');
+        if (txnStudentId && method === 'GET') {
+          return getTransactions(env, txnStudentId);
+        }
       }
 
       // Public booking page (GET /book/:token)
@@ -997,6 +1025,14 @@ export default {
         }
       }
 
+      // ---- Tutor No-Show (admin) ----
+      {
+        const noShowSessionId = matchPath(path, '/api/sessions/:id/tutor-noshow');
+        if (noShowSessionId && method === 'POST') {
+          return handleTutorNoShow(env, noShowSessionId);
+        }
+      }
+
       // ---- AI Matching ----
       {
         const matchEleveId = matchPath(path, '/api/matching/:id');
@@ -1404,6 +1440,41 @@ export default {
 
         console.log(`Reminder sent for booking ${booking.id} to ${booking.email}`);
       }
+    }
+
+    // ---- Credits System Cron Jobs ----
+    try {
+      // Expire credits (daily)
+      const expireResult = await expireCredits(env);
+      if (expireResult.expired_count > 0) {
+        console.log(`Credits: ${expireResult.expired_count} purchases expired`);
+      }
+
+      // Check group session thresholds (every run)
+      const thresholdResult = await checkThresholds(env);
+      if (thresholdResult.confirmed > 0) {
+        console.log(`Thresholds: ${thresholdResult.confirmed} sessions confirmed`);
+      }
+
+      // Deadline check for tomorrow's sessions (runs at every cron, checks J-1)
+      const hour = now.getUTCHours();
+      if (hour >= 16 && hour <= 19) {
+        const deadlineResult = await deadlineCheck(env);
+        if (deadlineResult.processed > 0) {
+          console.log(`Deadline: ${deadlineResult.processed} below-threshold sessions processed`);
+        }
+      }
+
+      // Mark no-shows (every run)
+      const noShowResult = await markNoShows(env);
+      if (noShowResult.no_shows > 0) {
+        console.log(`No-shows: ${noShowResult.no_shows} students marked absent`);
+      }
+
+      // Credit expiry warnings
+      await sendCreditExpiryWarnings(env);
+    } catch (e) {
+      console.error('Credits cron error:', e);
     }
   },
 };
