@@ -195,6 +195,8 @@ export async function getFormateur(env: Env, id: string): Promise<FormateurDetai
     { key: 'doc_casier_url', label: "Casier judiciaire (B3)", url: formateur.doc_casier_url || null, uploaded: !!formateur.doc_casier_url },
     { key: 'doc_rib_url', label: "RIB", url: formateur.doc_rib_url || null, uploaded: !!formateur.doc_rib_url },
     { key: 'doc_cv_url', label: "CV", url: formateur.doc_cv_url || null, uploaded: !!formateur.doc_cv_url },
+    { key: 'doc_siret_url', label: "SIRET / Enregistrement", url: formateur.doc_siret_url || null, uploaded: !!formateur.doc_siret_url },
+    { key: 'doc_urssaf_url', label: "Attestation URSSAF", url: formateur.doc_urssaf_url || null, uploaded: !!formateur.doc_urssaf_url },
   ];
 
   // Recent courses
@@ -349,4 +351,38 @@ export async function updateFormateur(
   ).bind(...params).run();
 
   return jsonResponse({ success: true });
+}
+
+// ============================================================================
+// DOWNLOAD DOCUMENT FROM R2
+// ============================================================================
+
+const VALID_DOC_KEYS = ['doc_identite_url', 'doc_diplomes_url', 'doc_siret_url', 'doc_urssaf_url', 'doc_casier_url', 'doc_rib_url', 'doc_cv_url', 'photo_url', 'signature_url'];
+
+export async function downloadFormateurDocument(env: Env, formateurId: string, docKey: string): Promise<Response> {
+  if (!VALID_DOC_KEYS.includes(docKey)) {
+    return errorResponse('Invalid document key', 400);
+  }
+
+  const result = await env.DB.prepare(
+    `SELECT ${docKey}, r2_folder FROM formateurs WHERE id = ?`
+  ).bind(formateurId).first<any>();
+
+  if (!result || !result[docKey]) {
+    return errorResponse('Document not found', 404);
+  }
+
+  const r2Key = result[docKey];
+  const object = await env.R2.get(r2Key);
+
+  if (!object) {
+    return errorResponse('File not found in storage', 404);
+  }
+
+  const headers = new Headers();
+  headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
+  headers.set('Content-Disposition', `inline; filename="${docKey.replace('_url', '')}.${r2Key.split('.').pop()}"`);
+  headers.set('Cache-Control', 'private, max-age=3600');
+
+  return new Response(object.body, { headers });
 }

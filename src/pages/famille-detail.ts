@@ -325,6 +325,73 @@ const PAGE_CSS = `
     animation-delay: 0.15s;
   }
 
+  /* ---- Matching button ---- */
+  .btn-match {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 8px;
+    background: var(--primary); color: #fff;
+    font-size: 12px; font-weight: 600; border: none; cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+  }
+  .btn-match:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+  /* ---- Matching modal ---- */
+  .match-overlay {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .match-overlay.active { display: flex; }
+  .match-modal {
+    background: #fff; border-radius: 16px; width: 90%; max-width: 720px;
+    max-height: 85vh; overflow-y: auto; padding: 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideUp 0.3s ease;
+  }
+  .match-modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+  }
+  .match-modal-title { font-size: 18px; font-weight: 700; color: var(--gray-900); }
+  .match-close {
+    width: 32px; height: 32px; border-radius: 8px; border: none;
+    background: var(--gray-100); cursor: pointer; font-size: 18px; color: var(--gray-500);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .match-close:hover { background: var(--gray-200); }
+  .match-loading { text-align: center; padding: 40px; color: var(--gray-500); }
+  .match-card {
+    border: 1px solid var(--gray-200); border-radius: 12px; padding: 16px;
+    margin-bottom: 12px; transition: all 0.2s;
+  }
+  .match-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .match-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .match-avatar {
+    width: 44px; height: 44px; border-radius: 50%; background: var(--gray-100);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .match-score {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    background: var(--success-light, #dcfce7); color: var(--success, #16a34a);
+  }
+  .match-name { font-weight: 700; font-size: 15px; }
+  .match-meta { font-size: 12px; color: var(--gray-500); }
+  .match-reasons { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+  .match-reason {
+    font-size: 11px; padding: 2px 8px; border-radius: 6px;
+    background: var(--gray-50); color: var(--gray-600); border: 1px solid var(--gray-200);
+  }
+  .match-ai { font-size: 12px; color: var(--gray-600); font-style: italic; margin-top: 6px; padding: 8px; background: #f0f7ff; border-radius: 8px; }
+  .match-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .match-actions a {
+    font-size: 12px; padding: 5px 12px; border-radius: 6px; text-decoration: none;
+    background: var(--primary); color: #fff; font-weight: 600;
+  }
+  .match-actions a:hover { background: var(--primary-dark); }
+  .match-empty { text-align: center; padding: 30px; color: var(--gray-400); }
+
   @media (max-width: 768px) {
     .parent-header { flex-direction: column; text-align: center; }
     .parent-info-grid { grid-template-columns: 1fr 1fr; }
@@ -452,6 +519,10 @@ export async function renderFamilleDetail(env: Env, familleId: string, userName?
           </div>
           <div style="margin-bottom:8px">${profilBadge(e.profil_specifique)}</div>
           <div class="enfant-badges">${thematiques}</div>
+          <button class="btn-match" onclick="openMatching('${e.id}', '${escapeHtml(e.prenom)}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Find matching tutor
+          </button>
         </div>
       `;
     }
@@ -727,7 +798,79 @@ export async function renderFamilleDetail(env: Env, familleId: string, userName?
       </div>
     </div>
 
+    <!-- Matching modal -->
+    <div class="match-overlay" id="match-overlay" onclick="if(event.target===this)closeMatching()">
+      <div class="match-modal">
+        <div class="match-modal-header">
+          <div class="match-modal-title" id="match-modal-title">Find matching tutor</div>
+          <button class="match-close" onclick="closeMatching()">&times;</button>
+        </div>
+        <div id="match-results">
+          <div class="match-loading">Searching for the best tutors...</div>
+        </div>
+      </div>
+    </div>
+
     <script>
+      async function openMatching(eleveId, eleveName) {
+        document.getElementById('match-modal-title').textContent = 'Matching tutors for ' + eleveName;
+        document.getElementById('match-overlay').classList.add('active');
+        document.getElementById('match-results').innerHTML = '<div class="match-loading"><span class="spinner"></span> Analyzing profiles with AI...</div>';
+
+        try {
+          var res = await fetch('/api/matching/' + eleveId);
+          var data = await res.json();
+
+          if (!data.matches || data.matches.length === 0) {
+            document.getElementById('match-results').innerHTML = '<div class="match-empty">' + (data.message || 'No matching tutors found') + '</div>';
+            return;
+          }
+
+          var html = '';
+          for (var i = 0; i < data.matches.length; i++) {
+            var m = data.matches[i];
+            var scoreColor = m.score >= 70 ? '#16a34a' : m.score >= 50 ? '#ca8a04' : '#dc2626';
+            var scoreBg = m.score >= 70 ? '#dcfce7' : m.score >= 50 ? '#fef9c3' : '#fee2e2';
+
+            var reasons = '';
+            for (var r = 0; r < m.match_reasons.length; r++) {
+              reasons += '<span class="match-reason">' + m.match_reasons[r] + '</span>';
+            }
+
+            var services = [];
+            if (m.accepte_domicile) services.push('In-person');
+            if (m.accepte_collectif) services.push('Group');
+            if (m.accepte_visio) services.push('Online');
+
+            html += '<div class="match-card">' +
+              '<div class="match-card-header">' +
+                '<div class="match-avatar">\\u{1F9D1}\\u200D\\u{1F3EB}</div>' +
+                '<div style="flex:1">' +
+                  '<div class="match-name">' + m.prenom + ' ' + m.nom + '</div>' +
+                  '<div class="match-meta">' + m.ville + ' \\u2022 ' + m.experience_annees + 'y exp \\u2022 ' + services.join(', ') + '</div>' +
+                '</div>' +
+                '<div class="match-score" style="background:' + scoreBg + ';color:' + scoreColor + '">' + m.score + '%</div>' +
+              '</div>' +
+              '<div class="match-reasons">' + reasons + '</div>' +
+              (m.note_moyenne > 0 ? '<div class="match-meta">\\u2B50 ' + m.note_moyenne.toFixed(1) + '/5 (' + m.nb_avis + ' reviews) \\u2022 ' + (m.tarif_individuel || '?') + ' ' + m.currency + '/h</div>' : '') +
+              (m.ai_explanation ? '<div class="match-ai">\\u{1F916} ' + m.ai_explanation + '</div>' : '') +
+              '<div class="match-actions">' +
+                '<a href="/formateurs/' + m.formateur_id + '">View profile</a>' +
+                '<a href="/cours/new?formateur=' + m.formateur_id + '" style="background:var(--success,#16a34a)">Create course</a>' +
+              '</div>' +
+            '</div>';
+          }
+
+          document.getElementById('match-results').innerHTML = '<div style="font-size:13px;color:var(--gray-500);margin-bottom:12px">' + data.total_candidates + ' candidates found, showing top ' + data.matches.length + '</div>' + html;
+        } catch (err) {
+          document.getElementById('match-results').innerHTML = '<div class="match-empty">Error: ' + err.message + '</div>';
+        }
+      }
+
+      function closeMatching() {
+        document.getElementById('match-overlay').classList.remove('active');
+      }
+
       async function submitEnfant(e) {
         e.preventDefault();
         var form = document.getElementById('add-enfant-form');

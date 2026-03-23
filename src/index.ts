@@ -14,7 +14,7 @@ import { renderDashboard } from './pages/dashboard';
 import { renderFormateursListe } from './pages/formateurs-liste';
 import { renderFormateurDetail } from './pages/formateur-detail';
 import { renderOnboarding } from './pages/onboarding';
-import { updateFormateurStatus, updateFormateur } from './api/formateurs';
+import { updateFormateurStatus, updateFormateur, downloadFormateurDocument } from './api/formateurs';
 import { registerFormateur, updateOnboarding, uploadDocument, submitOnboarding, getOnboardingState, getCatalogueTree } from './api/onboarding';
 import { renderFamillesListe } from './pages/familles-liste';
 import { renderFamilleDetail } from './pages/famille-detail';
@@ -49,6 +49,7 @@ import { createPayment, updatePaymentStatus } from './api/payments';
 import { renderPaymentSelection, renderPaymentSuccess, renderPaymentCancelled } from './pages/payment-checkout';
 import { getPaymentAdapter, type PaymentGateway } from './api/payment-gateways';
 import { handleChat } from './api/chatbot';
+import { matchFormateurs } from './api/matching';
 import { verifyWhatsAppWebhook, handleWhatsAppWebhook } from './api/whatsapp';
 import { renderStatistiques } from './pages/statistiques';
 import { renderSessions } from './pages/sessions';
@@ -939,6 +940,15 @@ export default {
         }
       }
 
+      // Formateur document download (GET /api/formateurs/:id/documents/:docKey)
+      if (method === 'GET' && path.includes('/api/formateurs/') && path.includes('/documents/')) {
+        const parts = path.split('/');
+        // /api/formateurs/:id/documents/:docKey -> ['', 'api', 'formateurs', id, 'documents', docKey]
+        if (parts.length === 6 && parts[4] === 'documents') {
+          return downloadFormateurDocument(env, parts[3], parts[5]);
+        }
+      }
+
       // Formateur status change API (PUT /api/formateurs/:id/status)
       {
         const fmtStatusId = matchPath(path, '/api/formateurs/:id/status');
@@ -984,6 +994,14 @@ export default {
         if (familleId && method === 'GET') {
           const html = await renderFamilleDetail(env, familleId, userName);
           return htmlResponse(html);
+        }
+      }
+
+      // ---- AI Matching ----
+      {
+        const matchEleveId = matchPath(path, '/api/matching/:id');
+        if (matchEleveId && method === 'GET') {
+          return matchFormateurs(env, matchEleveId);
         }
       }
 

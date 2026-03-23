@@ -903,6 +903,30 @@ export async function renderOnboarding(env: Env): Promise<string> {
             <div class="doc-upload-hint">Clean criminal record extract (optional)</div>
             <div class="doc-filename" id="fname-doc_casier_url"></div>
           </div>
+
+          <div class="doc-upload-card" data-doc="doc_siret_url" onclick="triggerDocUpload('doc_siret_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_siret_url')" ondragleave="docDragLeave(event)">
+            <div class="doc-upload-check">\u2713</div>
+            <span class="doc-upload-icon">\ud83c\udfe2</span>
+            <div class="doc-upload-label">SIRET / Business Reg.</div>
+            <div class="doc-upload-hint">Auto-entrepreneur or business registration (optional)</div>
+            <div class="doc-filename" id="fname-doc_siret_url"></div>
+          </div>
+
+          <div class="doc-upload-card" data-doc="doc_urssaf_url" onclick="triggerDocUpload('doc_urssaf_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_urssaf_url')" ondragleave="docDragLeave(event)">
+            <div class="doc-upload-check">\u2713</div>
+            <span class="doc-upload-icon">\ud83d\udcca</span>
+            <div class="doc-upload-label">URSSAF Certificate</div>
+            <div class="doc-upload-hint">URSSAF vigilance attestation (optional)</div>
+            <div class="doc-filename" id="fname-doc_urssaf_url"></div>
+          </div>
+
+          <div class="doc-upload-card" data-doc="doc_rib_url" onclick="triggerDocUpload('doc_rib_url')" ondragover="docDragOver(event)" ondrop="docDrop(event, 'doc_rib_url')" ondragleave="docDragLeave(event)">
+            <div class="doc-upload-check">\u2713</div>
+            <span class="doc-upload-icon">\ud83c\udfe6</span>
+            <div class="doc-upload-label">RIB / Bank Statement</div>
+            <div class="doc-upload-hint">Bank account details for payouts</div>
+            <div class="doc-filename" id="fname-doc_rib_url"></div>
+          </div>
         </div>
         <input type="file" id="doc-file-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
 
@@ -1007,6 +1031,7 @@ export async function renderOnboarding(env: Env): Promise<string> {
     document.addEventListener('DOMContentLoaded', function() {
       loadCatalogue();
       restoreFromLocalStorage();
+      restoreDocStatusFromServer();
       initSignatureCanvas();
     });
 
@@ -1084,6 +1109,11 @@ export async function renderOnboarding(env: Env): Promise<string> {
             const result = await res.json();
             formateurId = result.id;
             localStorage.setItem('onboarding_id', formateurId);
+            // Upload pending photo now that we have an ID
+            if (pendingPhotoFile) {
+              uploadDocToServer(pendingPhotoFile, 'photo_url');
+              pendingPhotoFile = null;
+            }
           }
         } catch (e) { console.error('Save error:', e); }
       }
@@ -1157,6 +1187,31 @@ export async function renderOnboarding(env: Env): Promise<string> {
       } catch (e) {}
     }
 
+    // ====== RESTORE DOC STATUS FROM SERVER ======
+    async function restoreDocStatusFromServer() {
+      if (!formateurId) return;
+      try {
+        const res = await fetch('/api/onboarding/' + formateurId);
+        if (!res.ok) return;
+        const data = await res.json();
+        const docFields = ['doc_identite_url', 'doc_diplomes_url', 'doc_cv_url', 'doc_casier_url', 'doc_siret_url', 'doc_urssaf_url', 'doc_rib_url'];
+        docFields.forEach(function(field) {
+          if (data[field]) {
+            const card = document.querySelector('[data-doc="' + field + '"]');
+            if (card) {
+              card.classList.add('uploaded');
+              const fnameEl = document.getElementById('fname-' + field);
+              if (fnameEl) fnameEl.textContent = 'Uploaded';
+            }
+          }
+        });
+        if (data.photo_url) {
+          const zone = document.getElementById('photo-zone');
+          if (zone) { zone.innerHTML = '<img src="/api/onboarding/' + formateurId + '/photo" alt="Photo" onerror="this.style.display=\\'none\\'">'; zone.classList.add('has-photo'); }
+        }
+      } catch (e) { console.error('Restore doc status error:', e); }
+    }
+
     // ====== CATALOGUE LOADING ======
     async function loadCatalogue() {
       try {
@@ -1221,6 +1276,8 @@ export async function renderOnboarding(env: Env): Promise<string> {
     }
 
     // ====== PHOTO UPLOAD ======
+    var pendingPhotoFile = null;
+
     function previewPhoto(input) {
       if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -1231,9 +1288,11 @@ export async function renderOnboarding(env: Env): Promise<string> {
         };
         reader.readAsDataURL(input.files[0]);
 
-        // Upload to server
+        // Upload to server if ID exists, otherwise store for later
         if (formateurId) {
           uploadDocToServer(input.files[0], 'photo_url');
+        } else {
+          pendingPhotoFile = input.files[0];
         }
       }
     }
@@ -1286,6 +1345,10 @@ export async function renderOnboarding(env: Env): Promise<string> {
       // Upload to server
       if (formateurId) {
         uploadDocToServer(file, docType);
+      } else {
+        // Store pending uploads for when formateurId becomes available
+        if (!window._pendingDocs) window._pendingDocs = [];
+        window._pendingDocs.push({ file, docType });
       }
     }
 
