@@ -1505,7 +1505,7 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
         <p class="pricing-desc">${t(locale, 'pricing.trial_desc')}</p>
         <div class="pricing-amount">${currency.symbol}9<span style="font-size:20px;font-weight:700">.9</span></div>
         <div class="pricing-unit">${t(locale, 'pricing.per_credit')}</div>
-        <div class="pricing-total">3 ${t(locale, 'pricing.credits')} &mdash; ${currency.symbol}29.70</div>
+        <div class="pricing-total">3 ${t(locale, 'pricing.credits')} &mdash; ${currency.symbol}29</div>
         <ul class="pricing-features">
           <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.trial_f1')}</li>
           <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.trial_f2')}</li>
@@ -1543,7 +1543,7 @@ export async function renderLanding(env: Env, request: Request): Promise<string>
         <p class="pricing-desc">${t(locale, 'pricing.intensive_desc')}</p>
         <div class="pricing-amount">${currency.symbol}7<span style="font-size:20px;font-weight:700">.9</span></div>
         <div class="pricing-unit">${t(locale, 'pricing.per_credit')}</div>
-        <div class="pricing-total">25 ${t(locale, 'pricing.credits')} &mdash; ${currency.symbol}197.50</div>
+        <div class="pricing-total">25 ${t(locale, 'pricing.credits')} &mdash; ${currency.symbol}197</div>
         <ul class="pricing-features">
           <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.intensive_f1')}</li>
           <li><span class="feat-check">&#10003;</span> ${t(locale, 'pricing.intensive_f2')}</li>
