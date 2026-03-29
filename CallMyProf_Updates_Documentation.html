@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CallMyProf - Full Updates Documentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1E293B;
+    line-height: 1.7;
+    background: #fff;
+    font-size: 11pt;
+  }
+
+  @page {
+    size: A4;
+    margin: 20mm 18mm 25mm 18mm;
+  }
+
+  .cover {
+    page-break-after: always;
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+    color: white;
+    border-radius: 0;
+    margin: -20mm -18mm 0 -18mm;
+    padding: 80px 60px;
+  }
+
+  .cover-logo {
+    font-size: 52pt;
+    margin-bottom: 16px;
+  }
+
+  .cover h1 {
+    font-size: 32pt;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: #DC2626;
+  }
+
+  .cover h2 {
+    font-size: 16pt;
+    font-weight: 400;
+    color: #94A3B8;
+    margin-bottom: 40px;
+  }
+
+  .cover-meta {
+    font-size: 11pt;
+    color: #64748B;
+    line-height: 2;
+  }
+
+  .cover-meta strong { color: #CBD5E1; }
+
+  .cover-badge {
+    display: inline-block;
+    background: #DC2626;
+    color: white;
+    padding: 8px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12pt;
+    margin-top: 30px;
+  }
+
+  h1 {
+    font-size: 22pt;
+    font-weight: 800;
+    color: #0F172A;
+    margin: 30px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid #DC2626;
+  }
+
+  h2 {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #1E293B;
+    margin: 24px 0 10px;
+    padding-left: 12px;
+    border-left: 4px solid #DC2626;
+  }
+
+  h3 {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #334155;
+    margin: 18px 0 8px;
+  }
+
+  h4 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #475569;
+    margin: 12px 0 6px;
+  }
+
+  p { margin: 6px 0; }
+
+  .section { margin-bottom: 24px; }
+
+  .page-break { page-break-before: always; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 9.5pt;
+  }
+
+  th {
+    background: #F1F5F9;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+    font-size: 9pt;
+  }
+
+  td {
+    padding: 6px 10px;
+    border: 1px solid #E2E8F0;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) { background: #F8FAFC; }
+
+  code {
+    background: #F1F5F9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9pt;
+    font-family: 'Consolas', 'Monaco', monospace;
+    color: #DC2626;
+  }
+
+  pre {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 9pt;
+    overflow-x: auto;
+    margin: 10px 0;
+    line-height: 1.5;
+  }
+
+  pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 8.5pt;
+    font-weight: 600;
+  }
+
+  .badge-done { background: #DCFCE7; color: #166534; }
+  .badge-partial { background: #FEF3C7; color: #92400E; }
+  .badge-pending { background: #FEE2E2; color: #991B1B; }
+  .badge-new { background: #DBEAFE; color: #1E40AF; }
+
+  .info-box {
+    background: #EFF6FF;
+    border-left: 4px solid #2563EB;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 10pt;
+  }
+
+  .warning-box {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 10pt;
+  }
+
+  .success-box {
+    background: #DCFCE7;
+    border-left: 4px solid #16A34A;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 10pt;
+  }
+
+  ul { margin: 6px 0 6px 20px; }
+  li { margin: 3px 0; }
+
+  .toc { margin: 20px 0; }
+  .toc a { color: #2563EB; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc li { margin: 6px 0; }
+
+  .link { color: #2563EB; text-decoration: none; }
+  .link:hover { text-decoration: underline; }
+
+  .footer {
+    text-align: center;
+    color: #94A3B8;
+    font-size: 9pt;
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #E2E8F0;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .card {
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 16px;
+    background: #FAFBFF;
+  }
+
+  .card h4 { margin-top: 0; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 14px 0;
+  }
+
+  .stat-card {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-size: 20pt;
+    font-weight: 800;
+    color: #DC2626;
+  }
+
+  .stat-label {
+    font-size: 8.5pt;
+    color: #64748B;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== COVER PAGE ===================== -->
+<div class="cover">
+  <div class="cover-logo">&#128222;</div>
+  <h1>CallMyProf</h1>
+  <h2>Full Platform Documentation & Updates Report</h2>
+  <div class="cover-meta">
+    <strong>Legal Entity:</strong> Capleb SAL (Lebanon)<br>
+    <strong>Website:</strong> https://callmyprof.com<br>
+    <strong>Version:</strong> 1.2.0<br>
+    <strong>Last Updated:</strong> March 29, 2026<br>
+    <strong>Prepared for:</strong> Samer Dawaliby<br>
+  </div>
+  <div class="cover-badge">CONFIDENTIAL - INTERNAL USE ONLY</div>
+</div>
+
+<!-- ===================== TABLE OF CONTENTS ===================== -->
+<h1>Table of Contents</h1>
+<div class="toc">
+<ol>
+  <li><a href="#overview">Platform Overview</a></li>
+  <li><a href="#tech-stack">Technical Architecture & Stack</a></li>
+  <li><a href="#all-links">All Platform Links & URLs</a>
+    <ul>
+      <li>Public Pages</li>
+      <li>Admin Dashboard Pages</li>
+      <li>Student Portal Pages</li>
+      <li>Tutor Portal Pages</li>
+      <li>API Endpoints</li>
+    </ul>
+  </li>
+  <li><a href="#database">Database Schema & Migrations</a></li>
+  <li><a href="#updates">All Updates & Changes (Session Log)</a>
+    <ul>
+      <li>Foreign Key Fix (cours_eleves)</li>
+      <li>Email Notifications on Session Creation</li>
+      <li>Student Portal Session Visibility</li>
+      <li>Student Dashboard Counters</li>
+      <li>Student Names in Admin Table</li>
+      <li>Admin Sessions Page Merger</li>
+      <li>Video Call Join Buttons</li>
+      <li>Page Rename: Private Session 1v1</li>
+      <li>Group Classes Integration</li>
+    </ul>
+  </li>
+  <li><a href="#video">Video Conferencing System</a></li>
+  <li><a href="#email">Email System</a></li>
+  <li><a href="#portals">Student & Tutor Portals</a></li>
+  <li><a href="#security">Security & Authentication</a></li>
+  <li><a href="#config">Cloudflare Configuration</a></li>
+  <li><a href="#commands">Useful Commands</a></li>
+  <li><a href="#roadmap">Roadmap & Status</a></li>
+</ol>
+</div>
+
+<!-- ===================== 1. OVERVIEW ===================== -->
+<div class="page-break"></div>
+<h1 id="overview">1. Platform Overview</h1>
+
+<div class="section">
+<p>CallMyProf is an international tutoring platform connecting students with qualified tutors. The platform supports multiple languages (English, French, Arabic with RTL), handles the complete student journey from lead capture to video sessions, and provides comprehensive admin tools for managing the business.</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-num">28K+</div>
+    <div class="stat-label">Lines of Code</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">27+</div>
+    <div class="stat-label">Pages</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">60+</div>
+    <div class="stat-label">API Endpoints</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">3</div>
+    <div class="stat-label">Languages</div>
+  </div>
+</div>
+
+<h3>Business Flow</h3>
+<ol>
+  <li>Student sees an ad (TikTok, Facebook, Instagram, Google)</li>
+  <li>Fills out the form on callmyprof.com</li>
+  <li>A lead is created in the CRM</li>
+  <li>Admin contacts and qualifies the need</li>
+  <li>Booking email sent &rarr; student picks a time slot</li>
+  <li>Payment &rarr; auto-generated video link &rarr; tutoring session</li>
+</ol>
+
+<h3>Pricing</h3>
+<table>
+  <tr><th>Service Type</th><th>Price/Hour</th></tr>
+  <tr><td>Individual 1v1</td><td>$15/hour</td></tr>
+  <tr><td>Online Session</td><td>$12/hour</td></tr>
+  <tr><td>Group Class</td><td>$8/hour</td></tr>
+</table>
+
+<h3>CRM Pipeline</h3>
+<p><code>NEW</code> &rarr; <code>CONTACTED</code> &rarr; <code>QUALIFIED</code> &rarr; <code>CONVERTED</code> (or <code>LOST</code>)</p>
+</div>
+
+<!-- ===================== 2. TECH STACK ===================== -->
+<div class="page-break"></div>
+<h1 id="tech-stack">2. Technical Architecture & Stack</h1>
+
+<div class="section">
+<h3>Core Stack</h3>
+<table>
+  <tr><th>Component</th><th>Technology</th><th>Purpose</th></tr>
+  <tr><td>Runtime</td><td>Cloudflare Workers</td><td>Edge-deployed TypeScript SSR</td></tr>
+  <tr><td>Database</td><td>Cloudflare D1 (SQLite)</td><td>Globally distributed database</td></tr>
+  <tr><td>File Storage</td><td>Cloudflare R2</td><td>Documents, avatars, uploads</td></tr>
+  <tr><td>AI</td><td>Workers AI (Llama 3.1)</td><td>Chatbot assistant</td></tr>
+  <tr><td>Email</td><td>Resend API</td><td>Transactional emails</td></tr>
+  <tr><td>Video (Primary)</td><td>Daily.co</td><td>Video conferencing rooms</td></tr>
+  <tr><td>Video (Fallback)</td><td>Jitsi Meet</td><td>Free fallback video</td></tr>
+  <tr><td>Payments</td><td>Stripe + PayPal</td><td>Payment processing (planned)</td></tr>
+</table>
+
+<h3>Architecture Principles</h3>
+<ul>
+  <li><strong>Single Worker</strong> - One Cloudflare Worker serves everything (public + admin + portals)</li>
+  <li><strong>Zero Frontend Framework</strong> - Vanilla JS inline, server-rendered HTML</li>
+  <li><strong>Single Entry Point</strong> - <code>src/index.js</code> contains all logic</li>
+  <li><strong>French Business Naming</strong> - <code>formateur</code>, <code>cours</code>, <code>eleve</code> for business concepts</li>
+  <li><strong>English Technical Naming</strong> - <code>request</code>, <code>response</code>, <code>handler</code> for technical code</li>
+</ul>
+
+<h3>Design System</h3>
+<table>
+  <tr><th>Element</th><th>Value</th></tr>
+  <tr><td>Primary Color</td><td><code>#DC2626</code> (Red)</td></tr>
+  <tr><td>Charcoal</td><td><code>#1E293B</code></td></tr>
+  <tr><td>Font</td><td>Inter</td></tr>
+  <tr><td>Border Radius</td><td>8-12px</td></tr>
+</table>
+</div>
+
+<!-- ===================== 3. ALL LINKS ===================== -->
+<div class="page-break"></div>
+<h1 id="all-links">3. All Platform Links & URLs</h1>
+
+<div class="info-box">
+  <strong>Production URL:</strong> https://callmyprof.com<br>
+  <strong>Dev URL:</strong> https://ffb01a2e-callmyprof.samirdawaliby.workers.dev<br>
+  <strong>Local Dev:</strong> http://localhost:8787
+</div>
+
+<h2>3.1 Public Pages</h2>
+<table>
+  <tr><th>Page</th><th>URL</th><th>Description</th></tr>
+  <tr><td>Homepage</td><td><code>/</code></td><td>Landing page with lead capture form</td></tr>
+  <tr><td>About</td><td><code>/about</code></td><td>About CallMyProf</td></tr>
+  <tr><td>Contact</td><td><code>/contact</code></td><td>Contact information</td></tr>
+  <tr><td>FAQ</td><td><code>/faq</code></td><td>Frequently asked questions</td></tr>
+  <tr><td>Terms</td><td><code>/terms</code></td><td>Terms of service</td></tr>
+  <tr><td>Privacy</td><td><code>/privacy</code></td><td>Privacy policy</td></tr>
+  <tr><td>Assignment Help</td><td><code>/assignment-help</code></td><td>Homework assistance page</td></tr>
+  <tr><td>Tutor Onboarding</td><td><code>/onboarding</code></td><td>4-step tutor application</td></tr>
+  <tr><td>Thank You</td><td><code>/thanks</code></td><td>Post-action confirmation</td></tr>
+  <tr><td>Health Check</td><td><code>/health</code></td><td>System health endpoint</td></tr>
+  <tr><td>Setup</td><td><code>/setup</code></td><td>Initial setup page</td></tr>
+  <tr><td>Daily Video Demo</td><td><code>/session-demo/daily</code></td><td>Daily.co demo room</td></tr>
+  <tr><td>Jitsi Video Demo</td><td><code>/session-demo/jitsi</code></td><td>Jitsi demo room</td></tr>
+</table>
+
+<h2>3.2 Admin Dashboard Pages</h2>
+<table>
+  <tr><th>Page</th><th>URL</th><th>Description</th></tr>
+  <tr><td>Login</td><td><code>/login</code></td><td>Admin authentication</td></tr>
+  <tr><td>Dashboard</td><td><code>/dashboard</code></td><td>Admin overview with KPIs</td></tr>
+  <tr><td>Leads</td><td><code>/leads</code></td><td>CRM lead management</td></tr>
+  <tr><td>Tutors</td><td><code>/formateurs</code></td><td>Tutor management list</td></tr>
+  <tr><td>Tutor Detail</td><td><code>/formateurs/:id</code></td><td>Individual tutor profile</td></tr>
+  <tr><td>Students & Families</td><td><code>/familles</code></td><td>Student/family management</td></tr>
+  <tr><td>Family Detail</td><td><code>/familles/:id</code></td><td>Individual family profile</td></tr>
+  <tr><td>New Family</td><td><code>/familles/new</code></td><td>Create new family</td></tr>
+  <tr><td>Catalogue</td><td><code>/catalogue</code></td><td>Subject domains &amp; themes</td></tr>
+  <tr><td>Assignments</td><td><code>/assignments</code></td><td>Homework assignments</td></tr>
+  <tr><td>Classes & Calendar</td><td><code>/cours</code></td><td>Classes management</td></tr>
+  <tr><td>New Class</td><td><code>/cours/new</code></td><td>Create new class/session</td></tr>
+  <tr><td>Class Detail</td><td><code>/cours/:id</code></td><td>Individual class details</td></tr>
+  <tr><td>Private Session 1v1</td><td><code>/sessions</code></td><td>1-on-1 video sessions</td></tr>
+  <tr><td>Group Classes</td><td><code>/group-classes</code></td><td>Group class management</td></tr>
+  <tr><td>New Group Class</td><td><code>/group-classes/new</code></td><td>Create new group class</td></tr>
+  <tr><td>Group Class Detail</td><td><code>/group-classes/:id</code></td><td>Group class detail & chat</td></tr>
+  <tr><td>Packages</td><td><code>/packages</code></td><td>Hour package management</td></tr>
+  <tr><td>Payments</td><td><code>/payments</code></td><td>Payment tracking</td></tr>
+  <tr><td>Calendar</td><td><code>/calendar</code></td><td>Visual calendar view</td></tr>
+  <tr><td>Reviews</td><td><code>/avis</code></td><td>Student reviews/ratings</td></tr>
+  <tr><td>Statistics</td><td><code>/statistiques</code></td><td>Analytics & charts</td></tr>
+  <tr><td>Support Tickets</td><td><code>/support-tickets</code></td><td>Support ticket management</td></tr>
+  <tr><td>Ticket Detail</td><td><code>/support-tickets/:id</code></td><td>Individual ticket view</td></tr>
+  <tr><td>Doc Verification</td><td><code>/doc-verification</code></td><td>Document verification</td></tr>
+</table>
+
+<h2>3.3 Student Portal Pages</h2>
+<table>
+  <tr><th>Page</th><th>URL</th><th>Description</th></tr>
+  <tr><td>Login</td><td><code>/portal/login</code></td><td>Student login</td></tr>
+  <tr><td>Signup</td><td><code>/portal/signup</code></td><td>Student registration</td></tr>
+  <tr><td>Forgot Password</td><td><code>/portal/forgot-password</code></td><td>Password recovery</td></tr>
+  <tr><td>Reset Password</td><td><code>/portal/reset-password</code></td><td>Password reset form</td></tr>
+  <tr><td>Dashboard</td><td><code>/portal</code></td><td>Student dashboard with stats</td></tr>
+  <tr><td>My Sessions</td><td><code>/portal/sessions</code></td><td>Upcoming & past sessions</td></tr>
+  <tr><td>My Payments</td><td><code>/portal/payments</code></td><td>Payment history</td></tr>
+  <tr><td>My Profile</td><td><code>/portal/profile</code></td><td>Edit student profile</td></tr>
+  <tr><td>Security</td><td><code>/portal/security</code></td><td>Password & security settings</td></tr>
+  <tr><td>Support</td><td><code>/portal/support</code></td><td>Support tickets</td></tr>
+  <tr><td>Support Ticket</td><td><code>/portal/support/:id</code></td><td>View specific ticket</td></tr>
+</table>
+
+<h2>3.4 Tutor Portal Pages</h2>
+<table>
+  <tr><th>Page</th><th>URL</th><th>Description</th></tr>
+  <tr><td>Login</td><td><code>/tutor/login</code></td><td>Tutor login</td></tr>
+  <tr><td>Signup</td><td><code>/tutor/signup</code></td><td>Tutor registration</td></tr>
+  <tr><td>Forgot Password</td><td><code>/tutor/forgot-password</code></td><td>Password recovery</td></tr>
+  <tr><td>Reset Password</td><td><code>/tutor/reset-password</code></td><td>Password reset form</td></tr>
+  <tr><td>Dashboard</td><td><code>/tutor</code></td><td>Tutor dashboard</td></tr>
+  <tr><td>My Classes</td><td><code>/tutor/classes</code></td><td>Upcoming & past classes</td></tr>
+  <tr><td>My Schedule</td><td><code>/tutor/schedule</code></td><td>Availability management</td></tr>
+  <tr><td>My Students</td><td><code>/tutor/students</code></td><td>Student list</td></tr>
+  <tr><td>My Payments</td><td><code>/tutor/payments</code></td><td>Earnings & payouts</td></tr>
+  <tr><td>My Profile</td><td><code>/tutor/profile</code></td><td>Edit tutor profile</td></tr>
+  <tr><td>Security</td><td><code>/tutor/security</code></td><td>Password & security settings</td></tr>
+  <tr><td>Support</td><td><code>/tutor/support</code></td><td>Support tickets</td></tr>
+  <tr><td>Support Ticket</td><td><code>/tutor/support/:id</code></td><td>View specific ticket</td></tr>
+</table>
+
+<div class="page-break"></div>
+<h2>3.5 API Endpoints</h2>
+
+<h3>Public API</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+  <tr><td>POST</td><td><code>/api/leads</code></td><td>Create new lead from form</td></tr>
+  <tr><td>POST</td><td><code>/api/booking</code></td><td>Create booking</td></tr>
+  <tr><td>POST</td><td><code>/api/chat</code></td><td>AI chatbot endpoint</td></tr>
+  <tr><td>POST</td><td><code>/api/assignment-help</code></td><td>Submit assignment help request</td></tr>
+  <tr><td>POST</td><td><code>/api/test-email</code></td><td>Test email sending</td></tr>
+</table>
+
+<h3>Admin API</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+  <tr><td>POST</td><td><code>/api/leads/:id/status</code></td><td>Update lead status</td></tr>
+  <tr><td>POST</td><td><code>/api/leads/:id</code></td><td>Delete lead</td></tr>
+  <tr><td>POST</td><td><code>/api/leads/:id/send-booking</code></td><td>Send booking link to lead</td></tr>
+  <tr><td>POST</td><td><code>/api/formateurs/:id/status</code></td><td>Update tutor status</td></tr>
+  <tr><td>POST</td><td><code>/api/formateurs/:id</code></td><td>Update tutor info</td></tr>
+  <tr><td>POST</td><td><code>/api/familles</code></td><td>Create family</td></tr>
+  <tr><td>POST</td><td><code>/api/cours</code></td><td>Create class/session</td></tr>
+  <tr><td>POST</td><td><code>/api/cours/:id/statut</code></td><td>Update class status</td></tr>
+  <tr><td>POST</td><td><code>/api/cours/:id/terminer</code></td><td>Mark class completed</td></tr>
+  <tr><td>POST</td><td><code>/api/group-classes</code></td><td>Create group class</td></tr>
+  <tr><td>POST</td><td><code>/api/group-classes/:id</code></td><td>Update group class</td></tr>
+  <tr><td>POST</td><td><code>/api/group-classes/:id/members</code></td><td>Manage members</td></tr>
+  <tr><td>POST</td><td><code>/api/group-classes/:id/chat</code></td><td>Group chat</td></tr>
+  <tr><td>POST</td><td><code>/api/calendar/slots</code></td><td>Create calendar slot</td></tr>
+  <tr><td>POST</td><td><code>/api/packages</code></td><td>Create package</td></tr>
+  <tr><td>POST</td><td><code>/api/payments</code></td><td>Create payment</td></tr>
+  <tr><td>POST</td><td><code>/api/admin/verify-doc</code></td><td>Verify document</td></tr>
+</table>
+
+<h3>Student Portal API</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+  <tr><td>POST</td><td><code>/api/portal/profile</code></td><td>Update student profile</td></tr>
+  <tr><td>POST</td><td><code>/api/portal/password</code></td><td>Change password</td></tr>
+  <tr><td>POST</td><td><code>/api/portal/avatar</code></td><td>Upload avatar</td></tr>
+  <tr><td>POST</td><td><code>/api/portal/delete-account</code></td><td>Delete account</td></tr>
+  <tr><td>POST</td><td><code>/api/portal/support</code></td><td>Create support ticket</td></tr>
+  <tr><td>POST</td><td><code>/api/portal/support/:id/reply</code></td><td>Reply to ticket</td></tr>
+  <tr><td>POST</td><td><code>/api/portal/payment-methods</code></td><td>Add payment method</td></tr>
+  <tr><td>POST</td><td><code>/api/portal/document</code></td><td>Upload document</td></tr>
+  <tr><td>POST</td><td><code>/api/portal/notifications</code></td><td>Update notification prefs</td></tr>
+</table>
+
+<h3>Tutor Portal API</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+  <tr><td>POST</td><td><code>/api/tutor/profile</code></td><td>Update tutor profile</td></tr>
+  <tr><td>POST</td><td><code>/api/tutor/password</code></td><td>Change password</td></tr>
+  <tr><td>POST</td><td><code>/api/tutor/avatar</code></td><td>Upload avatar</td></tr>
+  <tr><td>POST</td><td><code>/api/tutor/schedule</code></td><td>Add schedule slot</td></tr>
+  <tr><td>POST</td><td><code>/api/tutor/payout-settings</code></td><td>Update payout settings</td></tr>
+  <tr><td>POST</td><td><code>/api/tutor/support</code></td><td>Create support ticket</td></tr>
+  <tr><td>POST</td><td><code>/api/tutor/support/:id/reply</code></td><td>Reply to ticket</td></tr>
+  <tr><td>POST</td><td><code>/api/tutor/document</code></td><td>Upload document</td></tr>
+</table>
+
+<h3>Payment & Webhook Endpoints</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+  <tr><td>POST</td><td><code>/api/payment/create-session</code></td><td>Create payment session</td></tr>
+  <tr><td>POST</td><td><code>/api/payment/process-card</code></td><td>Process card payment</td></tr>
+  <tr><td>POST</td><td><code>/api/webhooks/checkout</code></td><td>Stripe checkout webhook</td></tr>
+  <tr><td>POST</td><td><code>/api/webhooks/paypal</code></td><td>PayPal webhook</td></tr>
+  <tr><td>GET/POST</td><td><code>/api/webhooks/whatsapp</code></td><td>WhatsApp Business webhook</td></tr>
+</table>
+
+<!-- ===================== 4. DATABASE ===================== -->
+<div class="page-break"></div>
+<h1 id="database">4. Database Schema & Migrations</h1>
+
+<h2>4.1 Core Tables</h2>
+<table>
+  <tr><th>Table</th><th>Description</th><th>Key Fields</th></tr>
+  <tr><td><code>users</code></td><td>All user accounts (admin, students, tutors)</td><td>id, email, prenom, nom, role, lead_id, formateur_id</td></tr>
+  <tr><td><code>sessions</code></td><td>Authentication sessions</td><td>id, user_id, expires_at</td></tr>
+  <tr><td><code>leads</code></td><td>CRM leads from website forms</td><td>id, prenom, nom, email, telephone, statut, utm_source</td></tr>
+  <tr><td><code>formateurs</code></td><td>Tutor profiles & qualifications</td><td>id, prenom, nom, email, statut, specialites</td></tr>
+  <tr><td><code>bookings</code></td><td>Booking-flow sessions</td><td>id, lead_id, booking_date, booking_time, video_provider</td></tr>
+  <tr><td><code>cours</code></td><td>Admin-created class sessions</td><td>id, formateur_id, date_cours, type_cours, video_room_url</td></tr>
+  <tr><td><code>cours_eleves</code></td><td>Student enrollment in classes</td><td>cours_id, eleve_id, heures_debitees, present</td></tr>
+  <tr><td><code>calendar_slots</code></td><td>Tutor availability slots</td><td>id, formateur_id, jour, heure_debut, heure_fin</td></tr>
+  <tr><td><code>thematiques</code></td><td>Subject themes catalogue</td><td>id, nom, sous_domaine_id</td></tr>
+  <tr><td><code>sous_domaines</code></td><td>Subject sub-domains</td><td>id, nom, domaine_id</td></tr>
+  <tr><td><code>domaines</code></td><td>Subject domains</td><td>id, nom</td></tr>
+  <tr><td><code>group_classes</code></td><td>Group class definitions</td><td>id, titre, max_eleves, inscrits, prix_par_eleve</td></tr>
+  <tr><td><code>group_class_members</code></td><td>Group class enrollments</td><td>group_class_id, user_id, role</td></tr>
+  <tr><td><code>group_chat_messages</code></td><td>Group class chat</td><td>id, group_class_id, user_id, message</td></tr>
+  <tr><td><code>packages</code></td><td>Hour packages</td><td>id, eleve_id, heures_total, heures_utilisees</td></tr>
+  <tr><td><code>support_tickets</code></td><td>Support tickets</td><td>id, user_id, subject, statut</td></tr>
+  <tr><td><code>ticket_responses</code></td><td>Ticket replies</td><td>id, ticket_id, user_id, message</td></tr>
+  <tr><td><code>payment_methods</code></td><td>Saved payment methods</td><td>id, user_id, type, last_four</td></tr>
+  <tr><td><code>signup_tokens</code></td><td>Registration tokens</td><td>token, email, role, expires_at</td></tr>
+  <tr><td><code>password_reset_tokens</code></td><td>Password reset tokens</td><td>token, email, expires_at</td></tr>
+</table>
+
+<h2>4.2 Migrations Applied</h2>
+<table>
+  <tr><th>#</th><th>File</th><th>Description</th><th>Status</th></tr>
+  <tr><td>0007</td><td>0007_portals.sql</td><td>Student & tutor portals, signup tokens, support tickets</td><td><span class="badge badge-done">Applied</span></td></tr>
+  <tr><td>0008</td><td>0008_enhanced_profile.sql</td><td>Enhanced profile fields (gender, DOB, photo, documents)</td><td><span class="badge badge-done">Applied</span></td></tr>
+  <tr><td>0009</td><td>0009_payment_methods.sql</td><td>Payment methods table, tutor payout settings</td><td><span class="badge badge-done">Applied</span></td></tr>
+  <tr><td>0010</td><td>0010_group_chat.sql</td><td>Group class members & chat messages</td><td><span class="badge badge-done">Applied</span></td></tr>
+  <tr><td>0011</td><td>0011_fix_cours_eleves_fk.sql</td><td>Fix foreign key constraint on cours_eleves.eleve_id</td><td><span class="badge badge-done">Applied</span></td></tr>
+  <tr><td>0012</td><td>0012_cours_video_columns.sql</td><td>Add video_provider, video_room_url, video_host_url, video_room_name to cours</td><td><span class="badge badge-done">Applied</span></td></tr>
+</table>
+
+<!-- ===================== 5. ALL UPDATES ===================== -->
+<div class="page-break"></div>
+<h1 id="updates">5. All Updates & Changes (March 29, 2026)</h1>
+
+<div class="success-box">
+  All changes listed below were implemented, deployed, and verified on production on March 29, 2026.
+</div>
+
+<h2>5.1 Foreign Key Fix (cours_eleves)</h2>
+<table>
+  <tr><th>Item</th><th>Detail</th></tr>
+  <tr><td>Problem</td><td>Creating a session at <code>/cours/new</code> failed with "FOREIGN KEY constraint failed"</td></tr>
+  <tr><td>Root Cause</td><td><code>cours_eleves.eleve_id</code> had a FK referencing the empty <code>eleves</code> table, but student IDs came from the <code>users</code> table (role='eleve')</td></tr>
+  <tr><td>Fix</td><td>Migration <code>0011_fix_cours_eleves_fk.sql</code> recreated the table without the invalid FK constraint</td></tr>
+  <tr><td>Code Changes</td><td>All queries changed from <code>JOIN eleves</code> to <code>JOIN users WHERE role='eleve'</code></td></tr>
+  <tr><td>Files Modified</td><td><code>src/index.js</code> (getCoursFormData, cours detail query, tutor students query)</td></tr>
+</table>
+
+<h2>5.2 Email Notifications on Session Creation</h2>
+<table>
+  <tr><th>Item</th><th>Detail</th></tr>
+  <tr><td>Feature</td><td>Auto-send email to students and tutors when a session is created via <code>/cours/new</code></td></tr>
+  <tr><td>Templates Added</td><td><code>sessionCreatedStudentEmail()</code> and <code>sessionCreatedTutorEmail()</code></td></tr>
+  <tr><td>Email Content</td><td>Session date, time, subject, tutor/student name, video link (if available)</td></tr>
+  <tr><td>Sender</td><td>Resend API via <code>noreply@callmyprof.com</code></td></tr>
+</table>
+
+<h2>5.3 Student Portal Session Visibility</h2>
+<table>
+  <tr><th>Item</th><th>Detail</th></tr>
+  <tr><td>Problem</td><td><code>/portal/sessions</code> only showed sessions from <code>bookings</code> table, not admin-created <code>cours</code></td></tr>
+  <tr><td>Fix</td><td>Added <code>cours_eleves</code> queries to <code>renderStudentSessions()</code>, merging both data sources</td></tr>
+  <tr><td>Result</td><td>Students now see all their sessions regardless of how they were created</td></tr>
+</table>
+
+<h2>5.4 Student Dashboard Counters</h2>
+<table>
+  <tr><th>Item</th><th>Detail</th></tr>
+  <tr><td>Problem</td><td>Dashboard at <code>/portal</code> showed "0 Upcoming Sessions" despite having sessions</td></tr>
+  <tr><td>Root Cause</td><td>Only counting from <code>bookings</code> table via <code>lead_id</code>, not from <code>cours_eleves</code></td></tr>
+  <tr><td>Fix</td><td>Added <code>cours_eleves</code> count queries to <code>renderStudentDashboard()</code></td></tr>
+  <tr><td>Result</td><td>Dashboard now shows correct count (e.g., "2 Upcoming Sessions") and next session info</td></tr>
+</table>
+
+<h2>5.5 Student Names in Admin Classes Table</h2>
+<table>
+  <tr><th>Item</th><th>Detail</th></tr>
+  <tr><td>Feature</td><td>Added student names column to the <code>/cours</code> admin table</td></tr>
+  <tr><td>Implementation</td><td>Added <code>GROUP_CONCAT</code> subquery joining <code>cours_eleves</code> with <code>users</code></td></tr>
+  <tr><td>Display</td><td>Shows comma-separated student names (e.g., "Samer Dawaliby, Rony El Ghawi")</td></tr>
+</table>
+
+<h2>5.6 Admin Sessions Page Merger</h2>
+<table>
+  <tr><th>Item</th><th>Detail</th></tr>
+  <tr><td>Feature</td><td><code>/sessions</code> now shows both booking-flow sessions AND admin-created cours</td></tr>
+  <tr><td>Implementation</td><td>Added second query for <code>cours</code> table, merged results sorted by date</td></tr>
+  <tr><td>Visual</td><td>Cours sessions show "Cours" badge, booking sessions show "Organic"/"Daily.co"</td></tr>
+</table>
+
+<h2>5.7 Video Call Join Buttons</h2>
+<table>
+  <tr><th>Item</th><th>Detail</th></tr>
+  <tr><td>Feature</td><td>Added video call "Join" buttons across all views</td></tr>
+  <tr><td>Migration</td><td><code>0012_cours_video_columns.sql</code> - Added video_provider, video_room_url, video_host_url, video_room_name to <code>cours</code></td></tr>
+  <tr><td>Auto-Generation</td><td><code>createCours()</code> now auto-creates Daily.co video rooms with student + host tokens</td></tr>
+  <tr><td>Backfill</td><td>Sessions page auto-generates video rooms for existing sessions missing them</td></tr>
+</table>
+
+<h4>Join Button Availability by View</h4>
+<table>
+  <tr><th>View</th><th>URL</th><th>Button Label</th><th>Video URL Used</th></tr>
+  <tr><td>Admin Sessions</td><td><code>/sessions</code></td><td>"Rejoindre" (red)</td><td><code>video_host_url</code> (host privileges)</td></tr>
+  <tr><td>Student Portal</td><td><code>/portal/sessions</code></td><td>"Join &rarr;" (blue)</td><td><code>video_room_url</code> (student link)</td></tr>
+  <tr><td>Tutor Portal</td><td><code>/tutor/classes</code></td><td>"Join &rarr;" (blue)</td><td><code>video_host_url</code> (host privileges)</td></tr>
+</table>
+
+<h2>5.8 Page Rename: Private Session 1v1</h2>
+<table>
+  <tr><th>Item</th><th>Detail</th></tr>
+  <tr><td>Change</td><td>Renamed "Sessions Video" &rarr; "Private Session 1v1" across page title, sidebar, and browser tab</td></tr>
+  <tr><td>Filter</td><td>Page now only shows individual sessions (<code>type_cours = 'individuel'</code>)</td></tr>
+  <tr><td>Reason</td><td>Separate group sessions from 1v1 sessions for clarity</td></tr>
+</table>
+
+<h2>5.9 Group Classes Integration</h2>
+<table>
+  <tr><th>Item</th><th>Detail</th></tr>
+  <tr><td>Feature</td><td>Group sessions from <code>cours</code> (type_cours='collectif') now appear on <code>/group-classes</code></td></tr>
+  <tr><td>Section</td><td>"Group Sessions (Classes & Calendar)" section added below the main group classes table</td></tr>
+  <tr><td>Columns</td><td>Title/Subject, Tutor, Date, Duration, Students (with names), Location, Status, Actions</td></tr>
+  <tr><td>Actions</td><td>Join button (Daily.co) + View button for each group session</td></tr>
+  <tr><td>Auto-Backfill</td><td>Video rooms auto-generated for group sessions missing them on page load</td></tr>
+</table>
+
+<!-- ===================== 6. VIDEO SYSTEM ===================== -->
+<div class="page-break"></div>
+<h1 id="video">6. Video Conferencing System</h1>
+
+<div class="section">
+<h3>Provider Priority</h3>
+<ol>
+  <li><strong>Daily.co</strong> (Primary) - Used when <code>DAILY_API_KEY</code> is configured</li>
+  <li><strong>Jitsi Meet</strong> (Fallback) - Free, used when Daily.co is unavailable</li>
+</ol>
+
+<h3>Daily.co Integration</h3>
+<table>
+  <tr><th>Feature</th><th>Detail</th></tr>
+  <tr><td>Room Creation</td><td>Auto-created via Daily.co REST API when session is created</td></tr>
+  <tr><td>Room Naming</td><td><code>cmp-{sessionId}-{YYYYMMDD}</code></td></tr>
+  <tr><td>Token Types</td><td>Student token (isOwner: false), Host token (isOwner: true)</td></tr>
+  <tr><td>URL Format</td><td><code>https://callmyprof.daily.co/{room}?t={token}</code></td></tr>
+  <tr><td>Max Participants</td><td>Configurable per session (default: 2 for 1v1, max_eleves+1 for group)</td></tr>
+</table>
+
+<h3>Video Room Storage</h3>
+<table>
+  <tr><th>Column</th><th>Table</th><th>Purpose</th></tr>
+  <tr><td><code>video_provider</code></td><td>cours, bookings</td><td>"daily" or "jitsi"</td></tr>
+  <tr><td><code>video_room_url</code></td><td>cours, bookings</td><td>Student video link</td></tr>
+  <tr><td><code>video_host_url</code></td><td>cours, bookings</td><td>Tutor/admin video link (host privileges)</td></tr>
+  <tr><td><code>video_room_name</code></td><td>cours, bookings</td><td>Room identifier</td></tr>
+</table>
+
+<h3>Auto-Backfill Logic</h3>
+<p>When the admin sessions page (<code>/sessions</code>) or group classes page (<code>/group-classes</code>) loads, it checks for cours sessions with missing video rooms. If found and the session date is in the future, it automatically creates a Daily.co room and updates the database.</p>
+</div>
+
+<!-- ===================== 7. EMAIL SYSTEM ===================== -->
+<h1 id="email">7. Email System</h1>
+
+<div class="section">
+<h3>Provider: Resend API</h3>
+<table>
+  <tr><th>Email Type</th><th>Trigger</th><th>Recipients</th></tr>
+  <tr><td>Booking Confirmation</td><td>Student books a session</td><td>Student</td></tr>
+  <tr><td>Session Created (Student)</td><td>Admin creates a session at /cours/new</td><td>All enrolled students</td></tr>
+  <tr><td>Session Created (Tutor)</td><td>Admin creates a session at /cours/new</td><td>Assigned tutor</td></tr>
+  <tr><td>Session Reminder</td><td>Cron job (15 min intervals)</td><td>Student + Tutor</td></tr>
+  <tr><td>Password Reset</td><td>Forgot password request</td><td>Requesting user</td></tr>
+  <tr><td>Welcome Email</td><td>Account signup</td><td>New user</td></tr>
+</table>
+</div>
+
+<!-- ===================== 8. PORTALS ===================== -->
+<h1 id="portals">8. Student & Tutor Portals</h1>
+
+<div class="section">
+<div class="two-col">
+  <div class="card">
+    <h4>Student Portal</h4>
+    <ul>
+      <li>Dashboard with upcoming sessions count, next session, total paid</li>
+      <li>Sessions page merging bookings + admin-created cours</li>
+      <li>Video Join buttons for upcoming sessions</li>
+      <li>Payment history & methods</li>
+      <li>Profile editing with avatar upload</li>
+      <li>Security (password change)</li>
+      <li>Support ticket system</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Tutor Portal</h4>
+    <ul>
+      <li>Dashboard with class stats and earnings</li>
+      <li>Classes page with calendar view + Action column</li>
+      <li>Video Join buttons (host URL with host privileges)</li>
+      <li>Schedule/availability management</li>
+      <li>Student list from assigned sessions</li>
+      <li>Earnings & payout settings</li>
+      <li>Support ticket system</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Data Architecture Note</h3>
+<div class="warning-box">
+  <strong>Two Student Systems:</strong> Students exist in the <code>users</code> table (role='eleve') for portal access AND historically in the <code>eleves</code> table (legacy CRM, now empty). All current code references <code>users</code> table. The <code>cours_eleves.eleve_id</code> column references <code>users.id</code> (FK constraint was removed in migration 0011).
+</div>
+</div>
+
+<!-- ===================== 9. SECURITY ===================== -->
+<h1 id="security">9. Security & Authentication</h1>
+
+<div class="section">
+<table>
+  <tr><th>Feature</th><th>Implementation</th></tr>
+  <tr><td>Password Hashing</td><td>PBKDF2 with salt (Web Crypto API)</td></tr>
+  <tr><td>Session Management</td><td>D1-backed sessions with expiry</td></tr>
+  <tr><td>HTTPS</td><td>Enforced via Cloudflare</td></tr>
+  <tr><td>XSS Protection</td><td><code>escapeHtml()</code> on all user-provided data</td></tr>
+  <tr><td>SQL Injection</td><td>Parameterized queries via D1 <code>.bind()</code></td></tr>
+  <tr><td>CSRF</td><td>Session-based validation</td></tr>
+  <tr><td>Auth Separation</td><td>Separate login flows for admin, student portal, tutor portal</td></tr>
+  <tr><td>Password Reset</td><td>Time-limited tokens via <code>password_reset_tokens</code> table</td></tr>
+</table>
+</div>
+
+<!-- ===================== 10. CONFIG ===================== -->
+<div class="page-break"></div>
+<h1 id="config">10. Cloudflare Configuration</h1>
+
+<div class="section">
+<table>
+  <tr><th>Setting</th><th>Value</th></tr>
+  <tr><td>Account</td><td>samirdawaliby@gmail.com</td></tr>
+  <tr><td>Account ID</td><td><code>bc9bdfa814d313ad361e1120f2d57af9</code></td></tr>
+  <tr><td>Worker Name</td><td><code>callmyprof</code></td></tr>
+  <tr><td>D1 Database</td><td><code>callmyprof-db</code> (ID: <code>2294dbe8-f898-4c8c-a8fd-0f62563e19a9</code>)</td></tr>
+  <tr><td>R2 Bucket</td><td><code>callmyprof-docs</code></td></tr>
+  <tr><td>AI Binding</td><td><code>AI</code> (Workers AI)</td></tr>
+  <tr><td>Cron Schedule</td><td><code>*/15 * * * *</code> (every 15 minutes)</td></tr>
+  <tr><td>Compatibility Date</td><td>2024-09-23</td></tr>
+  <tr><td>Compatibility Flags</td><td><code>nodejs_compat</code></td></tr>
+</table>
+
+<h3>Custom Domains</h3>
+<ul>
+  <li><code>callmyprof.com</code> (primary)</li>
+  <li><code>www.callmyprof.com</code> (redirect)</li>
+</ul>
+
+<h3>Environment Secrets</h3>
+<table>
+  <tr><th>Secret</th><th>Status</th><th>Purpose</th></tr>
+  <tr><td>DAILY_API_KEY</td><td><span class="badge badge-done">Configured</span></td><td>Daily.co video rooms</td></tr>
+  <tr><td>RESEND_API_KEY</td><td><span class="badge badge-pending">Pending</span></td><td>Transactional emails</td></tr>
+  <tr><td>STRIPE_SECRET_KEY</td><td><span class="badge badge-pending">Pending</span></td><td>Stripe payments</td></tr>
+  <tr><td>PAYPAL_CLIENT_ID</td><td><span class="badge badge-pending">Pending</span></td><td>PayPal payments</td></tr>
+  <tr><td>WHATSAPP_TOKEN</td><td><span class="badge badge-pending">Pending</span></td><td>WhatsApp Business API</td></tr>
+</table>
+</div>
+
+<!-- ===================== 11. COMMANDS ===================== -->
+<h1 id="commands">11. Useful Commands</h1>
+
+<div class="section">
+<h3>Development</h3>
+<pre><code># Start local development server
+npm run dev
+
+# Deploy to production
+npm run deploy
+
+# TypeScript type checking
+npm run typecheck
+
+# Deploy via wrangler directly
+cd callmyprof/callmyprof && npx wrangler deploy</code></pre>
+
+<h3>Database Operations</h3>
+<pre><code># Run SQL on production D1
+npx wrangler d1 execute callmyprof-db --remote --command "SELECT ..."
+
+# Apply a migration
+npx wrangler d1 execute callmyprof-db --remote --file ../migrations/0012_cours_video_columns.sql
+
+# Check table schema
+npx wrangler d1 execute callmyprof-db --remote --command "SELECT sql FROM sqlite_master WHERE name='cours'"</code></pre>
+
+<h3>Secrets Management</h3>
+<pre><code># Set a secret
+npx wrangler secret put DAILY_API_KEY
+
+# List secrets
+npx wrangler secret list</code></pre>
+</div>
+
+<!-- ===================== 12. ROADMAP ===================== -->
+<h1 id="roadmap">12. Roadmap & Status</h1>
+
+<div class="section">
+<table>
+  <tr><th>Phase</th><th>Feature</th><th>Priority</th><th>Status</th></tr>
+  <tr><td>MVP</td><td>Landing, CRM, Booking, Video, Onboarding, Chatbot, Catalogue</td><td>Critical</td><td><span class="badge badge-done">Complete</span></td></tr>
+  <tr><td>Sessions</td><td>Private 1v1 sessions, Group classes, Video join buttons, Email notifications</td><td>High</td><td><span class="badge badge-done">Complete</span></td></tr>
+  <tr><td>Portals</td><td>Student portal, Tutor portal (dashboard, sessions, profile, support)</td><td>High</td><td><span class="badge badge-done">Complete</span></td></tr>
+  <tr><td>Phase 1</td><td>Stripe + PayPal payments</td><td>High</td><td><span class="badge badge-pending">Not Started</span></td></tr>
+  <tr><td>Phase 2</td><td>PDF invoices</td><td>High</td><td><span class="badge badge-pending">Not Started</span></td></tr>
+  <tr><td>Phase 3</td><td>Video links auto-generation</td><td>Medium</td><td><span class="badge badge-done">Complete</span></td></tr>
+  <tr><td>Phase 4</td><td>Student portal enhancements</td><td>Medium</td><td><span class="badge badge-partial">Partial</span></td></tr>
+  <tr><td>Phase 5</td><td>Group classes enhancements</td><td>Medium</td><td><span class="badge badge-partial">Partial</span></td></tr>
+  <tr><td>Phase 6</td><td>Discord notifications</td><td>Low</td><td><span class="badge badge-pending">Not Started</span></td></tr>
+  <tr><td>Phase 7</td><td>MFA admin</td><td>Low</td><td><span class="badge badge-pending">Not Started</span></td></tr>
+  <tr><td>Phase 8</td><td>WhatsApp Business</td><td>Low</td><td><span class="badge badge-pending">Not Started</span></td></tr>
+</table>
+</div>
+
+<div class="footer">
+  <p><strong>CallMyProf</strong> &mdash; Capleb SAL &mdash; https://callmyprof.com</p>
+  <p>Document generated on March 29, 2026 &mdash; Version 1.2.0</p>
+  <p>All rights reserved. Confidential &mdash; Internal Use Only.</p>
+</div>
+
+</body>
+</html>

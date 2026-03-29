@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CallMyProf - Tutoriel de Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #f4f5f7; color: #1e293b; line-height: 1.7; }
+.container { max-width: 820px; margin: 0 auto; padding: 24px 20px 60px; }
+
+/* Nav */
+.top-nav { background: linear-gradient(135deg, #1a1a2e, #0f3460); padding: 16px 24px; position: sticky; top: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center; }
+.top-nav a { color: #94a3b8; text-decoration: none; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 6px; transition: all 0.2s; }
+.top-nav a:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.top-nav .logo { color: #fff; font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.top-nav .logo span { color: #DC2626; }
+
+/* Cover */
+.cover { text-align: center; padding: 60px 20px 40px; }
+.cover h1 { font-size: 42px; font-weight: 800; color: #DC2626; letter-spacing: -1px; }
+.cover h2 { font-size: 22px; color: #475569; font-weight: 500; margin-top: 8px; }
+.cover .version { color: #94a3b8; font-size: 14px; margin-top: 12px; }
+
+/* Credentials */
+.creds-table { max-width: 500px; margin: 24px auto; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.creds-table tr { display: flex; }
+.creds-table td { padding: 12px 16px; font-size: 14px; }
+.creds-table td:first-child { width: 140px; font-weight: 700; background: #f1f5f9; color: #475569; }
+.creds-table td:last-child { flex: 1; background: #fff; font-family: 'Courier New', monospace; color: #DC2626; word-break: break-all; }
+
+/* Sections */
+h1.section { font-size: 28px; font-weight: 800; color: #DC2626; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 3px solid #DC2626; }
+h2.sub { font-size: 20px; font-weight: 700; color: #1e293b; margin: 32px 0 12px; display: flex; align-items: center; gap: 8px; }
+h2.sub .num { width: 28px; height: 28px; border-radius: 50%; background: #DC2626; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+
+/* Cards */
+.card { background: #fff; border-radius: 12px; padding: 20px 24px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+.card.info { border-left: 4px solid #DC2626; background: #fef2f2; }
+.card.info .title { color: #DC2626; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.card.info p { color: #475569; font-size: 14px; }
+
+/* Steps */
+ol.steps { padding-left: 0; counter-reset: step; list-style: none; }
+ol.steps li { padding: 8px 0 8px 36px; position: relative; font-size: 15px; color: #334155; }
+ol.steps li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; width: 24px; height: 24px; border-radius: 50%; background: #f1f5f9; color: #64748b; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; }
+ul.bullets { padding-left: 20px; }
+ul.bullets li { padding: 4px 0; font-size: 14px; color: #475569; }
+
+/* Code */
+.code { background: #1e293b; color: #e2e8f0; padding: 12px 16px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px; margin: 12px 0; overflow-x: auto; word-break: break-all; }
+.code a { color: #60a5fa; }
+
+/* Tables */
+table.data { width: 100%; border-collapse: collapse; margin: 16px 0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+table.data th { background: #1e293b; color: #fff; font-size: 13px; font-weight: 700; padding: 10px 14px; text-align: left; }
+table.data td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; background: #fff; }
+table.data tr:last-child td { border-bottom: none; }
+table.data td.mono { font-family: 'Courier New', monospace; font-size: 12px; color: #DC2626; word-break: break-all; }
+
+/* Badges */
+.badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+.badge-red { background: rgba(220,38,38,0.1); color: #DC2626; }
+.badge-blue { background: rgba(59,130,246,0.1); color: #3b82f6; }
+.badge-green { background: rgba(34,197,94,0.1); color: #22c55e; }
+.badge-black { background: rgba(0,0,0,0.08); color: #000; }
+.badge-pink { background: rgba(225,48,108,0.1); color: #E1306C; }
+
+/* TOC */
+.toc { background: #fff; border-radius: 12px; padding: 24px; margin: 24px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.toc h3 { font-size: 16px; margin-bottom: 12px; color: #1e293b; }
+.toc a { display: block; padding: 6px 0; color: #475569; text-decoration: none; font-size: 14px; border-bottom: 1px solid #f8fafc; }
+.toc a:hover { color: #DC2626; }
+.toc a span { color: #94a3b8; margin-right: 8px; }
+
+/* Footer */
+.footer { text-align: center; padding: 32px; color: #94a3b8; font-size: 13px; border-top: 1px solid #e2e8f0; margin-top: 48px; }
+
+@media (max-width: 600px) {
+  .cover h1 { font-size: 28px; }
+  .container { padding: 16px 12px 40px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <div class="logo">&#128222; Call<span>My</span>Prof</div>
+  <div>
+    <a href="#workflow1">Workflow 1</a>
+    <a href="#workflow2">Workflow 2</a>
+    <a href="#admin">Admin</a>
+    <a href="#emails">Emails</a>
+    <a href="#video">Video</a>
+    <a href="#portail">Portail</a>
+    <a href="#liens">Liens</a>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- COVER -->
+<div class="cover">
+  <h1>&#128222; CallMyProf</h1>
+  <h2>Tutoriel Complet de Test</h2>
+  <div class="version">Version 0.2.0 &mdash; 18 Mars 2026</div>
+</div>
+
+<table class="creds-table">
+  <tr><td>Admin URL</td><td><a href="https://callmyprof.com/login" target="_blank">callmyprof.com/login</a></td></tr>
+  <tr><td>Email</td><td>admin@callmyprof.com</td></tr>
+  <tr><td>Mot de passe</td><td>admin123</td></tr>
+  <tr><td>Site public</td><td><a href="https://callmyprof.com" target="_blank">callmyprof.com</a></td></tr>
+  <tr><td>Discord</td><td><a href="https://discord.gg/Bpf6ACbWAG" target="_blank">discord.gg/Bpf6ACbWAG</a></td></tr>
+</table>
+
+<!-- TOC -->
+<div class="toc">
+  <h3>&#128203; Sommaire</h3>
+  <a href="#workflow1"><span>1.</span> Workflow Client Organique (site)</a>
+  <a href="#workflow2"><span>2.</span> Workflow Client Pub (TikTok/Instagram)</a>
+  <a href="#admin"><span>3.</span> Dashboard Admin - Guide des pages</a>
+  <a href="#emails"><span>4.</span> Systeme Email</a>
+  <a href="#video"><span>5.</span> Video Conference</a>
+  <a href="#portail"><span>6.</span> Portail Etudiant</a>
+  <a href="#pricing"><span>7.</span> Tarification</a>
+  <a href="#liens"><span>8.</span> Tous les liens utiles</a>
+</div>
+
+<!-- ============================================================ -->
+<h1 class="section" id="workflow1">1. Workflow : Client depuis le site (Organique)</h1>
+<p>Ce workflow simule un client qui arrive sur callmyprof.com et remplit le formulaire.</p>
+
+<h2 class="sub"><span class="num">1</span> Remplir le formulaire CTA</h2>
+<ol class="steps">
+  <li>Ouvrir <a href="https://callmyprof.com" target="_blank">https://callmyprof.com</a></li>
+  <li>Tester la langue : cliquer <strong>EN / FR / AR</strong> dans la navbar</li>
+  <li>Scroller vers le formulaire (hero section)</li>
+  <li>Remplir : Prenom, Telephone, Email, Matiere, Niveau</li>
+  <li>Cliquer <strong>"Book Your FREE Trial Lesson"</strong></li>
+  <li>Verifier la redirection vers <code>/thanks</code></li>
+</ol>
+<div class="card info">
+  <div class="title">&#9989; Resultat attendu</div>
+  <p>Email de confirmation envoye au client + notification admin a contact@callmyprof.com. Le lead apparait dans le CRM admin (/leads).</p>
+</div>
+
+<h2 class="sub"><span class="num">2</span> Verifier dans le CRM admin</h2>
+<ol class="steps">
+  <li>Aller sur <a href="https://callmyprof.com/login" target="_blank">callmyprof.com/login</a></li>
+  <li>Se connecter : <code>admin@callmyprof.com</code> / <code>admin123</code></li>
+  <li>Aller dans <strong>Leads</strong> (sidebar)</li>
+  <li>Verifier que le nouveau lead apparait avec le badge <span class="badge badge-green">Organic</span></li>
+  <li>Cliquer sur le lead pour voir le detail</li>
+</ol>
+
+<h2 class="sub"><span class="num">3</span> Envoyer une invitation booking</h2>
+<ol class="steps">
+  <li>Sur la page detail du lead, cliquer <strong>"Send Booking Invite"</strong></li>
+  <li>Un email avec un lien unique est envoye au client</li>
+  <li>Le statut du lead passe a <span class="badge badge-blue">Contacted</span></li>
+  <li>Verifier l'email recu (sujet: "Book Your Free Consultation")</li>
+</ol>
+
+<h2 class="sub"><span class="num">4</span> Reserver un creneau (cote client)</h2>
+<ol class="steps">
+  <li>Ouvrir le lien du booking email (<code>/book/{token}</code>)</li>
+  <li>Choisir une date dans la grille</li>
+  <li>Choisir une heure</li>
+  <li>Confirmer la reservation</li>
+</ol>
+<div class="card info">
+  <div class="title">&#9989; Resultat attendu</div>
+  <p>Video room creee automatiquement (Daily.co ou Jitsi). Email de confirmation envoye avec lien visio + lien portail etudiant. Lead passe en "Qualified".</p>
+</div>
+
+<h2 class="sub"><span class="num">5</span> Portail etudiant</h2>
+<ol class="steps">
+  <li>Ouvrir le lien <strong>"Mon Dashboard"</strong> dans l'email de confirmation</li>
+  <li>Le portail affiche : carte de bienvenue, sessions a venir, profil, support</li>
+  <li>Cliquer <strong>"Join"</strong> pour rejoindre la session video</li>
+  <li>Tester le lien Discord dans la section support</li>
+</ol>
+
+<h2 class="sub"><span class="num">6</span> Rejoindre la session video</h2>
+<ol class="steps">
+  <li>Depuis le portail etudiant, cliquer <strong>"Join"</strong> sur la session</li>
+  <li>La page <code>/session/{id}</code> s'ouvre avec l'iframe video embedded</li>
+  <li>Le header affiche le nom, la date, l'heure, le badge <span class="badge badge-red">Live</span></li>
+  <li>L'URL reste <strong>callmyprof.com</strong> (pas de jitsi ou daily visible)</li>
+</ol>
+
+<!-- ============================================================ -->
+<h1 class="section" id="workflow2">2. Workflow : Client depuis une pub (TikTok/Instagram)</h1>
+<p>Ce workflow simule un client qui clique sur une pub TikTok ou Instagram.</p>
+
+<h2 class="sub"><span class="num">1</span> Simuler un clic pub avec UTM</h2>
+<p>Ouvrir ces liens dans le navigateur :</p>
+
+<div class="card">
+  <p><strong><span class="badge badge-black">TikTok</span></strong></p>
+  <div class="code"><a href="https://callmyprof.com?utm_source=tiktok&utm_medium=paid&utm_campaign=math2026" target="_blank">https://callmyprof.com?utm_source=tiktok&amp;utm_medium=paid&amp;utm_campaign=math2026</a></div>
+
+  <p><strong><span class="badge badge-pink">Instagram</span></strong></p>
+  <div class="code"><a href="https://callmyprof.com?utm_source=instagram&utm_medium=paid&utm_campaign=langues2026" target="_blank">https://callmyprof.com?utm_source=instagram&amp;utm_medium=paid&amp;utm_campaign=langues2026</a></div>
+
+  <p><strong><span class="badge badge-blue">Facebook</span></strong></p>
+  <div class="code"><a href="https://callmyprof.com?utm_source=facebook&utm_medium=paid&utm_campaign=sciences2026" target="_blank">https://callmyprof.com?utm_source=facebook&amp;utm_medium=paid&amp;utm_campaign=sciences2026</a></div>
+</div>
+
+<h2 class="sub"><span class="num">2</span> Remplir et soumettre le formulaire</h2>
+<ol class="steps">
+  <li>Remplir le formulaire comme dans le workflow 1</li>
+  <li>Soumettre</li>
+  <li>Verifier dans le CRM : le lead a le badge source correspondant</li>
+</ol>
+<div class="card info">
+  <div class="title">&#128293; Difference avec organique</div>
+  <p>Le lead a un badge colore (<span class="badge badge-black">tiktok</span> <span class="badge badge-pink">instagram</span> <span class="badge badge-blue">facebook</span>) dans la liste des leads. Cela permet de tracker la provenance et mesurer le ROI des pubs.</p>
+</div>
+
+<!-- ============================================================ -->
+<h1 class="section" id="admin">3. Dashboard Admin - Guide des pages</h1>
+
+<table class="data">
+  <tr><th>Page</th><th>URL</th><th>Description</th></tr>
+  <tr><td><strong>Dashboard</strong></td><td class="mono">/dashboard</td><td>Stats leads, tuteurs, sessions, alertes urgentes</td></tr>
+  <tr><td><strong>Sessions</strong></td><td class="mono">/sessions</td><td>Sessions video a venir/passees, bouton Rejoindre, countdown</td></tr>
+  <tr><td><strong>Leads</strong></td><td class="mono">/leads</td><td>CRM complet avec filtres, badges UTM, recherche</td></tr>
+  <tr><td><strong>Calendar</strong></td><td class="mono">/calendar</td><td>Vue hebdomadaire des disponibilites tuteurs</td></tr>
+  <tr><td><strong>Formateurs</strong></td><td class="mono">/formateurs</td><td>Liste et detail des tuteurs</td></tr>
+  <tr><td><strong>Familles</strong></td><td class="mono">/familles</td><td>Gestion parents et eleves</td></tr>
+  <tr><td><strong>Catalogue</strong></td><td class="mono">/catalogue</td><td>Domaines, sous-domaines, thematiques</td></tr>
+  <tr><td><strong>Cours</strong></td><td class="mono">/cours</td><td>Gestion des cours individuels</td></tr>
+  <tr><td><strong>Group Classes</strong></td><td class="mono">/group-classes</td><td>Cours collectifs</td></tr>
+  <tr><td><strong>Packages</strong></td><td class="mono">/packages</td><td>Packs de seances</td></tr>
+  <tr><td><strong>Payments</strong></td><td class="mono">/payments</td><td>Suivi des paiements</td></tr>
+  <tr><td><strong>Reviews</strong></td><td class="mono">/avis</td><td>Gestion des avis</td></tr>
+  <tr><td><strong>Statistics</strong></td><td class="mono">/statistiques</td><td>Graphiques et metriques</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h1 class="section" id="emails">4. Systeme Email</h1>
+
+<h2 class="sub">Emails automatiques</h2>
+<table class="data">
+  <tr><th>Email</th><th>Declencheur</th><th>Expediteur</th></tr>
+  <tr><td>Confirmation lead</td><td>Formulaire CTA soumis</td><td>noreply@ / nepasrepondre@</td></tr>
+  <tr><td>Notification admin</td><td>Nouveau lead cree</td><td>nepasrepondre@</td></tr>
+  <tr><td>Invitation booking</td><td>Admin clique "Send Booking"</td><td>noreply@ / nepasrepondre@</td></tr>
+  <tr><td>Confirmation booking</td><td>Etudiant reserve un creneau</td><td>noreply@ / nepasrepondre@</td></tr>
+  <tr><td>Reminder 1h avant</td><td>Cron automatique (*/15 min)</td><td>noreply@ / nepasrepondre@</td></tr>
+</table>
+
+<h2 class="sub">Regle expediteur</h2>
+<div class="card">
+  <ul class="bullets">
+    <li><strong>Langue FR :</strong> <code>nepasrepondre@callmyprof.com</code></li>
+    <li><strong>Langue EN/AR :</strong> <code>noreply@callmyprof.com</code></li>
+    <li><strong>Reply-to :</strong> <code>contact@callmyprof.com</code> (redirige vers Gmail)</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h1 class="section" id="video">5. Video Conference</h1>
+
+<div class="card">
+  <h3 style="margin-bottom:12px;">&#127909; Daily.co (Principal)</h3>
+  <ul class="bullets">
+    <li>Subdomain : <code>callmyprof.daily.co</code></li>
+    <li>Rooms privees avec tokens (anti-demarchage)</li>
+    <li>2000 minutes gratuites/mois</li>
+    <li>Au-dela : $0.04/min/participant</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3 style="margin-bottom:12px;">&#128187; Jitsi Meet (Fallback)</h3>
+  <ul class="bullets">
+    <li>100% gratuit, pas de limite</li>
+    <li>Utilise automatiquement si Daily.co echoue</li>
+    <li>Embedded dans callmyprof.com (pas de lien jitsi visible)</li>
+  </ul>
+</div>
+
+<h2 class="sub">Pages de demo</h2>
+<div class="card">
+  <p>&#127909; <strong>Daily.co :</strong> <a href="https://callmyprof.com/session-demo/daily" target="_blank">callmyprof.com/session-demo/daily</a></p>
+  <p>&#128187; <strong>Jitsi :</strong> <a href="https://callmyprof.com/session-demo/jitsi" target="_blank">callmyprof.com/session-demo/jitsi</a></p>
+  <p style="margin-top:8px;color:#94a3b8;font-size:13px;">Les deux sont embedded dans une page callmyprof.com branded. Le client ne voit jamais "jitsi" ou "daily".</p>
+</div>
+
+<!-- ============================================================ -->
+<h1 class="section" id="portail">6. Portail Etudiant</h1>
+
+<div class="card">
+  <h3 style="margin-bottom:12px;">&#128100; Acces</h3>
+  <ul class="bullets">
+    <li>URL : <code>callmyprof.com/student/{leadId}?key={accessKey}</code></li>
+    <li>Pas de mot de passe &mdash; magic link envoye par email</li>
+    <li>Cle deterministe basee sur leadId + email (SHA-256)</li>
+  </ul>
+</div>
+
+<h2 class="sub">Lien de test</h2>
+<div class="code"><a href="https://callmyprof.com/student/c5153b0d-e73a-47dd-8a10-75cc2cb581e0?key=f707a2f7a29bc8ab" target="_blank" style="color:#60a5fa;">https://callmyprof.com/student/c5153b0d-e73a-47dd-8a10-75cc2cb581e0?key=f707a2f7a29bc8ab</a></div>
+
+<h2 class="sub">Test mauvaise cle</h2>
+<div class="code"><a href="https://callmyprof.com/student/c5153b0d-e73a-47dd-8a10-75cc2cb581e0?key=wrong" target="_blank" style="color:#60a5fa;">https://callmyprof.com/student/c5153b0d-e73a-47dd-8a10-75cc2cb581e0?key=wrong</a></div>
+<p style="color:#94a3b8;font-size:13px;">Resultat : page "Access Denied" avec cadenas.</p>
+
+<h2 class="sub">Contenu du portail</h2>
+<div class="card">
+  <ul class="bullets">
+    <li>&#128075; Carte de bienvenue avec le prenom</li>
+    <li>&#127909; Sessions a venir avec countdown + bouton "Rejoindre"</li>
+    <li>&#9989; Historique des sessions passees</li>
+    <li>&#128100; Profil (nom, email, telephone)</li>
+    <li>&#128172; Liens support : Email, FAQ, Discord</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h1 class="section" id="pricing">7. Tarification</h1>
+
+<table class="data">
+  <tr><th></th><th>&#128293; Cours Collectif</th><th>Individuel</th></tr>
+  <tr><td><strong>Prix/seance</strong></td><td style="color:#DC2626;font-weight:800;font-size:18px;">&#8364;15</td><td>&#8364;30 (unique) / <strong style="color:#DC2626;">&#8364;25</strong> (x10)</td></tr>
+  <tr><td><strong>Participants</strong></td><td>2-6 etudiants</td><td>1 etudiant</td></tr>
+  <tr><td><strong>Badge</strong></td><td><span class="badge badge-red">Best Value</span></td><td>-</td></tr>
+</table>
+<p style="color:#94a3b8;font-size:13px;">La section pricing est en haut de la landing page, juste apres le hero.</p>
+
+<!-- ============================================================ -->
+<h1 class="section" id="liens">8. Tous les liens utiles</h1>
+
+<table class="data">
+  <tr><th>Page</th><th>URL</th></tr>
+  <tr><td>Landing EN</td><td class="mono"><a href="https://callmyprof.com" target="_blank">callmyprof.com</a></td></tr>
+  <tr><td>Landing FR</td><td class="mono"><a href="https://callmyprof.com?lang=fr" target="_blank">callmyprof.com?lang=fr</a></td></tr>
+  <tr><td>Landing AR</td><td class="mono"><a href="https://callmyprof.com?lang=ar" target="_blank">callmyprof.com?lang=ar</a></td></tr>
+  <tr><td>Admin login</td><td class="mono"><a href="https://callmyprof.com/login" target="_blank">callmyprof.com/login</a></td></tr>
+  <tr><td>Dashboard</td><td class="mono"><a href="https://callmyprof.com/dashboard" target="_blank">callmyprof.com/dashboard</a></td></tr>
+  <tr><td>Sessions</td><td class="mono"><a href="https://callmyprof.com/sessions" target="_blank">callmyprof.com/sessions</a></td></tr>
+  <tr><td>Leads</td><td class="mono"><a href="https://callmyprof.com/leads" target="_blank">callmyprof.com/leads</a></td></tr>
+  <tr><td>Calendar</td><td class="mono"><a href="https://callmyprof.com/calendar" target="_blank">callmyprof.com/calendar</a></td></tr>
+  <tr><td>Portail etudiant</td><td class="mono"><a href="https://callmyprof.com/student/c5153b0d-e73a-47dd-8a10-75cc2cb581e0?key=f707a2f7a29bc8ab" target="_blank">callmyprof.com/student/{id}?key={key}</a></td></tr>
+  <tr><td>Demo Daily.co</td><td class="mono"><a href="https://callmyprof.com/session-demo/daily" target="_blank">callmyprof.com/session-demo/daily</a></td></tr>
+  <tr><td>Demo Jitsi</td><td class="mono"><a href="https://callmyprof.com/session-demo/jitsi" target="_blank">callmyprof.com/session-demo/jitsi</a></td></tr>
+  <tr><td>Onboarding tuteur</td><td class="mono"><a href="https://callmyprof.com/onboarding" target="_blank">callmyprof.com/onboarding</a></td></tr>
+  <tr><td>FAQ</td><td class="mono"><a href="https://callmyprof.com/faq" target="_blank">callmyprof.com/faq</a></td></tr>
+  <tr><td>Discord</td><td class="mono"><a href="https://discord.gg/Bpf6ACbWAG" target="_blank">discord.gg/Bpf6ACbWAG</a></td></tr>
+  <tr><td>UTM TikTok</td><td class="mono"><a href="https://callmyprof.com?utm_source=tiktok&utm_medium=paid&utm_campaign=test" target="_blank">callmyprof.com?utm_source=tiktok&amp;...</a></td></tr>
+  <tr><td>UTM Instagram</td><td class="mono"><a href="https://callmyprof.com?utm_source=instagram&utm_medium=paid&utm_campaign=test" target="_blank">callmyprof.com?utm_source=instagram&amp;...</a></td></tr>
+</table>
+
+<div class="footer">
+  &#128222; CallMyProf &bull; Capleb SAL &bull; 2026<br>
+  <span style="font-size:11px;">Document genere automatiquement le 18 Mars 2026</span>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "name": "callmyprof",
+  "main": "src/index.js",
+  "workers_dev": true,
+  "preview_urls": true,
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "routes": [
+    {
+      "pattern": "callmyprof.com/*",
+      "zone_name": "callmyprof.com"
+    },
+    {
+      "pattern": "www.callmyprof.com/*",
+      "zone_name": "callmyprof.com"
+    },
+    {
+      "pattern": "callmyprof.com",
+      "zone_name": "callmyprof.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.callmyprof.com",
+      "zone_name": "callmyprof.com",
+      "custom_domain": true
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "*/15 * * * *"
+    ]
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "2294dbe8-f898-4c8c-a8fd-0f62563e19a9"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "callmyprof-docs"
+    }
+  ]
+}
