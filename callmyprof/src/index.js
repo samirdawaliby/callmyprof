@@ -11229,29 +11229,28 @@ async function createCours(env, request) {
         try { return new Date(date_cours).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }); }
         catch { return date_cours; }
       })();
-      const sessionInfo = { thematique: thematiqueNom, date: dateFormatted, heure: heure_debut, duree: `${duree} min`, lieu: lieu || "En ligne", formateur: formateurNomFull };
+      const sessionInfo = { thematique: thematiqueNom, date: dateFormatted, heure: heure_debut, duree: `${duree} min`, lieu: lieu || "En ligne", formateur: formateurNomFull, coursId };
       // Email to tutor
       if (formateurInfo?.email) {
         const eleveNames = [];
         if (Array.isArray(eleve_ids) && eleve_ids.length > 0) {
           for (const eleveId of eleve_ids) {
-            const el = await env.DB.prepare("SELECT prenom, nom FROM eleves WHERE id = ?").bind(eleveId).first();
+            const el = await env.DB.prepare("SELECT prenom, nom FROM users WHERE id = ?").bind(eleveId).first();
             if (el) eleveNames.push(`${el.prenom} ${el.nom || ""}`.trim());
           }
         }
         const tutorMail = sessionCreatedTutorEmail({ ...sessionInfo, eleves: eleveNames });
         await sendEmail(env, { to: formateurInfo.email, subject: tutorMail.subject, html: tutorMail.html });
       }
-      // Email to each student's parent
+      // Email to each student
       if (Array.isArray(eleve_ids) && eleve_ids.length > 0) {
         for (const eleveId of eleve_ids) {
-          const ep = await env.DB.prepare(`
-            SELECT e.prenom as eleve_prenom, e.nom as eleve_nom, p.email as parent_email, p.prenom as parent_prenom
-            FROM eleves e LEFT JOIN parents p ON p.id = e.parent_id WHERE e.id = ?
+          const student = await env.DB.prepare(`
+            SELECT prenom, nom, email FROM users WHERE id = ?
           `).bind(eleveId).first();
-          if (ep?.parent_email) {
-            const studentMail = sessionCreatedStudentEmail({ ...sessionInfo, eleve: `${ep.eleve_prenom} ${ep.eleve_nom || ""}`.trim(), parent: ep.parent_prenom || "" });
-            await sendEmail(env, { to: ep.parent_email, subject: studentMail.subject, html: studentMail.html });
+          if (student?.email) {
+            const studentMail = sessionCreatedStudentEmail({ ...sessionInfo, eleve: `${student.prenom} ${student.nom || ""}`.trim(), parent: student.prenom || "" });
+            await sendEmail(env, { to: student.email, subject: studentMail.subject, html: studentMail.html });
           }
         }
       }
@@ -17729,63 +17728,523 @@ function sessionReminderEmail(data) {
 }
 __name(sessionReminderEmail, "sessionReminderEmail");
 function sessionCreatedStudentEmail(data) {
-  const subject = `CallMyProf - Session planifi\xE9e pour ${data.eleve}`;
+  const sessionLink = `https://callmyprof.com/portal/sessions/${data.coursId}`;
+  const subject = `CallMyProf - Action requise : nouvelle session pour ${data.eleve}`;
+  const detailRow = (icon, label, value) => `
+    <tr>
+      <td style="padding:14px 16px;border-bottom:1px solid #f1f5f9;width:44px;vertical-align:middle">
+        <div style="width:36px;height:36px;background:#FEF2F2;border-radius:10px;text-align:center;line-height:36px;font-size:18px">${icon}</div>
+      </td>
+      <td style="padding:14px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600;margin-bottom:2px">${label}</div>
+        <div style="font-size:15px;color:#1e293b;font-weight:600">${value}</div>
+      </td>
+    </tr>`;
   const content = `
-    <div class="header" style="background: linear-gradient(135deg, #DC2626 0%, #b91c1c 100%);">
-      <h1>&#128197; Session confirm\xE9e</h1>
-      <p>Une nouvelle session a \xE9t\xE9 planifi\xE9e</p>
+    <div class="header" style="background: linear-gradient(135deg, #DC2626 0%, #b91c1c 100%);padding:36px 40px;text-align:center">
+      <h1 style="color:#fff;font-size:26px;margin:0">&#128276; Action requise</h1>
+      <p style="color:rgba(255,255,255,0.8);font-size:14px;margin:10px 0 0">Une nouvelle session attend votre confirmation</p>
     </div>
-    <div class="body">
-      <h2>Bonjour ${data.parent || ''} !</h2>
-      <p>Une session de cours a \xE9t\xE9 planifi\xE9e pour <strong>${data.eleve}</strong>. Voici les d\xE9tails :</p>
-      <div class="info-box">
-        <div class="info-row"><span class="info-label">&#127891; Mati\xE8re</span><span>${data.thematique}</span></div>
-        <div class="info-row"><span class="info-label">&#128197; Date</span><span>${data.date}</span></div>
-        <div class="info-row"><span class="info-label">&#128348; Heure</span><span>${data.heure}</span></div>
-        <div class="info-row"><span class="info-label">&#9203; Dur\xE9e</span><span>${data.duree}</span></div>
-        <div class="info-row"><span class="info-label">&#127891; Formateur</span><span>${data.formateur}</span></div>
-        <div class="info-row"><span class="info-label">&#128205; Lieu</span><span>${data.lieu}</span></div>
+    <div class="body" style="padding:36px 40px">
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 8px">Bonjour ${data.parent || data.eleve} !</h2>
+      <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 8px">Une session de cours a \xE9t\xE9 planifi\xE9e pour <strong>${data.eleve}</strong>.</p>
+      <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px 18px;margin:16px 0 24px;font-size:14px;color:#92400E">
+        <strong>&#9888; En attente de votre r\xE9ponse</strong> &mdash; Veuillez accepter, refuser ou proposer un autre horaire.
       </div>
-      <p style="font-size:13px;color:#94a3b8;">Pour toute question, contactez-nous \xE0 <a href="mailto:contact@callmyprof.com">contact@callmyprof.com</a></p>
+      <table style="width:100%;border-collapse:collapse;background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0" cellpadding="0" cellspacing="0">
+        ${detailRow('&#128218;', 'Mati\xE8re', data.thematique)}
+        ${detailRow('&#128197;', 'Date', data.date)}
+        ${detailRow('&#128348;', 'Heure', data.heure)}
+        ${detailRow('&#9203;', 'Dur\xE9e', data.duree)}
+        ${detailRow('&#128104;&#8205;&#127891;', 'Formateur', data.formateur)}
+        ${detailRow('&#128205;', 'Lieu', data.lieu)}
+      </table>
+      <div style="text-align:center;margin:28px 0 8px">
+        <a href="${sessionLink}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#DC2626,#ef4444);color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">&#9989; Accepter ou modifier la session</a>
+      </div>
+      <p style="font-size:13px;color:#94a3b8;text-align:center;margin-top:24px">Pour toute question, contactez-nous \xE0 <a href="mailto:contact@callmyprof.com" style="color:#DC2626;text-decoration:none">contact@callmyprof.com</a></p>
     </div>
-    <div class="footer">
-      <p>&copy; 2026 CallMyProf &bull; <a href="https://callmyprof.com">callmyprof.com</a></p>
+    <div class="footer" style="padding:24px 40px;background:#f8fafc;text-align:center;border-top:1px solid #e2e8f0">
+      <p style="color:#94a3b8;font-size:12px;margin:0">&copy; 2026 CallMyProf &bull; <a href="https://callmyprof.com" style="color:#DC2626;text-decoration:none">callmyprof.com</a></p>
     </div>
   `;
   return { subject, html: emailLayout(content) };
 }
 __name(sessionCreatedStudentEmail, "sessionCreatedStudentEmail");
 function sessionCreatedTutorEmail(data) {
-  const subject = `CallMyProf - Nouvelle session : ${data.thematique} le ${data.date}`;
+  const sessionLink = `https://callmyprof.com/tutor/classes/${data.coursId}`;
+  const subject = `CallMyProf - Action requise : ${data.thematique} le ${data.date}`;
   const elevesHtml = data.eleves && data.eleves.length > 0
-    ? data.eleves.map((e) => `<li style="padding:4px 0;color:#475569;">${e}</li>`).join("")
-    : "<li style='color:#94a3b8;'>Aucun \xE9l\xE8ve assign\xE9</li>";
+    ? data.eleves.map((e) => `<div style="display:inline-block;padding:6px 14px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;margin:4px;font-size:14px;color:#1e40af;font-weight:600">&#128100; ${e}</div>`).join("")
+    : '<div style="padding:6px 14px;color:#94a3b8;font-size:14px">Aucun \xE9l\xE8ve assign\xE9</div>';
+  const detailRow = (icon, label, value) => `
+    <tr>
+      <td style="padding:14px 16px;border-bottom:1px solid #f1f5f9;width:44px;vertical-align:middle">
+        <div style="width:36px;height:36px;background:#EFF6FF;border-radius:10px;text-align:center;line-height:36px;font-size:18px">${icon}</div>
+      </td>
+      <td style="padding:14px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600;margin-bottom:2px">${label}</div>
+        <div style="font-size:15px;color:#1e293b;font-weight:600">${value}</div>
+      </td>
+    </tr>`;
   const content = `
-    <div class="header" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
-      <h1>&#128197; Nouvelle session assign\xE9e</h1>
-      <p>Vous avez une nouvelle session de cours</p>
+    <div class="header" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);padding:36px 40px;text-align:center">
+      <h1 style="color:#fff;font-size:26px;margin:0">&#128276; Action requise</h1>
+      <p style="color:rgba(255,255,255,0.6);font-size:14px;margin:10px 0 0">Une nouvelle session attend votre confirmation</p>
     </div>
-    <div class="body">
-      <h2>Bonjour ${data.formateur} !</h2>
-      <p>Une nouvelle session vous a \xE9t\xE9 assign\xE9e. Voici les d\xE9tails :</p>
-      <div class="info-box">
-        <div class="info-row"><span class="info-label">&#127891; Mati\xE8re</span><span>${data.thematique}</span></div>
-        <div class="info-row"><span class="info-label">&#128197; Date</span><span>${data.date}</span></div>
-        <div class="info-row"><span class="info-label">&#128348; Heure</span><span>${data.heure}</span></div>
-        <div class="info-row"><span class="info-label">&#9203; Dur\xE9e</span><span>${data.duree}</span></div>
-        <div class="info-row"><span class="info-label">&#128205; Lieu</span><span>${data.lieu}</span></div>
+    <div class="body" style="padding:36px 40px">
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 8px">Bonjour ${data.formateur} !</h2>
+      <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 8px">Une nouvelle session vous a \xE9t\xE9 assign\xE9e.</p>
+      <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px 18px;margin:16px 0 24px;font-size:14px;color:#92400E">
+        <strong>&#9888; En attente de votre r\xE9ponse</strong> &mdash; Veuillez accepter, refuser ou proposer un autre horaire.
       </div>
-      <p><strong>\xC9l\xE8ve(s) :</strong></p>
-      <ul style="margin:0;padding-left:20px;">${elevesHtml}</ul>
-      <p style="margin-top:20px;font-size:13px;color:#94a3b8;">Connectez-vous \xE0 votre espace formateur pour plus de d\xE9tails : <a href="https://callmyprof.com/tutor">callmyprof.com/tutor</a></p>
+      <table style="width:100%;border-collapse:collapse;background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0" cellpadding="0" cellspacing="0">
+        ${detailRow('&#128218;', 'Mati\xE8re', data.thematique)}
+        ${detailRow('&#128197;', 'Date', data.date)}
+        ${detailRow('&#128348;', 'Heure', data.heure)}
+        ${detailRow('&#9203;', 'Dur\xE9e', data.duree)}
+        ${detailRow('&#128205;', 'Lieu', data.lieu)}
+      </table>
+      <div style="margin:24px 0 8px">
+        <div style="font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin-bottom:10px">&#128100; \xC9l\xE8ve(s) assign\xE9(s)</div>
+        <div>${elevesHtml}</div>
+      </div>
+      <div style="text-align:center;margin:28px 0 8px">
+        <a href="${sessionLink}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#1e293b,#334155);color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">&#9989; Accepter ou modifier la session</a>
+      </div>
+      <p style="font-size:13px;color:#94a3b8;text-align:center;margin-top:24px">Connectez-vous \xE0 votre espace formateur : <a href="https://callmyprof.com/tutor" style="color:#DC2626;text-decoration:none">callmyprof.com/tutor</a></p>
     </div>
-    <div class="footer">
-      <p>&copy; 2026 CallMyProf &bull; <a href="https://callmyprof.com">callmyprof.com</a></p>
+    <div class="footer" style="padding:24px 40px;background:#f8fafc;text-align:center;border-top:1px solid #e2e8f0">
+      <p style="color:#94a3b8;font-size:12px;margin:0">&copy; 2026 CallMyProf &bull; <a href="https://callmyprof.com" style="color:#DC2626;text-decoration:none">callmyprof.com</a></p>
     </div>
   `;
   return { subject, html: emailLayout(content) };
 }
 __name(sessionCreatedTutorEmail, "sessionCreatedTutorEmail");
+function sessionModificationEmail(data) {
+  const subject = `CallMyProf - ${data.proposerName} propose un changement d'horaire`;
+  const detailRow = (icon, label, value) => `
+    <tr>
+      <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;width:44px;vertical-align:middle">
+        <div style="width:36px;height:36px;background:#FFF7ED;border-radius:10px;text-align:center;line-height:36px;font-size:18px">${icon}</div>
+      </td>
+      <td style="padding:12px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600;margin-bottom:2px">${label}</div>
+        <div style="font-size:15px;color:#1e293b;font-weight:600">${value}</div>
+      </td>
+    </tr>`;
+  const content = `
+    <div class="header" style="background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);padding:36px 40px;text-align:center">
+      <h1 style="color:#fff;font-size:26px;margin:0">&#128260; Modification propos\xE9e</h1>
+      <p style="color:rgba(255,255,255,0.85);font-size:14px;margin:10px 0 0">${data.proposerName} souhaite modifier l'horaire</p>
+    </div>
+    <div class="body" style="padding:36px 40px">
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 8px">Bonjour ${data.recipientName} !</h2>
+      <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 20px"><strong>${data.proposerName}</strong> a propos\xE9 un changement d'horaire pour la session <strong>${data.thematique}</strong>.</p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:16px" cellpadding="0" cellspacing="0">
+        <tr><td style="padding:0 8px 0 0;width:50%;vertical-align:top">
+          <div style="background:#FEE2E2;border-radius:10px;padding:16px;text-align:center">
+            <div style="font-size:11px;text-transform:uppercase;color:#991B1B;font-weight:700;margin-bottom:6px">Horaire actuel</div>
+            <div style="font-size:16px;color:#1e293b;font-weight:700">${data.currentDate}</div>
+            <div style="font-size:14px;color:#475569">${data.currentTime}</div>
+          </div>
+        </td>
+        <td style="padding:0 0 0 8px;width:50%;vertical-align:top">
+          <div style="background:#DCFCE7;border-radius:10px;padding:16px;text-align:center">
+            <div style="font-size:11px;text-transform:uppercase;color:#166534;font-weight:700;margin-bottom:6px">Nouvel horaire propos\xE9</div>
+            <div style="font-size:16px;color:#1e293b;font-weight:700">${data.proposedDate}</div>
+            <div style="font-size:14px;color:#475569">${data.proposedTime}</div>
+          </div>
+        </td></tr>
+      </table>
+      ${data.note ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin:16px 0;font-size:14px;color:#475569"><strong>Note :</strong> ${data.note}</div>` : ''}
+      <div style="text-align:center;margin:28px 0 8px">
+        <a href="${data.actionLink}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#F59E0B,#D97706);color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">&#128197; Voir et r\xE9pondre</a>
+      </div>
+    </div>
+    <div class="footer" style="padding:24px 40px;background:#f8fafc;text-align:center;border-top:1px solid #e2e8f0">
+      <p style="color:#94a3b8;font-size:12px;margin:0">&copy; 2026 CallMyProf &bull; <a href="https://callmyprof.com" style="color:#DC2626;text-decoration:none">callmyprof.com</a></p>
+    </div>
+  `;
+  return { subject, html: emailLayout(content) };
+}
+__name(sessionModificationEmail, "sessionModificationEmail");
+function sessionConfirmedEmail(data) {
+  const subject = `CallMyProf - Session confirm\xE9e : ${data.thematique} le ${data.date}`;
+  const content = `
+    <div class="header" style="background:linear-gradient(135deg,#16A34A 0%,#15803d 100%);padding:36px 40px;text-align:center">
+      <h1 style="color:#fff;font-size:26px;margin:0">&#9989; Session confirm\xE9e !</h1>
+      <p style="color:rgba(255,255,255,0.85);font-size:14px;margin:10px 0 0">Tous les participants ont accept\xE9</p>
+    </div>
+    <div class="body" style="padding:36px 40px">
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 8px">Bonjour ${data.recipientName} !</h2>
+      <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 24px">La session <strong>${data.thematique}</strong> a \xE9t\xE9 confirm\xE9e par tous les participants. Rendez-vous le <strong>${data.date}</strong> \xE0 <strong>${data.heure}</strong>.</p>
+      <div style="background:#DCFCE7;border:1px solid #BBF7D0;border-radius:10px;padding:18px;text-align:center;margin:0 0 24px">
+        <div style="font-size:24px;margin-bottom:4px">&#127891;</div>
+        <div style="font-size:18px;font-weight:700;color:#166534">${data.thematique}</div>
+        <div style="font-size:15px;color:#475569;margin-top:4px">${data.date} \xE0 ${data.heure}</div>
+        <div style="font-size:13px;color:#64748b;margin-top:2px">${data.lieu}</div>
+      </div>
+      ${data.videoUrl ? `<div style="text-align:center;margin:0 0 16px"><a href="${data.videoUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#2563EB,#3B82F6);color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">&#127909; Rejoindre la session</a></div>` : ''}
+      <div style="text-align:center">
+        <a href="${data.portalLink}" style="display:inline-block;padding:12px 28px;background:#f1f5f9;color:#475569;text-decoration:none;border-radius:10px;font-weight:600;font-size:14px;border:1px solid #e2e8f0">&#128197; Voir dans mon espace</a>
+      </div>
+    </div>
+    <div class="footer" style="padding:24px 40px;background:#f8fafc;text-align:center;border-top:1px solid #e2e8f0">
+      <p style="color:#94a3b8;font-size:12px;margin:0">&copy; 2026 CallMyProf &bull; <a href="https://callmyprof.com" style="color:#DC2626;text-decoration:none">callmyprof.com</a></p>
+    </div>
+  `;
+  return { subject, html: emailLayout(content) };
+}
+__name(sessionConfirmedEmail, "sessionConfirmedEmail");
+// === SESSION ACCEPTANCE WORKFLOW ===
+async function checkAndAutoConfirm(env, coursId) {
+  const cours = await env.DB.prepare("SELECT tutor_status, date_cours, heure_debut, video_room_url, video_host_url, formateur_id, thematique_id, lieu FROM cours WHERE id = ?").bind(coursId).first();
+  if (!cours) return;
+  const eleves = await env.DB.prepare("SELECT eleve_status FROM cours_eleves WHERE cours_id = ?").bind(coursId).all();
+  const allEleves = eleves.results || [];
+  const atLeastOneAccepted = allEleves.some(e => e.eleve_status === 'accepted');
+  if (cours.tutor_status === 'accepted' && atLeastOneAccepted) {
+    await env.DB.prepare("UPDATE cours SET statut = 'confirme' WHERE id = ? AND statut = 'planifie'").bind(coursId).run();
+    // Send confirmed email to all participants
+    try {
+      const thematique = await env.DB.prepare("SELECT nom FROM thematiques WHERE id = ?").bind(cours.thematique_id).first();
+      const formateur = await env.DB.prepare("SELECT email, prenom, nom FROM formateurs WHERE id = ?").bind(cours.formateur_id).first();
+      const dateFormatted = (() => { try { return new Date(cours.date_cours).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }); } catch { return cours.date_cours; } })();
+      const baseData = { thematique: thematique?.nom || '', date: dateFormatted, heure: cours.heure_debut, lieu: cours.lieu || 'En ligne' };
+      // Email tutor
+      if (formateur?.email) {
+        const mail = sessionConfirmedEmail({ ...baseData, recipientName: `${formateur.prenom} ${formateur.nom}`, videoUrl: cours.video_host_url || cours.video_room_url, portalLink: `https://callmyprof.com/tutor/classes/${coursId}` });
+        await sendEmail(env, { to: formateur.email, subject: mail.subject, html: mail.html });
+      }
+      // Email each accepted student
+      const students = await env.DB.prepare("SELECT ce.eleve_id, ce.eleve_status, u.email, u.prenom, u.nom FROM cours_eleves ce JOIN users u ON u.id = ce.eleve_id WHERE ce.cours_id = ?").bind(coursId).all();
+      for (const s of (students.results || [])) {
+        if (s.email && s.eleve_status === 'accepted') {
+          const mail = sessionConfirmedEmail({ ...baseData, recipientName: `${s.prenom} ${s.nom || ''}`, videoUrl: cours.video_room_url, portalLink: `https://callmyprof.com/portal/sessions/${coursId}` });
+          await sendEmail(env, { to: s.email, subject: mail.subject, html: mail.html });
+        }
+      }
+    } catch (e) { console.error('Auto-confirm email error:', e); }
+  }
+}
+__name(checkAndAutoConfirm, "checkAndAutoConfirm");
+function acceptanceStatusBadge(status) {
+  if (status === 'accepted') return '<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#DCFCE7;color:#166534">&#9989; Accept\xE9e</span>';
+  if (status === 'rejected') return '<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#FEE2E2;color:#991B1B">&#10060; Refus\xE9e</span>';
+  if (status === 'modification_requested') return '<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#FEF3C7;color:#92400E">&#128260; Modification</span>';
+  return '<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#FEF3C7;color:#92400E">&#9203; En attente</span>';
+}
+__name(acceptanceStatusBadge, "acceptanceStatusBadge");
+// Student session detail page
+async function renderStudentSessionDetail(env, user, coursId) {
+  const userId = user.id;
+  const enrollment = await env.DB.prepare("SELECT * FROM cours_eleves WHERE cours_id = ? AND eleve_id = ?").bind(coursId, userId).first();
+  if (!enrollment) return htmlStudentPage({ title: "Session introuvable", content: '<div style="text-align:center;padding:60px 20px"><h2>Session introuvable</h2><p style="color:#64748B">Vous n\'avez pas acc\xE8s \xE0 cette session.</p><a href="/portal/sessions" style="color:#DC2626">&#8592; Retour</a></div>', activePage: "sessions", userName: `${user.prenom} ${user.nom}` });
+  const cours = await env.DB.prepare(`
+    SELECT c.*, t.nom as thematique, f.prenom as f_prenom, f.nom as f_nom
+    FROM cours c
+    LEFT JOIN thematiques t ON t.id = c.thematique_id
+    LEFT JOIN formateurs f ON f.id = c.formateur_id
+    WHERE c.id = ?
+  `).bind(coursId).first();
+  if (!cours) return htmlStudentPage({ title: "Session introuvable", content: '<div style="text-align:center;padding:60px 20px"><h2>Session introuvable</h2><a href="/portal/sessions" style="color:#DC2626">&#8592; Retour</a></div>', activePage: "sessions", userName: `${user.prenom} ${user.nom}` });
+  const formateurName = `${cours.f_prenom || ''} ${cours.f_nom || ''}`.trim();
+  const dateFormatted = (() => { try { return new Date(cours.date_cours).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }); } catch { return cours.date_cours; } })();
+  const eleveStatus = enrollment.eleve_status || 'pending';
+  const tutorStatus = cours.tutor_status || 'pending';
+  // Check if tutor proposed a modification
+  const tutorProposed = tutorStatus === 'modification_requested' && cours.tutor_proposed_date;
+  const infoCard = (icon, label, value) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+      <div style="width:40px;height:40px;background:#FEF2F2;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${icon}</div>
+      <div><div style="font-size:11px;text-transform:uppercase;color:#94a3b8;font-weight:600">${label}</div><div style="font-size:15px;color:#1e293b;font-weight:600">${value}</div></div>
+    </div>`;
+  const actionSection = eleveStatus === 'pending' ? `
+    <div style="margin-top:28px">
+      <h3 style="font-size:16px;color:#1e293b;margin-bottom:16px">&#9997; Votre r\xE9ponse</h3>
+      ${tutorProposed ? `
+        <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:16px;margin-bottom:20px">
+          <strong style="color:#92400E">&#128260; Le formateur propose un nouvel horaire :</strong>
+          <div style="margin-top:8px;font-size:16px;font-weight:700;color:#1e293b">${cours.tutor_proposed_date} \xE0 ${cours.tutor_proposed_time}</div>
+          ${cours.tutor_response_note ? `<div style="margin-top:6px;color:#64748B;font-size:13px">"${escapeHtml(cours.tutor_response_note)}"</div>` : ''}
+        </div>` : ''}
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+        <button onclick="respondSession('accept')" style="padding:12px 28px;background:#16A34A;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">&#9989; Accepter</button>
+        <button onclick="document.getElementById('rejectForm').style.display='block';this.style.display='none'" style="padding:12px 28px;background:#DC2626;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">&#10060; Refuser</button>
+        <button onclick="document.getElementById('modifyForm').style.display='block';this.style.display='none'" style="padding:12px 28px;background:#F59E0B;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">&#128260; Proposer un autre horaire</button>
+      </div>
+      <div id="rejectForm" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:20px;margin-bottom:16px">
+        <label style="font-weight:600;color:#991B1B;font-size:13px">Raison du refus (optionnel)</label>
+        <textarea id="rejectNote" rows="3" style="width:100%;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;resize:vertical" placeholder="Expliquez pourquoi..."></textarea>
+        <button onclick="respondSession('reject')" style="margin-top:10px;padding:10px 24px;background:#DC2626;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer">Confirmer le refus</button>
+      </div>
+      <div id="modifyForm" style="display:none;background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:20px;margin-bottom:16px">
+        <label style="font-weight:600;color:#92400E;font-size:13px">Proposer un nouvel horaire</label>
+        <div style="display:flex;gap:12px;margin-top:10px">
+          <input type="date" id="propDate" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px" value="${cours.date_cours}">
+          <input type="time" id="propTime" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px" value="${cours.heure_debut}">
+        </div>
+        <textarea id="modifyNote" rows="2" style="width:100%;margin-top:10px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;resize:vertical" placeholder="Note (optionnel)"></textarea>
+        <button onclick="respondSession('request_modification')" style="margin-top:10px;padding:10px 24px;background:#F59E0B;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer">Envoyer la proposition</button>
+      </div>
+    </div>` : `
+    <div style="margin-top:28px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px">
+      <h3 style="font-size:14px;color:#64748B;margin:0 0 8px">Votre r\xE9ponse</h3>
+      <div>${acceptanceStatusBadge(eleveStatus)}</div>
+      ${enrollment.eleve_response_note ? `<div style="margin-top:8px;color:#475569;font-size:13px">"${escapeHtml(enrollment.eleve_response_note)}"</div>` : ''}
+      ${eleveStatus === 'modification_requested' && enrollment.eleve_proposed_date ? `<div style="margin-top:8px;font-size:13px;color:#92400E">Horaire propos\xE9 : <strong>${enrollment.eleve_proposed_date} \xE0 ${enrollment.eleve_proposed_time}</strong></div>` : ''}
+    </div>`;
+  const content = `
+    <style>
+      .sd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:20px 0}
+      .sd-status{display:flex;gap:12px;align-items:center;margin:16px 0}
+      #respMsg{display:none;padding:14px 18px;border-radius:10px;margin-top:16px;font-size:14px}
+    </style>
+    <a href="/portal/sessions" style="color:#64748B;font-size:13px;text-decoration:none">&#8592; Retour aux sessions</a>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <h1 style="font-size:24px;color:#0F172A;margin:0">${escapeHtml(cours.thematique || 'Session')}</h1>
+      ${acceptanceStatusBadge(eleveStatus)}
+    </div>
+    <div class="sd-status">
+      <span style="font-size:13px;color:#64748B">Statut formateur :</span> ${acceptanceStatusBadge(tutorStatus)}
+    </div>
+    <div class="sd-grid">
+      ${infoCard('&#128218;', 'Mati\xE8re', escapeHtml(cours.thematique || '-'))}
+      ${infoCard('&#128197;', 'Date', dateFormatted)}
+      ${infoCard('&#128348;', 'Heure', cours.heure_debut)}
+      ${infoCard('&#9203;', 'Dur\xE9e', (cours.duree_minutes || 60) + ' min')}
+      ${infoCard('&#128104;&#8205;&#127891;', 'Formateur', escapeHtml(formateurName))}
+      ${infoCard('&#128205;', 'Lieu', escapeHtml(cours.lieu || 'En ligne'))}
+    </div>
+    ${actionSection}
+    <div id="respMsg"></div>
+    <script>
+    async function respondSession(action) {
+      const body = { action };
+      if (action === 'reject') body.note = document.getElementById('rejectNote')?.value || '';
+      if (action === 'request_modification') {
+        body.proposed_date = document.getElementById('propDate')?.value || '';
+        body.proposed_time = document.getElementById('propTime')?.value || '';
+        body.note = document.getElementById('modifyNote')?.value || '';
+        if (!body.proposed_date || !body.proposed_time) { alert('Veuillez choisir une date et une heure'); return; }
+      }
+      try {
+        const res = await fetch('/api/portal/sessions/${coursId}/respond', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        const json = await res.json();
+        const msg = document.getElementById('respMsg');
+        if (json.success) {
+          msg.style.display='block'; msg.style.background='#DCFCE7'; msg.style.color='#166534';
+          msg.textContent = action === 'accept' ? 'Session accept\xE9e !' : action === 'reject' ? 'Session refus\xE9e.' : 'Proposition envoy\xE9e au formateur.';
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          msg.style.display='block'; msg.style.background='#FEE2E2'; msg.style.color='#991B1B';
+          msg.textContent = json.error || 'Erreur';
+        }
+      } catch(e) { alert('Erreur: ' + e.message); }
+    }
+    <\/script>
+  `;
+  return htmlStudentPage({ title: cours.thematique || 'Session', pageTitle: cours.thematique || 'Session', activePage: "sessions", content, userName: `${user.prenom} ${user.nom}` });
+}
+__name(renderStudentSessionDetail, "renderStudentSessionDetail");
+// Tutor session detail page
+async function renderTutorSessionDetail(env, user, coursId) {
+  const fmtId = user.formateur_id;
+  const cours = await env.DB.prepare(`
+    SELECT c.*, t.nom as thematique
+    FROM cours c
+    LEFT JOIN thematiques t ON t.id = c.thematique_id
+    WHERE c.id = ? AND c.formateur_id = ?
+  `).bind(coursId, fmtId).first();
+  if (!cours) return htmlTutorPage({ title: "Session introuvable", content: '<div style="text-align:center;padding:60px 20px"><h2>Session introuvable</h2><p style="color:#64748B">Vous n\'avez pas acc\xE8s \xE0 cette session.</p><a href="/tutor/classes" style="color:#DC2626">&#8592; Retour</a></div>', activePage: "classes", userName: `${user.prenom} ${user.nom}` });
+  const dateFormatted = (() => { try { return new Date(cours.date_cours).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }); } catch { return cours.date_cours; } })();
+  const tutorStatus = cours.tutor_status || 'pending';
+  // Get enrolled students with their statuses
+  const studentsRes = await env.DB.prepare(`
+    SELECT ce.*, u.prenom, u.nom, u.email FROM cours_eleves ce JOIN users u ON u.id = ce.eleve_id WHERE ce.cours_id = ?
+  `).bind(coursId).all();
+  const students = studentsRes.results || [];
+  const studentCards = students.length > 0 ? students.map(s => {
+    const sStatus = s.eleve_status || 'pending';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px">
+      <div><span style="font-weight:600;color:#1e293b">&#128100; ${escapeHtml(s.prenom)} ${escapeHtml(s.nom || '')}</span><br><span style="font-size:12px;color:#64748B">${escapeHtml(s.email || '')}</span></div>
+      <div>${acceptanceStatusBadge(sStatus)}
+        ${sStatus === 'modification_requested' && s.eleve_proposed_date ? `<div style="font-size:11px;color:#92400E;margin-top:4px">Propose: ${s.eleve_proposed_date} ${s.eleve_proposed_time}</div>` : ''}
+        ${s.eleve_response_note ? `<div style="font-size:11px;color:#64748B;margin-top:2px">"${escapeHtml(s.eleve_response_note)}"</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:#94A3B8;padding:16px;text-align:center">Aucun \xE9l\xE8ve inscrit</div>';
+  // Check if any student proposed a modification
+  const studentModification = students.find(s => s.eleve_status === 'modification_requested' && s.eleve_proposed_date);
+  const infoCard = (icon, label, value) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+      <div style="width:40px;height:40px;background:#EFF6FF;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${icon}</div>
+      <div><div style="font-size:11px;text-transform:uppercase;color:#94a3b8;font-weight:600">${label}</div><div style="font-size:15px;color:#1e293b;font-weight:600">${value}</div></div>
+    </div>`;
+  const actionSection = tutorStatus === 'pending' ? `
+    <div style="margin-top:28px">
+      <h3 style="font-size:16px;color:#1e293b;margin-bottom:16px">&#9997; Votre r\xE9ponse</h3>
+      ${studentModification ? `
+        <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:16px;margin-bottom:20px">
+          <strong style="color:#92400E">&#128260; ${escapeHtml(studentModification.prenom)} propose un nouvel horaire :</strong>
+          <div style="margin-top:8px;font-size:16px;font-weight:700;color:#1e293b">${studentModification.eleve_proposed_date} \xE0 ${studentModification.eleve_proposed_time}</div>
+          ${studentModification.eleve_response_note ? `<div style="margin-top:6px;color:#64748B;font-size:13px">"${escapeHtml(studentModification.eleve_response_note)}"</div>` : ''}
+        </div>` : ''}
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+        <button onclick="respondSession('accept')" style="padding:12px 28px;background:#16A34A;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">&#9989; Accepter</button>
+        <button onclick="document.getElementById('rejectForm').style.display='block';this.style.display='none'" style="padding:12px 28px;background:#DC2626;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">&#10060; Refuser</button>
+        <button onclick="document.getElementById('modifyForm').style.display='block';this.style.display='none'" style="padding:12px 28px;background:#F59E0B;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">&#128260; Proposer un autre horaire</button>
+      </div>
+      <div id="rejectForm" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:20px;margin-bottom:16px">
+        <label style="font-weight:600;color:#991B1B;font-size:13px">Raison du refus (optionnel)</label>
+        <textarea id="rejectNote" rows="3" style="width:100%;margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;resize:vertical" placeholder="Expliquez pourquoi..."></textarea>
+        <button onclick="respondSession('reject')" style="margin-top:10px;padding:10px 24px;background:#DC2626;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer">Confirmer le refus</button>
+      </div>
+      <div id="modifyForm" style="display:none;background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:20px;margin-bottom:16px">
+        <label style="font-weight:600;color:#92400E;font-size:13px">Proposer un nouvel horaire</label>
+        <div style="display:flex;gap:12px;margin-top:10px">
+          <input type="date" id="propDate" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px" value="${cours.date_cours}">
+          <input type="time" id="propTime" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px" value="${cours.heure_debut}">
+        </div>
+        <textarea id="modifyNote" rows="2" style="width:100%;margin-top:10px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;resize:vertical" placeholder="Note (optionnel)"></textarea>
+        <button onclick="respondSession('request_modification')" style="margin-top:10px;padding:10px 24px;background:#F59E0B;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer">Envoyer la proposition</button>
+      </div>
+    </div>` : `
+    <div style="margin-top:28px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px">
+      <h3 style="font-size:14px;color:#64748B;margin:0 0 8px">Votre r\xE9ponse</h3>
+      <div>${acceptanceStatusBadge(tutorStatus)}</div>
+      ${cours.tutor_response_note ? `<div style="margin-top:8px;color:#475569;font-size:13px">"${escapeHtml(cours.tutor_response_note)}"</div>` : ''}
+      ${tutorStatus === 'modification_requested' && cours.tutor_proposed_date ? `<div style="margin-top:8px;font-size:13px;color:#92400E">Horaire propos\xE9 : <strong>${cours.tutor_proposed_date} \xE0 ${cours.tutor_proposed_time}</strong></div>` : ''}
+    </div>`;
+  const content = `
+    <style>
+      .sd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:20px 0}
+      #respMsg{display:none;padding:14px 18px;border-radius:10px;margin-top:16px;font-size:14px}
+    </style>
+    <a href="/tutor/classes" style="color:#64748B;font-size:13px;text-decoration:none">&#8592; Retour aux cours</a>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <h1 style="font-size:24px;color:#0F172A;margin:0">${escapeHtml(cours.thematique || 'Session')}</h1>
+      ${acceptanceStatusBadge(tutorStatus)}
+    </div>
+    <div class="sd-grid">
+      ${infoCard('&#128218;', 'Mati\xE8re', escapeHtml(cours.thematique || '-'))}
+      ${infoCard('&#128197;', 'Date', dateFormatted)}
+      ${infoCard('&#128348;', 'Heure', cours.heure_debut)}
+      ${infoCard('&#9203;', 'Dur\xE9e', (cours.duree_minutes || 60) + ' min')}
+      ${infoCard('&#128205;', 'Lieu', escapeHtml(cours.lieu || 'En ligne'))}
+    </div>
+    <div style="margin-top:24px">
+      <h3 style="font-size:16px;color:#1e293b;margin-bottom:12px">&#128100; \xC9l\xE8ves inscrits (${students.length})</h3>
+      ${studentCards}
+    </div>
+    ${actionSection}
+    <div id="respMsg"></div>
+    <script>
+    async function respondSession(action) {
+      const body = { action };
+      if (action === 'reject') body.note = document.getElementById('rejectNote')?.value || '';
+      if (action === 'request_modification') {
+        body.proposed_date = document.getElementById('propDate')?.value || '';
+        body.proposed_time = document.getElementById('propTime')?.value || '';
+        body.note = document.getElementById('modifyNote')?.value || '';
+        if (!body.proposed_date || !body.proposed_time) { alert('Veuillez choisir une date et une heure'); return; }
+      }
+      try {
+        const res = await fetch('/api/tutor/sessions/${coursId}/respond', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        const json = await res.json();
+        const msg = document.getElementById('respMsg');
+        if (json.success) {
+          msg.style.display='block'; msg.style.background='#DCFCE7'; msg.style.color='#166534';
+          msg.textContent = action === 'accept' ? 'Session accept\xE9e !' : action === 'reject' ? 'Session refus\xE9e.' : 'Proposition envoy\xE9e aux \xE9l\xE8ves.';
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          msg.style.display='block'; msg.style.background='#FEE2E2'; msg.style.color='#991B1B';
+          msg.textContent = json.error || 'Erreur';
+        }
+      } catch(e) { alert('Erreur: ' + e.message); }
+    }
+    <\/script>
+  `;
+  return htmlTutorPage({ title: cours.thematique || 'Session', pageTitle: cours.thematique || 'Session', activePage: "classes", content, userName: `${user.prenom} ${user.nom}` });
+}
+__name(renderTutorSessionDetail, "renderTutorSessionDetail");
+// API: Student responds to session
+async function handleStudentSessionResponse(request, env, user, coursId) {
+  try {
+    const body = await request.json();
+    const { action, proposed_date, proposed_time, note } = body;
+    if (!['accept', 'reject', 'request_modification'].includes(action)) return jsonResponse({ success: false, error: 'Action invalide' }, 400);
+    const enrollment = await env.DB.prepare("SELECT * FROM cours_eleves WHERE cours_id = ? AND eleve_id = ?").bind(coursId, user.id).first();
+    if (!enrollment) return jsonResponse({ success: false, error: 'Non inscrit' }, 403);
+    const statusMap = { accept: 'accepted', reject: 'rejected', request_modification: 'modification_requested' };
+    const now = new Date().toISOString();
+    await env.DB.prepare(`UPDATE cours_eleves SET eleve_status = ?, eleve_proposed_date = ?, eleve_proposed_time = ?, eleve_response_note = ?, eleve_responded_at = ? WHERE cours_id = ? AND eleve_id = ?`)
+      .bind(statusMap[action], proposed_date || null, proposed_time || null, note || null, now, coursId, user.id).run();
+    // If modification requested, email the tutor
+    if (action === 'request_modification' && proposed_date && proposed_time) {
+      try {
+        const cours = await env.DB.prepare("SELECT c.*, t.nom as thematique, f.email as f_email, f.prenom as f_prenom, f.nom as f_nom FROM cours c LEFT JOIN thematiques t ON t.id = c.thematique_id LEFT JOIN formateurs f ON f.id = c.formateur_id WHERE c.id = ?").bind(coursId).first();
+        if (cours?.f_email) {
+          const dateF = (() => { try { return new Date(cours.date_cours).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); } catch { return cours.date_cours; } })();
+          const propDateF = (() => { try { return new Date(proposed_date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); } catch { return proposed_date; } })();
+          const mail = sessionModificationEmail({
+            proposerName: `${user.prenom} ${user.nom || ''}`.trim(),
+            recipientName: `${cours.f_prenom} ${cours.f_nom}`,
+            thematique: cours.thematique || '',
+            currentDate: dateF, currentTime: cours.heure_debut,
+            proposedDate: propDateF, proposedTime: proposed_time,
+            note: note || '', actionLink: `https://callmyprof.com/tutor/classes/${coursId}`
+          });
+          await sendEmail(env, { to: cours.f_email, subject: mail.subject, html: mail.html });
+        }
+      } catch (e) { console.error('Modification email error:', e); }
+    }
+    if (action === 'accept') await checkAndAutoConfirm(env, coursId);
+    return jsonResponse({ success: true });
+  } catch (e) { return jsonResponse({ success: false, error: e.message }, 500); }
+}
+__name(handleStudentSessionResponse, "handleStudentSessionResponse");
+// API: Tutor responds to session
+async function handleTutorSessionResponse(request, env, user, coursId) {
+  try {
+    const body = await request.json();
+    const { action, proposed_date, proposed_time, note } = body;
+    if (!['accept', 'reject', 'request_modification'].includes(action)) return jsonResponse({ success: false, error: 'Action invalide' }, 400);
+    const cours = await env.DB.prepare("SELECT * FROM cours WHERE id = ? AND formateur_id = ?").bind(coursId, user.formateur_id).first();
+    if (!cours) return jsonResponse({ success: false, error: 'Non autoris\xE9' }, 403);
+    const statusMap = { accept: 'accepted', reject: 'rejected', request_modification: 'modification_requested' };
+    const now = new Date().toISOString();
+    await env.DB.prepare(`UPDATE cours SET tutor_status = ?, tutor_proposed_date = ?, tutor_proposed_time = ?, tutor_response_note = ?, tutor_responded_at = ? WHERE id = ?`)
+      .bind(statusMap[action], proposed_date || null, proposed_time || null, note || null, now, coursId).run();
+    // If modification requested, email all students
+    if (action === 'request_modification' && proposed_date && proposed_time) {
+      try {
+        const thematique = await env.DB.prepare("SELECT nom FROM thematiques WHERE id = ?").bind(cours.thematique_id).first();
+        const dateF = (() => { try { return new Date(cours.date_cours).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); } catch { return cours.date_cours; } })();
+        const propDateF = (() => { try { return new Date(proposed_date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); } catch { return proposed_date; } })();
+        const students = await env.DB.prepare("SELECT u.email, u.prenom, u.nom FROM cours_eleves ce JOIN users u ON u.id = ce.eleve_id WHERE ce.cours_id = ?").bind(coursId).all();
+        for (const s of (students.results || [])) {
+          if (s.email) {
+            const mail = sessionModificationEmail({
+              proposerName: `${user.prenom} ${user.nom || ''}`.trim(),
+              recipientName: `${s.prenom} ${s.nom || ''}`.trim(),
+              thematique: thematique?.nom || '',
+              currentDate: dateF, currentTime: cours.heure_debut,
+              proposedDate: propDateF, proposedTime: proposed_time,
+              note: note || '', actionLink: `https://callmyprof.com/portal/sessions/${coursId}`
+            });
+            await sendEmail(env, { to: s.email, subject: mail.subject, html: mail.html });
+          }
+        }
+      } catch (e) { console.error('Modification email error:', e); }
+    }
+    if (action === 'accept') await checkAndAutoConfirm(env, coursId);
+    return jsonResponse({ success: true });
+  } catch (e) { return jsonResponse({ success: false, error: e.message }, 500); }
+}
+__name(handleTutorSessionResponse, "handleTutorSessionResponse");
+// === END SESSION ACCEPTANCE WORKFLOW ===
 function testEmail(locale) {
   const isFr = locale === "fr";
   const isAr = locale === "ar";
@@ -25627,7 +26086,8 @@ async function renderStudentSessions(env, user) {
            c.video_provider, c.video_room_url, c.statut,
            c.created_at, t.nom as subject_description,
            c.type_cours as service_type, c.duree_minutes,
-           f.prenom || ' ' || f.nom as formateur_nom, c.lieu, 'cours' as source
+           f.prenom || ' ' || f.nom as formateur_nom, c.lieu, 'cours' as source,
+           ce.eleve_status
     FROM cours_eleves ce
     JOIN cours c ON c.id = ce.cours_id
     LEFT JOIN thematiques t ON t.id = c.thematique_id
@@ -25640,7 +26100,8 @@ async function renderStudentSessions(env, user) {
            c.video_provider, c.video_room_url, c.statut,
            c.created_at, t.nom as subject_description,
            c.type_cours as service_type, c.duree_minutes,
-           f.prenom || ' ' || f.nom as formateur_nom, c.lieu, 'cours' as source
+           f.prenom || ' ' || f.nom as formateur_nom, c.lieu, 'cours' as source,
+           ce.eleve_status
     FROM cours_eleves ce
     JOIN cours c ON c.id = ce.cours_id
     LEFT JOIN thematiques t ON t.id = c.thematique_id
@@ -25662,6 +26123,13 @@ async function renderStudentSessions(env, user) {
     sessionDates[s.booking_date].push({ booking_time: s.booking_time, video_provider: s.video_provider, statut: s.statut });
   });
   const sessionDatesJson = JSON.stringify(sessionDates).replace(/<\/script>/gi, "<\\/script>");
+  const acceptBadge = (status) => {
+    if (status === 'accepted') return '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#DCFCE7;color:#166534">Accepted</span>';
+    if (status === 'rejected') return '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#FEE2E2;color:#991B1B">Rejected</span>';
+    if (status === 'modification_requested') return '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#FEF3C7;color:#92400E">Modified</span>';
+    if (status === 'pending') return '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#FEF9C3;color:#854D0E">Pending</span>';
+    return '';
+  };
   const tableRow = (s) => {
     const statusBadge = s.statut === "completed" ? '<span class="p-badge p-badge-green">Completed</span>'
       : s.statut === "cancelled" ? '<span class="p-badge p-badge-gray">Cancelled</span>'
@@ -25672,6 +26140,8 @@ async function renderStudentSessions(env, user) {
     const typeLabel = s.service_type === "online" ? "🌐 Online" : s.service_type === "group" ? "👥 Group" : "👤 Individual";
     const subject = s.subject_description ? escapeHtml(s.subject_description.length > 35 ? s.subject_description.slice(0, 35) + "…" : s.subject_description) : '<span style="color:#94A3B8">—</span>';
     const level = s.level ? escapeHtml(s.level) : '<span style="color:#94A3B8">—</span>';
+    const acceptCol = s.source === 'cours' ? acceptBadge(s.eleve_status || 'pending') : '';
+    const detailBtn = s.source === 'cours' && isUpcoming && s.eleve_status === 'pending' ? `<a href="/portal/sessions/${s.id}" class="p-btn" style="padding:4px 14px;font-size:12px;background:#F59E0B;color:#fff;border-radius:6px;text-decoration:none">Respond</a>` : s.source === 'cours' ? `<a href="/portal/sessions/${s.id}" style="font-size:12px;color:#2563EB;text-decoration:underline">Details</a>` : '';
     return `<tr class="srow">
       <td style="padding:10px 14px;white-space:nowrap">${s.booking_date}</td>
       <td style="padding:10px 14px">${s.booking_time}</td>
@@ -25680,7 +26150,8 @@ async function renderStudentSessions(env, user) {
       <td style="padding:10px 14px">${typeLabel}</td>
       <td style="padding:10px 14px">${s.video_provider || "Video"}</td>
       <td style="padding:10px 14px">${statusBadge}</td>
-      <td style="padding:10px 14px">${joinBtn}</td>
+      <td style="padding:10px 14px">${acceptCol}</td>
+      <td style="padding:10px 14px">${detailBtn || joinBtn}</td>
     </tr>`;
   };
   const tableHead = `<thead><tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0">
@@ -25691,10 +26162,11 @@ async function renderStudentSessions(env, user) {
     <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Type</th>
     <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Platform</th>
     <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Status</th>
+    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Acceptance</th>
     <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Action</th>
   </tr></thead>`;
-  const upRows = upcoming.length > 0 ? upcoming.map(tableRow).join("") : `<tr><td colspan="8" style="text-align:center;padding:32px;color:#94A3B8">No upcoming sessions</td></tr>`;
-  const pastRows = past.length > 0 ? past.map(tableRow).join("") : `<tr><td colspan="8" style="text-align:center;padding:32px;color:#94A3B8">No past sessions yet</td></tr>`;
+  const upRows = upcoming.length > 0 ? upcoming.map(tableRow).join("") : `<tr><td colspan="9" style="text-align:center;padding:32px;color:#94A3B8">No upcoming sessions</td></tr>`;
+  const pastRows = past.length > 0 ? past.map(tableRow).join("") : `<tr><td colspan="9" style="text-align:center;padding:32px;color:#94A3B8">No past sessions yet</td></tr>`;
   const makeTable = (rows) => `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px">${tableHead}<tbody>${rows}</tbody></table></div>`;
   const content = `
     <style>
@@ -26279,6 +26751,7 @@ async function renderTutorClasses(env, user) {
     const ures = await env.DB.prepare("SELECT c.*, t.nom as thematique FROM cours c LEFT JOIN thematiques t ON t.id = c.thematique_id WHERE c.formateur_id = ? AND c.date_cours >= ? AND c.statut != 'annule' ORDER BY c.date_cours ASC, c.heure_debut ASC").bind(fmtId, now).all();
     upcoming = ures.results || [];
     const pres = await env.DB.prepare("SELECT c.*, t.nom as thematique FROM cours c LEFT JOIN thematiques t ON t.id = c.thematique_id WHERE c.formateur_id = ? AND (c.date_cours < ? OR c.statut = 'annule') ORDER BY c.date_cours DESC LIMIT 50").bind(fmtId, now).all();
+    // Note: c.* now includes tutor_status from migration 0013
     // Note: c.* includes video_provider, video_room_url, video_host_url from cours table
     past = pres.results || [];
   }
@@ -26289,6 +26762,12 @@ async function renderTutorClasses(env, user) {
     classDates[c.date_cours].push({ heure_debut: c.heure_debut, thematique: c.thematique, statut: c.statut });
   });
   const classDatesJson = JSON.stringify(classDates).replace(/<\/script>/gi, "<\\/script>");
+  const tutorAcceptBadge = (status) => {
+    if (status === 'accepted') return '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#DCFCE7;color:#166534">Accepted</span>';
+    if (status === 'rejected') return '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#FEE2E2;color:#991B1B">Rejected</span>';
+    if (status === 'modification_requested') return '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#FEF3C7;color:#92400E">Modified</span>';
+    return '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#FEF9C3;color:#854D0E">Pending</span>';
+  };
   const tableRow = (c) => {
     const sb = c.statut === "termine" ? '<span class="p-badge p-badge-green">Completed</span>'
       : c.statut === "annule" ? '<span class="p-badge p-badge-gray">Cancelled</span>'
@@ -26301,6 +26780,8 @@ async function renderTutorClasses(env, user) {
     const isUpcoming = c.date_cours >= now;
     const videoUrl = c.video_host_url || c.video_room_url;
     const joinBtn = isUpcoming && videoUrl && c.statut !== 'annule' ? `<a href="${videoUrl}" class="p-btn p-btn-primary" style="padding:4px 14px;font-size:12px" target="_blank">Join &rarr;</a>` : '<span style="color:#94A3B8">\u2014</span>';
+    const acceptCol = tutorAcceptBadge(c.tutor_status || 'pending');
+    const detailBtn = isUpcoming && (c.tutor_status || 'pending') === 'pending' ? `<a href="/tutor/classes/${c.id}" class="p-btn" style="padding:4px 14px;font-size:12px;background:#F59E0B;color:#fff;border-radius:6px;text-decoration:none">Respond</a>` : `<a href="/tutor/classes/${c.id}" style="font-size:12px;color:#2563EB;text-decoration:underline">Details</a>`;
     return `<tr class="srow">
       <td style="padding:10px 14px;white-space:nowrap">${c.date_cours}</td>
       <td style="padding:10px 14px">${c.heure_debut}</td>
@@ -26311,7 +26792,8 @@ async function renderTutorClasses(env, user) {
       <td style="padding:10px 14px">${maxStudents}</td>
       <td style="padding:10px 14px">${lieu}</td>
       <td style="padding:10px 14px">${sb}</td>
-      <td style="padding:10px 14px">${joinBtn}</td>
+      <td style="padding:10px 14px">${acceptCol}</td>
+      <td style="padding:10px 14px">${detailBtn} ${joinBtn !== '<span style="color:#94A3B8">\u2014</span>' ? joinBtn : ''}</td>
     </tr>`;
   };
   const tableHead = `<thead><tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0">
@@ -26324,10 +26806,11 @@ async function renderTutorClasses(env, user) {
     <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Max Students</th>
     <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Location</th>
     <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Status</th>
+    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Acceptance</th>
     <th style="padding:10px 14px;text-align:left;font-weight:600;color:#64748B">Action</th>
   </tr></thead>`;
-  const upRows = upcoming.length > 0 ? upcoming.map(tableRow).join("") : `<tr><td colspan="10" style="text-align:center;padding:32px;color:#94A3B8">No upcoming classes</td></tr>`;
-  const pastRows = past.length > 0 ? past.map(tableRow).join("") : `<tr><td colspan="10" style="text-align:center;padding:32px;color:#94A3B8">No past classes yet</td></tr>`;
+  const upRows = upcoming.length > 0 ? upcoming.map(tableRow).join("") : `<tr><td colspan="11" style="text-align:center;padding:32px;color:#94A3B8">No upcoming classes</td></tr>`;
+  const pastRows = past.length > 0 ? past.map(tableRow).join("") : `<tr><td colspan="11" style="text-align:center;padding:32px;color:#94A3B8">No past classes yet</td></tr>`;
   const makeTable = (rows) => `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px">${tableHead}<tbody>${rows}</tbody></table></div>`;
   const content = `
     <style>
@@ -27740,6 +28223,10 @@ var index_default = {
         }
         if (path === "/portal" && method === "GET") return htmlResponse(await renderStudentDashboard(env, studentUser));
         if (path === "/portal/sessions" && method === "GET") return htmlResponse(await renderStudentSessions(env, studentUser));
+        {
+          const sessionDetailId = matchPath(path, "/portal/sessions/:id");
+          if (sessionDetailId && method === "GET") return htmlResponse(await renderStudentSessionDetail(env, studentUser, sessionDetailId));
+        }
         if (path === "/portal/payments" && method === "GET") return htmlResponse(await renderStudentPayments(env, studentUser));
         if (path === "/portal/profile" && method === "GET") {
           const saved = url.searchParams.get("saved");
@@ -27778,6 +28265,10 @@ var index_default = {
         {
           const replyTicketId = matchPath(path, "/api/portal/support/:id/reply");
           if (replyTicketId && method === "POST") return handleTicketReply(request, env, studentUser, replyTicketId);
+        }
+        {
+          const sessionRespondId = matchPath(path, "/api/portal/sessions/:id/respond");
+          if (sessionRespondId && method === "POST") return handleStudentSessionResponse(request, env, studentUser, sessionRespondId);
         }
       }
 
@@ -27826,6 +28317,10 @@ var index_default = {
         }
         if (path === "/tutor" && method === "GET") return htmlResponse(await renderTutorDashboard(env, tutorUser));
         if (path === "/tutor/classes" && method === "GET") return htmlResponse(await renderTutorClasses(env, tutorUser));
+        {
+          const classDetailId = matchPath(path, "/tutor/classes/:id");
+          if (classDetailId && method === "GET") return htmlResponse(await renderTutorSessionDetail(env, tutorUser, classDetailId));
+        }
         if (path === "/tutor/schedule" && method === "GET") return htmlResponse(await renderTutorSchedule(env, tutorUser));
         if (path === "/tutor/students" && method === "GET") return htmlResponse(await renderTutorStudents(env, tutorUser));
         if (path === "/tutor/payments" && method === "GET") return htmlResponse(await renderTutorEarnings(env, tutorUser));
@@ -27865,6 +28360,10 @@ var index_default = {
         {
           const replyTicketId = matchPath(path, "/api/tutor/support/:id/reply");
           if (replyTicketId && method === "POST") return handleTicketReply(request, env, tutorUser, replyTicketId);
+        }
+        {
+          const tutorRespondId = matchPath(path, "/api/tutor/sessions/:id/respond");
+          if (tutorRespondId && method === "POST") return handleTutorSessionResponse(request, env, tutorUser, tutorRespondId);
         }
       }
 
