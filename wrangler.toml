@@ -1,0 +1,31 @@
+name = "callmyprof"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+account_id = "bc9bdfa814d313ad361e1120f2d57af9"
+workers_dev = true
+
+routes = [
+  { pattern = "callmyprof.com/*", zone_name = "callmyprof.com" },
+  { pattern = "www.callmyprof.com/*", zone_name = "callmyprof.com" }
+]
+
+[vars]
+ENVIRONMENT = "production"
+CHECKOUT_PUBLIC_KEY = "pk_sbox_4c3n43l4jyewc6fac3ee3a6homn"
+PAYPAL_SANDBOX = "true"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "callmyprof-db"
+database_id = "2294dbe8-f898-4c8c-a8fd-0f62563e19a9"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "callmyprof-docs"
+
+[ai]
+binding = "AI"
+
+# Cron trigger: every 15 minutes to check for session reminders
+[triggers]
+crons = ["*/15 * * * *"]
