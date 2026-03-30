@@ -46,5 +46,10 @@
       "binding": "R2",
       "bucket_name": "callmyprof-docs"
     }
-  ]
+  ],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "CHECKOUT_PUBLIC_KEY": "pk_sbox_4c3n43l4jyewc6fac3ee3a6homn",
+    "PAYPAL_SANDBOX": "true"
+  }
 }

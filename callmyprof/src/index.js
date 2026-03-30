@@ -140,7 +140,8 @@ async function requireStudentAuth(request, env) {
   if (!session) {
     throw new Response(null, { status: 302, headers: { Location: "/portal/login" } });
   }
-  if (session.user.role !== "eleve") {
+  // Allow users with role 'eleve' OR users with lead_id (dual-role support)
+  if (session.user.role !== "eleve" && !session.user.lead_id) {
     if (session.user.role === "admin") {
       throw new Response(null, { status: 302, headers: { Location: "/dashboard" } });
     }
@@ -157,7 +158,8 @@ async function requireTutorAuth(request, env) {
   if (!session) {
     throw new Response(null, { status: 302, headers: { Location: "/tutor/login" } });
   }
-  if (session.user.role !== "formateur") {
+  // Allow users with role 'formateur' OR users with formateur_id (dual-role support)
+  if (session.user.role !== "formateur" && !session.user.formateur_id) {
     if (session.user.role === "admin") {
       throw new Response(null, { status: 302, headers: { Location: "/dashboard" } });
     }
@@ -2207,6 +2209,11 @@ var CSS_TABLE = `
     font-weight: 600;
     color: var(--gray-900);
     font-size: 14px;
+    transition: color 0.15s;
+  }
+  a.user-cell:hover .user-name {
+    color: var(--primary) !important;
+    text-decoration: underline;
   }
   .user-cell .user-info .user-meta {
     font-size: 12px;
@@ -2482,7 +2489,12 @@ var CSS_BADGES = `
     border: 1px solid var(--gray-200);
   }
 
-  .badge-confirme, .badge-emise, .badge-en_cours, .badge-submitted {
+  .badge-confirme {
+    background: var(--success-light);
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+  .badge-emise, .badge-en_cours, .badge-submitted {
     background: var(--blue-light);
     color: #1e40af;
     border: 1px solid #93c5fd;
@@ -2545,7 +2557,7 @@ var CSS_BADGES = `
   .badge-en_attente.badge-dot::before { background: var(--warning); }
   .badge-refuse.badge-dot::before { background: var(--danger); }
   .badge-suspendu.badge-dot::before { background: var(--gray-400); }
-  .badge-confirme.badge-dot::before,
+  .badge-confirme.badge-dot::before { background: var(--success); }
   .badge-emise.badge-dot::before { background: var(--blue); }
 `;
 function getSidebarSections(locale) {
@@ -4278,6 +4290,7 @@ async function renderDashboard(env, user) {
           requestAnimationFrame(step);
         });
       });
+
     <\/script>
   `;
   return htmlPage({
@@ -5968,9 +5981,61 @@ async function renderFormateurDetail(env, formateurId, userName) {
         <div style="font-size:15px;font-weight:700;color:#0F172A;margin-bottom:12px">&#128203; Document Verification</div>
         <div id="fmtDocVerify" style="color:#94A3B8;text-align:center;padding:12px">Loading...</div>
       </div>
+
+      <!-- Reset Password -->
+      <div style="margin-top:20px;background:#fff;border-radius:12px;padding:20px;border:1px solid #E2E8F0">
+        <div style="font-size:15px;font-weight:700;color:#0F172A;margin-bottom:12px">\u{1F511} Reset Password</div>
+        <div id="tutor-reset-pwd-section" style="color:#94A3B8;text-align:center;padding:8px;font-size:13px;">Checking account...</div>
+      </div>
     </div>
 
     <script>
+      // Check if tutor has a user account for password reset
+      (function() {
+        var section = document.getElementById('tutor-reset-pwd-section');
+        fetch('/api/admin/search-user?email=${encodeURIComponent(f.email)}')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data.success || !data.user) {
+              section.innerHTML = '<div style="text-align:center;color:#94A3B8;padding:8px;font-size:13px;">\u{1F6AB} No portal account found for this tutor.<br><span style="font-size:11px;margin-top:4px;display:block;">The tutor must create an account first.</span></div>';
+              return;
+            }
+            var u = data.user;
+            section.innerHTML = '<div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">'
+              + '<div style="width:32px;height:32px;border-radius:50%;background:#1E293B;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">' + (u.prenom||'')[0].toUpperCase() + (u.nom||'')[0].toUpperCase() + '<\/div>'
+              + '<div><div style="font-weight:600;font-size:13px;color:#0F172A;">' + u.prenom + ' ' + u.nom + '<\/div>'
+              + '<div style="font-size:11px;color:#64748B;">' + u.email + '<\/div><\/div><\/div>'
+              + '<div style="position:relative;margin-bottom:10px;">'
+              + '<label style="display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">New Password</label>'
+              + '<input type="password" id="tutor-new-pwd" placeholder="Min. 8 characters" style="width:100%;padding:8px 36px 8px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;box-sizing:border-box;">'
+              + '<button type="button" onclick="var i=document.getElementById(\\'tutor-new-pwd\\');i.type=i.type===\\'password\\'?\\'text\\':\\'password\\'" style="position:absolute;right:8px;top:26px;background:none;border:none;cursor:pointer;font-size:14px;">\u{1F441}<\/button>'
+              + '<\/div>'
+              + '<button onclick="resetTutorPwd(\\'' + u.id + '\\')" id="tutor-reset-btn" style="width:100%;background:#DC2626;color:#fff;border:none;padding:8px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;font-family:Inter,sans-serif;">\u{1F504} Reset Password<\/button>'
+              + '<div id="tutor-reset-msg" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;"><\/div>';
+          });
+      })();
+      function resetTutorPwd(userId) {
+        var pwd = document.getElementById('tutor-new-pwd').value;
+        if (!pwd || pwd.length < 8) { alert('Password must be at least 8 characters'); return; }
+        var btn = document.getElementById('tutor-reset-btn');
+        btn.disabled = true; btn.textContent = '\u23F3 Resetting...';
+        fetch('/api/admin/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, new_password: pwd }) })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            btn.disabled = false; btn.innerHTML = '\u{1F504} Reset Password';
+            var msg = document.getElementById('tutor-reset-msg');
+            msg.style.display = 'block';
+            if (data.success) {
+              msg.style.background = '#DCFCE7'; msg.style.color = '#166534';
+              msg.textContent = '\u2705 Password reset successfully!';
+              document.getElementById('tutor-new-pwd').value = '';
+            } else {
+              msg.style.background = '#FEF2F2'; msg.style.color = '#991B1B';
+              msg.textContent = '\u274C ' + (data.error || 'Failed');
+            }
+            setTimeout(function() { msg.style.display = 'none'; }, 4000);
+          });
+      }
       // Load tutor doc verification
       fetch('/api/admin/formateur-docs/${escapeHtml(f.id)}').then(r=>r.json()).then(function(data) {
         if (!data.hasAccount) { document.getElementById('fmtDocVerify').innerHTML = 'No documents uploaded yet.'; return; }
@@ -7093,7 +7158,10 @@ async function renderOnboarding(env) {
   <script>
     // ====== STATE ======
     let currentStep = 1;
-    let formateurId = localStorage.getItem('onboarding_id') || null;
+    // Always start fresh — clear any previous registration data
+    localStorage.removeItem('onboarding_data');
+    localStorage.removeItem('onboarding_id');
+    let formateurId = null;
     let catalogueTree = [];
     let currentDocType = null;
     let signatureDrawn = false;
@@ -7101,7 +7169,6 @@ async function renderOnboarding(env) {
     // ====== INIT ======
     document.addEventListener('DOMContentLoaded', function() {
       loadCatalogue();
-      restoreFromLocalStorage();
       initSignatureCanvas();
     });
 
@@ -11121,7 +11188,7 @@ async function getCoursDetail(env, id) {
   };
 }
 __name(getCoursDetail, "getCoursDetail");
-async function createCours(env, request) {
+async function createCours(env, request, ctx) {
   let body;
   try {
     body = await request.json();
@@ -11140,6 +11207,7 @@ async function createCours(env, request) {
       duree_minutes,
       max_eleves,
       lieu,
+      prix_total,
       eleve_ids
     } = body;
     if (!formateur_id || !thematique_id || !type_cours || !date_cours || !heure_debut) {
@@ -11163,34 +11231,11 @@ async function createCours(env, request) {
     const coursId = generateId();
     const duree = parseInt(duree_minutes) || 60;
     const maxEl = type_cours === "individuel" ? 1 : parseInt(max_eleves) || 6;
-    // Create video room for the session
-    let videoProvider = null, videoRoomUrl = null, videoHostUrl = null, videoRoomName = null;
-    try {
-      const studentName = Array.isArray(eleve_ids) && eleve_ids.length > 0
-        ? (await env.DB.prepare("SELECT prenom FROM users WHERE id = ?").bind(eleve_ids[0]).first())?.prenom || "Student"
-        : "Student";
-      const tutorName = (await env.DB.prepare("SELECT prenom FROM formateurs WHERE id = ?").bind(formateur_id).first())?.prenom || "Tutor";
-      const videoRoom = await createVideoRoom(env, {
-        bookingId: coursId,
-        scheduledDate: date_cours,
-        scheduledTime: heure_debut,
-        studentName,
-        tutorName,
-        durationMinutes: duree,
-        maxParticipants: maxEl + 1
-      });
-      videoProvider = videoRoom.provider;
-      videoRoomUrl = videoRoom.room_url;
-      videoHostUrl = videoRoom.host_url || "";
-      videoRoomName = videoRoom.room_name;
-    } catch (videoErr) {
-      console.error("Video room creation error:", videoErr);
-    }
+    // Insert cours first (without video — will be created in background)
     await env.DB.prepare(`
       INSERT INTO cours (id, formateur_id, thematique_id, type_cours, titre, description,
-                         date_cours, heure_debut, duree_minutes, max_eleves, lieu, statut,
-                         video_provider, video_room_url, video_host_url, video_room_name)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'planifie', ?, ?, ?, ?)
+                         date_cours, heure_debut, duree_minutes, max_eleves, lieu, prix_total, statut)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'planifie')
     `).bind(
       coursId,
       formateur_id,
@@ -11203,10 +11248,7 @@ async function createCours(env, request) {
       duree,
       maxEl,
       lieu || null,
-      videoProvider,
-      videoRoomUrl,
-      videoHostUrl,
-      videoRoomName
+      parseFloat(prix_total) || null
     ).run();
     if (Array.isArray(eleve_ids) && eleve_ids.length > 0) {
       const heuresDebitees = duree / 60;
@@ -11217,45 +11259,72 @@ async function createCours(env, request) {
         `).bind(coursId, eleveId, heuresDebitees).run();
       }
     }
-    // Send email notifications (non-blocking)
-    try {
-      const [formateurInfo, thematiqueInfo] = await Promise.all([
-        env.DB.prepare("SELECT email, prenom, nom FROM formateurs WHERE id = ?").bind(formateur_id).first(),
-        env.DB.prepare("SELECT nom FROM thematiques WHERE id = ?").bind(thematique_id).first()
-      ]);
-      const thematiqueNom = thematiqueInfo?.nom || "";
-      const formateurNomFull = formateurInfo ? `${formateurInfo.prenom} ${formateurInfo.nom}` : "";
-      const dateFormatted = (() => {
-        try { return new Date(date_cours).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }); }
-        catch { return date_cours; }
-      })();
-      const sessionInfo = { thematique: thematiqueNom, date: dateFormatted, heure: heure_debut, duree: `${duree} min`, lieu: lieu || "En ligne", formateur: formateurNomFull, coursId };
-      // Email to tutor
-      if (formateurInfo?.email) {
-        const eleveNames = [];
+    // Do video room creation + email notifications in background (non-blocking)
+    const bgWork = (async () => {
+      try {
+        // Create video room
+        const studentName = Array.isArray(eleve_ids) && eleve_ids.length > 0
+          ? (await env.DB.prepare("SELECT prenom FROM users WHERE id = ?").bind(eleve_ids[0]).first())?.prenom || "Student"
+          : "Student";
+        const tutorName = (await env.DB.prepare("SELECT prenom FROM formateurs WHERE id = ?").bind(formateur_id).first())?.prenom || "Tutor";
+        try {
+          const videoRoom = await createVideoRoom(env, {
+            bookingId: coursId,
+            scheduledDate: date_cours,
+            scheduledTime: heure_debut,
+            studentName,
+            tutorName,
+            durationMinutes: duree,
+            maxParticipants: maxEl + 1
+          });
+          if (videoRoom) {
+            await env.DB.prepare("UPDATE cours SET video_provider = ?, video_room_url = ?, video_host_url = ?, video_room_name = ? WHERE id = ?")
+              .bind(videoRoom.provider, videoRoom.room_url, videoRoom.host_url || "", videoRoom.room_name, coursId).run();
+          }
+        } catch (videoErr) {
+          console.error("Video room creation error:", videoErr);
+        }
+        // Send email notifications
+        const [formateurInfo, thematiqueInfo] = await Promise.all([
+          env.DB.prepare("SELECT email, prenom, nom FROM formateurs WHERE id = ?").bind(formateur_id).first(),
+          env.DB.prepare("SELECT nom FROM thematiques WHERE id = ?").bind(thematique_id).first()
+        ]);
+        const thematiqueNom = thematiqueInfo?.nom || "";
+        const formateurNomFull = formateurInfo ? `${formateurInfo.prenom} ${formateurInfo.nom}` : "";
+        const dateFormatted = (() => {
+          try { return new Date(date_cours).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }); }
+          catch { return date_cours; }
+        })();
+        const sessionInfo = { thematique: thematiqueNom, date: dateFormatted, heure: heure_debut, duree: `${duree} min`, lieu: lieu || "En ligne", formateur: formateurNomFull, coursId };
+        // Email to tutor
+        if (formateurInfo?.email) {
+          const eleveNames = [];
+          if (Array.isArray(eleve_ids) && eleve_ids.length > 0) {
+            for (const eleveId of eleve_ids) {
+              const el = await env.DB.prepare("SELECT prenom, nom FROM users WHERE id = ?").bind(eleveId).first();
+              if (el) eleveNames.push(`${el.prenom} ${el.nom || ""}`.trim());
+            }
+          }
+          const tutorMail = sessionCreatedTutorEmail({ ...sessionInfo, eleves: eleveNames });
+          await sendEmail(env, { to: formateurInfo.email, subject: tutorMail.subject, html: tutorMail.html });
+        }
+        // Email to each student
         if (Array.isArray(eleve_ids) && eleve_ids.length > 0) {
           for (const eleveId of eleve_ids) {
-            const el = await env.DB.prepare("SELECT prenom, nom FROM users WHERE id = ?").bind(eleveId).first();
-            if (el) eleveNames.push(`${el.prenom} ${el.nom || ""}`.trim());
+            const student = await env.DB.prepare("SELECT prenom, nom, email FROM users WHERE id = ?").bind(eleveId).first();
+            if (student?.email) {
+              const studentMail = sessionCreatedStudentEmail({ ...sessionInfo, eleve: `${student.prenom} ${student.nom || ""}`.trim(), parent: student.prenom || "" });
+              await sendEmail(env, { to: student.email, subject: studentMail.subject, html: studentMail.html });
+            }
           }
         }
-        const tutorMail = sessionCreatedTutorEmail({ ...sessionInfo, eleves: eleveNames });
-        await sendEmail(env, { to: formateurInfo.email, subject: tutorMail.subject, html: tutorMail.html });
+      } catch (bgErr) {
+        console.error("Background task error (video/email):", bgErr);
       }
-      // Email to each student
-      if (Array.isArray(eleve_ids) && eleve_ids.length > 0) {
-        for (const eleveId of eleve_ids) {
-          const student = await env.DB.prepare(`
-            SELECT prenom, nom, email FROM users WHERE id = ?
-          `).bind(eleveId).first();
-          if (student?.email) {
-            const studentMail = sessionCreatedStudentEmail({ ...sessionInfo, eleve: `${student.prenom} ${student.nom || ""}`.trim(), parent: student.prenom || "" });
-            await sendEmail(env, { to: student.email, subject: studentMail.subject, html: studentMail.html });
-          }
-        }
-      }
-    } catch (emailErr) {
-      console.error("Session email notification error:", emailErr);
+    })();
+    // Use ctx.waitUntil if available to run in background, otherwise fire-and-forget
+    if (ctx && ctx.waitUntil) {
+      ctx.waitUntil(bgWork);
     }
     return jsonResponse({ success: true, id: coursId }, 201);
   } catch (err) {
@@ -11347,6 +11416,8 @@ async function terminerCours(env, id, request) {
     SET nb_heures_total = nb_heures_total + ?
     WHERE id = ?
   `).bind(cours.duree_minutes / 60, cours.formateur_id).run();
+  // Settle escrow: split funds between tutor and admin wallets
+  try { await settleSession(env, id); } catch (e) { console.error('Settlement error:', e); }
   return jsonResponse({ success: true });
 }
 __name(terminerCours, "terminerCours");
@@ -11372,12 +11443,16 @@ async function getCoursFormData(env) {
     WHERE u.role = 'eleve'
     ORDER BY u.prenom, u.nom
   `).all();
+  const pricingResult = await env.DB.prepare("SELECT key, value FROM admin_settings WHERE key IN ('prix_individuel_heure','prix_collectif_heure')").all();
+  const pricing = {};
+  for (const row of (pricingResult.results || [])) { pricing[row.key] = parseFloat(row.value) || 0; }
   return {
     formateurs: formateursResult.results || [],
     domaines: domainesResult.results || [],
     sous_domaines: sousDomainesResult.results || [],
     thematiques: thematiquesResult.results || [],
-    eleves: elevesResult.results || []
+    eleves: elevesResult.results || [],
+    pricing
   };
 }
 __name(getCoursFormData, "getCoursFormData");
@@ -12724,6 +12799,7 @@ async function renderCoursForm(env, userName) {
   const sousDomainesJson = JSON.stringify(sous_domaines);
   const elevesJson = JSON.stringify(eleves.map(e => ({ id: e.id, prenom: e.prenom, nom: e.nom || '', email: e.email || '', city: e.city || '', telephone: e.telephone || '' })));
   const thematiquesJson = JSON.stringify(thematiques);
+  const pricingJson = JSON.stringify(data.pricing || {});
   const formateurOptions = formateurs.map(
     (f) => `<option value="${escapeHtml(f.id)}">${escapeHtml(f.prenom)} ${escapeHtml(f.nom)} - ${escapeHtml(f.ville)}</option>`
   ).join("");
@@ -12850,6 +12926,17 @@ async function renderCoursForm(env, userName) {
             </div>
           </div>
 
+          <!-- Prix -->
+          <div class="form-section-title">\u{1F4B0} Prix de la session</div>
+          <div class="form-group">
+            <label class="form-label">Prix total ($)</label>
+            <div style="display:flex;align-items:center;gap:12px">
+              <input type="number" class="form-input" name="prix_total" id="prix-total-input" step="0.01" min="0" style="max-width:160px" value="30.00">
+              <span id="prix-detail" style="font-size:13px;color:#64748B">$30/h \xD7 60 min</span>
+            </div>
+            <div class="form-hint">Calcul\xE9 automatiquement. Modifiable si n\xE9cessaire.</div>
+          </div>
+
           <!-- Lieu -->
           <div class="form-group">
             <label class="form-label">Lieu</label>
@@ -12876,6 +12963,19 @@ async function renderCoursForm(env, userName) {
         var dd = String(today.getDate()).padStart(2, '0');
         document.getElementById('date-cours-input').min = yyyy + '-' + mm + '-' + dd;
       })();
+
+      // ---- Pricing data ----
+      var pricingData = ${pricingJson};
+      var selectedDuration = 60;
+
+      function updatePrice() {
+        var type = currentType || 'individuel';
+        var durMin = selectedDuration || 60;
+        var rate = type === 'individuel' ? (pricingData.prix_individuel_heure || 30) : (pricingData.prix_collectif_heure || 15);
+        var price = rate * (durMin / 60);
+        document.getElementById('prix-total-input').value = price.toFixed(2);
+        document.getElementById('prix-detail').textContent = '$' + rate + '/h \\u00d7 ' + durMin + ' min';
+      }
 
       // ---- Cascade data ----
       var domainesData = ${domainesJson};
@@ -12944,16 +13044,19 @@ async function renderCoursForm(env, userName) {
           renderSelectedEleves();
           updateAddBtnState();
         }
+        updatePrice();
       }
 
       // ---- Duration selection ----
       function selectDuration(val) {
+        selectedDuration = val;
         document.querySelectorAll('.duration-chip').forEach(function(c) { c.classList.remove('selected'); });
         var radio = document.querySelector('input[name="duree_minutes"][value="' + val + '"]');
         if (radio) {
           radio.checked = true;
           radio.closest('.duration-chip').classList.add('selected');
         }
+        updatePrice();
       }
 
       // ---- Eleve selection (dropdown) ----
@@ -13055,6 +13158,7 @@ async function renderCoursForm(env, userName) {
           heure_debut: form.querySelector('[name="heure_debut"]').value,
           duree_minutes: parseInt(form.querySelector('[name="duree_minutes"]:checked').value),
           lieu: form.querySelector('[name="lieu"]').value,
+          prix_total: parseFloat(document.getElementById('prix-total-input').value) || null,
           eleve_ids: eleve_ids
         };
 
@@ -17871,6 +17975,39 @@ function sessionModificationEmail(data) {
 __name(sessionModificationEmail, "sessionModificationEmail");
 function sessionConfirmedEmail(data) {
   const subject = `CallMyProf - Session confirm\xE9e : ${data.thematique} le ${data.date}`;
+  // Build Google Calendar link
+  let googleCalUrl = '';
+  let outlookCalUrl = '';
+  if (data.dateCours && data.heure) {
+    const [y, m, d] = data.dateCours.split('-');
+    const [hh, mm] = data.heure.split(':');
+    const startDt = `${y}${m}${d}T${hh}${mm || '00'}00`;
+    const durMin = data.dureeMinutes || 60;
+    const endDate = new Date(`${data.dateCours}T${hh}:${mm || '00'}:00`);
+    endDate.setMinutes(endDate.getMinutes() + durMin);
+    const endDt = `${endDate.getFullYear()}${String(endDate.getMonth()+1).padStart(2,'0')}${String(endDate.getDate()).padStart(2,'0')}T${String(endDate.getHours()).padStart(2,'0')}${String(endDate.getMinutes()).padStart(2,'0')}00`;
+    const title = encodeURIComponent(`CallMyProf - ${data.thematique}`);
+    const details = encodeURIComponent(`Session de tutorat CallMyProf\\n${data.thematique}\\nFormateur: ${data.lieu}${data.videoUrl ? '\\nLien vid\xE9o: ' + data.videoUrl : ''}`);
+    const location = encodeURIComponent(data.videoUrl || data.lieu || 'En ligne');
+    googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDt}/${endDt}&details=${details}&location=${location}`;
+    outlookCalUrl = `https://outlook.live.com/calendar/0/action/compose?subject=${title}&startdt=${data.dateCours}T${hh}:${mm || '00'}:00&enddt=${endDate.toISOString().slice(0,19)}&body=${details}&location=${location}`;
+  }
+  const calendarButtons = googleCalUrl ? `
+      <div style="margin:24px 0 0;text-align:center">
+        <p style="color:#64748b;font-size:13px;font-weight:600;margin:0 0 12px;text-transform:uppercase;letter-spacing:0.5px">Ajouter \xE0 votre calendrier</p>
+        <div style="display:inline-block">
+          <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" style="height:42px;v-text-anchor:middle;width:220px;" arcsize="20%" stroke="t" strokecolor="#e2e8f0" fillcolor="#ffffff"><center><![endif]-->
+          <a href="${googleCalUrl}" target="_blank" style="display:inline-block;padding:10px 22px;background:#ffffff;color:#1e293b;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;border:1px solid #e2e8f0;margin:4px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" alt="" width="18" height="18" style="vertical-align:middle;margin-right:6px"/>Google Calendar
+          </a>
+          <!--[if mso]></center></v:roundrect><![endif]-->
+          <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" style="height:42px;v-text-anchor:middle;width:220px;" arcsize="20%" stroke="t" strokecolor="#e2e8f0" fillcolor="#ffffff"><center><![endif]-->
+          <a href="${outlookCalUrl}" target="_blank" style="display:inline-block;padding:10px 22px;background:#ffffff;color:#1e293b;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;border:1px solid #e2e8f0;margin:4px;">
+            <img src="https://img.icons8.com/color/48/microsoft-outlook-2019--v2.png" alt="" width="18" height="18" style="vertical-align:middle;margin-right:6px"/>Outlook
+          </a>
+          <!--[if mso]></center></v:roundrect><![endif]-->
+        </div>
+      </div>` : '';
   const content = `
     <div class="header" style="background:linear-gradient(135deg,#16A34A 0%,#15803d 100%);padding:36px 40px;text-align:center">
       <h1 style="color:#fff;font-size:26px;margin:0">&#9989; Session confirm\xE9e !</h1>
@@ -17885,7 +18022,8 @@ function sessionConfirmedEmail(data) {
         <div style="font-size:15px;color:#475569;margin-top:4px">${data.date} \xE0 ${data.heure}</div>
         <div style="font-size:13px;color:#64748b;margin-top:2px">${data.lieu}</div>
       </div>
-      ${data.videoUrl ? `<div style="text-align:center;margin:0 0 16px"><a href="${data.videoUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#2563EB,#3B82F6);color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">&#127909; Rejoindre la session</a></div>` : ''}
+      ${calendarButtons}
+      ${data.videoUrl ? `<div style="text-align:center;margin:24px 0 16px"><a href="${data.videoUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#2563EB,#3B82F6);color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">&#127909; Rejoindre la session</a></div>` : ''}
       <div style="text-align:center">
         <a href="${data.portalLink}" style="display:inline-block;padding:12px 28px;background:#f1f5f9;color:#475569;text-decoration:none;border-radius:10px;font-weight:600;font-size:14px;border:1px solid #e2e8f0">&#128197; Voir dans mon espace</a>
       </div>
@@ -17897,9 +18035,74 @@ function sessionConfirmedEmail(data) {
   return { subject, html: emailLayout(content) };
 }
 __name(sessionConfirmedEmail, "sessionConfirmedEmail");
+// === ESCROW & SETTLEMENT HELPERS ===
+async function creditEscrow(db, paymentId, coursId, eleveId, amount, currency) {
+  const escrowRow = await db.prepare("SELECT value FROM admin_settings WHERE key = 'escrow_balance'").first();
+  const currentEscrow = parseFloat(escrowRow?.value || '0');
+  const newEscrow = currentEscrow + amount;
+  await db.prepare("UPDATE admin_settings SET value = ?, updated_at = datetime('now') WHERE key = 'escrow_balance'").bind(String(newEscrow)).run();
+  const txId = crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+  await db.prepare("INSERT INTO wallet_transactions (id, wallet_type, owner_id, cours_id, eleve_id, payment_id, type, amount, currency, description, balance_after) VALUES (?, 'escrow', NULL, ?, ?, ?, 'credit', ?, ?, 'Session payment received', ?)")
+    .bind(txId, coursId, eleveId, paymentId, amount, currency || 'USD', newEscrow).run();
+}
+__name(creditEscrow, "creditEscrow");
+async function settleSession(env, coursId) {
+  const cours = await env.DB.prepare("SELECT prix_total, formateur_id, type_cours, duree_minutes, settled FROM cours WHERE id = ?").bind(coursId).first();
+  if (!cours || cours.settled === 1) return;
+
+  const formateur = await env.DB.prepare("SELECT tarif_horaire_individuel, tarif_horaire_collectif FROM formateurs WHERE id = ?").bind(cours.formateur_id).first();
+
+  const paidEnrollments = await env.DB.prepare("SELECT ce.eleve_id, ce.payment_id, p.amount FROM cours_eleves ce JOIN payments p ON p.id = ce.payment_id WHERE ce.cours_id = ? AND ce.payment_id IS NOT NULL AND p.statut = 'completed'").bind(coursId).all();
+  const enrollments = paidEnrollments.results || [];
+  if (enrollments.length === 0) return;
+
+  const tutorRate = cours.type_cours === 'collectif' ? (formateur?.tarif_horaire_collectif || 0) : (formateur?.tarif_horaire_individuel || 0);
+  const tutorSharePerStudent = tutorRate * ((cours.duree_minutes || 60) / 60);
+
+  let totalTutor = 0, totalAdmin = 0, totalEscrowDebit = 0;
+  for (const e of enrollments) {
+    const studentPaid = e.amount || 0;
+    const tutorPart = Math.min(tutorSharePerStudent, studentPaid);
+    const adminPart = studentPaid - tutorPart;
+    totalTutor += tutorPart;
+    totalAdmin += adminPart;
+    totalEscrowDebit += studentPaid;
+  }
+
+  // Debit escrow
+  const escrowRow = await env.DB.prepare("SELECT value FROM admin_settings WHERE key = 'escrow_balance'").first();
+  const currentEscrow = parseFloat(escrowRow?.value || '0');
+  const newEscrow = Math.max(0, currentEscrow - totalEscrowDebit);
+  await env.DB.prepare("UPDATE admin_settings SET value = ?, updated_at = datetime('now') WHERE key = 'escrow_balance'").bind(String(newEscrow)).run();
+
+  function genId() { return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join(''); }
+
+  await env.DB.prepare("INSERT INTO wallet_transactions (id, wallet_type, cours_id, type, amount, currency, description, balance_after) VALUES (?, 'escrow', ?, 'debit', ?, 'USD', 'Session settled', ?)").bind(genId(), coursId, totalEscrowDebit, newEscrow).run();
+
+  // Credit tutor wallet
+  if (totalTutor > 0 && cours.formateur_id) {
+    await env.DB.prepare("INSERT OR IGNORE INTO tutor_wallets (formateur_id, balance, total_earned) VALUES (?, 0, 0)").bind(cours.formateur_id).run();
+    await env.DB.prepare("UPDATE tutor_wallets SET balance = balance + ?, total_earned = total_earned + ?, updated_at = datetime('now') WHERE formateur_id = ?").bind(totalTutor, totalTutor, cours.formateur_id).run();
+    const tw = await env.DB.prepare("SELECT balance FROM tutor_wallets WHERE formateur_id = ?").bind(cours.formateur_id).first();
+    await env.DB.prepare("INSERT INTO wallet_transactions (id, wallet_type, owner_id, cours_id, type, amount, currency, description, balance_after) VALUES (?, 'tutor', ?, ?, 'credit', ?, 'USD', 'Session payment - tutor share', ?)").bind(genId(), cours.formateur_id, coursId, totalTutor, tw?.balance || totalTutor).run();
+  }
+
+  // Credit admin wallet
+  if (totalAdmin > 0) {
+    const adminRow = await env.DB.prepare("SELECT value FROM admin_settings WHERE key = 'admin_wallet_balance'").first();
+    const currentAdmin = parseFloat(adminRow?.value || '0');
+    const newAdmin = currentAdmin + totalAdmin;
+    await env.DB.prepare("UPDATE admin_settings SET value = ?, updated_at = datetime('now') WHERE key = 'admin_wallet_balance'").bind(String(newAdmin)).run();
+    await env.DB.prepare("INSERT INTO wallet_transactions (id, wallet_type, cours_id, type, amount, currency, description, balance_after) VALUES (?, 'admin', ?, 'credit', ?, 'USD', 'Session payment - platform commission', ?)").bind(genId(), coursId, totalAdmin, newAdmin).run();
+  }
+
+  // Mark as settled
+  await env.DB.prepare("UPDATE cours SET settled = 1 WHERE id = ?").bind(coursId).run();
+}
+__name(settleSession, "settleSession");
 // === SESSION ACCEPTANCE WORKFLOW ===
 async function checkAndAutoConfirm(env, coursId) {
-  const cours = await env.DB.prepare("SELECT tutor_status, date_cours, heure_debut, video_room_url, video_host_url, formateur_id, thematique_id, lieu FROM cours WHERE id = ?").bind(coursId).first();
+  const cours = await env.DB.prepare("SELECT tutor_status, date_cours, heure_debut, duree_minutes, video_room_url, video_host_url, formateur_id, thematique_id, lieu FROM cours WHERE id = ?").bind(coursId).first();
   if (!cours) return;
   const eleves = await env.DB.prepare("SELECT eleve_status FROM cours_eleves WHERE cours_id = ?").bind(coursId).all();
   const allEleves = eleves.results || [];
@@ -17911,7 +18114,7 @@ async function checkAndAutoConfirm(env, coursId) {
       const thematique = await env.DB.prepare("SELECT nom FROM thematiques WHERE id = ?").bind(cours.thematique_id).first();
       const formateur = await env.DB.prepare("SELECT email, prenom, nom FROM formateurs WHERE id = ?").bind(cours.formateur_id).first();
       const dateFormatted = (() => { try { return new Date(cours.date_cours).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }); } catch { return cours.date_cours; } })();
-      const baseData = { thematique: thematique?.nom || '', date: dateFormatted, heure: cours.heure_debut, lieu: cours.lieu || 'En ligne' };
+      const baseData = { thematique: thematique?.nom || '', date: dateFormatted, heure: cours.heure_debut, lieu: cours.lieu || 'En ligne', dateCours: cours.date_cours, dureeMinutes: cours.duree_minutes || 60 };
       // Email tutor
       if (formateur?.email) {
         const mail = sessionConfirmedEmail({ ...baseData, recipientName: `${formateur.prenom} ${formateur.nom}`, videoUrl: cours.video_host_url || cours.video_room_url, portalLink: `https://callmyprof.com/tutor/classes/${coursId}` });
@@ -17953,6 +18156,8 @@ async function renderStudentSessionDetail(env, user, coursId) {
   const dateFormatted = (() => { try { return new Date(cours.date_cours).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }); } catch { return cours.date_cours; } })();
   const eleveStatus = enrollment.eleve_status || 'pending';
   const tutorStatus = cours.tutor_status || 'pending';
+  const prixTotal = cours.prix_total || 0;
+  const checkoutPublicKey = env.CHECKOUT_PUBLIC_KEY || '';
   // Check if tutor proposed a modification
   const tutorProposed = tutorStatus === 'modification_requested' && cours.tutor_proposed_date;
   const infoCard = (icon, label, value) => `
@@ -17995,11 +18200,42 @@ async function renderStudentSessionDetail(env, user, coursId) {
       ${enrollment.eleve_response_note ? `<div style="margin-top:8px;color:#475569;font-size:13px">"${escapeHtml(enrollment.eleve_response_note)}"</div>` : ''}
       ${eleveStatus === 'modification_requested' && enrollment.eleve_proposed_date ? `<div style="margin-top:8px;font-size:13px;color:#92400E">Horaire propos\xE9 : <strong>${enrollment.eleve_proposed_date} \xE0 ${enrollment.eleve_proposed_time}</strong></div>` : ''}
     </div>`;
+  const priceDisplay = prixTotal > 0 ? `$${prixTotal.toFixed(2)}` : 'Gratuit';
   const content = `
     <style>
       .sd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:20px 0}
       .sd-status{display:flex;gap:12px;align-items:center;margin:16px 0}
       #respMsg{display:none;padding:14px 18px;border-radius:10px;margin-top:16px;font-size:14px}
+      .pm-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;padding:20px}
+      .pm-card{background:#fff;border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,0.15);max-width:460px;width:100%;overflow:hidden;animation:pmSlideUp 0.3s ease both;max-height:90vh;overflow-y:auto}
+      @keyframes pmSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+      .pm-header{background:linear-gradient(135deg,#0d3865,#1a5276);padding:24px 28px;color:#fff;text-align:center;position:relative}
+      .pm-header h2{font-size:14px;font-weight:600;opacity:0.8;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+      .pm-amount{font-size:32px;font-weight:800;letter-spacing:-1px}
+      .pm-close{position:absolute;top:12px;right:16px;background:none;border:none;color:#fff;font-size:24px;cursor:pointer;opacity:0.7}
+      .pm-close:hover{opacity:1}
+      .pm-body{padding:24px 28px 28px}
+      .pm-form-group{margin-bottom:16px}
+      .pm-form-label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:6px}
+      .pm-frame{border:2px solid #e2e8f0;border-radius:10px;background:#fafbfc;height:50px;overflow:hidden;transition:border-color 0.2s}
+      .pm-frame iframe{width:100% !important;height:50px !important}
+      .pm-frame:focus-within,.pm-frame.frame--focus{border-color:#0d3865;box-shadow:0 0 0 3px rgba(13,56,101,0.1)}
+      .pm-frame.frame--invalid{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,0.1)}
+      .pm-card-brands{display:flex;gap:8px;margin-top:8px}
+      .pm-card-brands svg{transition:opacity 0.2s}
+      .pm-row{display:flex;gap:12px}
+      .pm-row .pm-form-group{flex:1}
+      .pm-pay-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#0d3865,#1a5276);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px}
+      .pm-pay-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(13,56,101,0.3)}
+      .pm-pay-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none}
+      .pm-divider{display:flex;align-items:center;gap:14px;margin:20px 0}
+      .pm-divider-line{flex:1;height:1px;background:#e2e8f0}
+      .pm-divider-text{font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+      .pm-paypal-btn{width:100%;padding:14px;border:2px solid #FFC439;border-radius:12px;background:#FFC439;color:#003087;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s}
+      .pm-paypal-btn:hover{background:#f0b800}
+      .pm-error{display:none;padding:12px;border-radius:8px;background:#FEE2E2;color:#991B1B;font-size:13px;margin-top:12px}
+      .pm-3ds-msg{display:none;padding:16px;border-radius:10px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E40AF;font-size:14px;text-align:center;margin-top:12px}
+      .pm-secure{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:16px;font-size:12px;color:#94a3b8}
     </style>
     <a href="/portal/sessions" style="color:#64748B;font-size:13px;text-decoration:none">&#8592; Retour aux sessions</a>
     <div style="margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -18016,12 +18252,131 @@ async function renderStudentSessionDetail(env, user, coursId) {
       ${infoCard('&#9203;', 'Dur\xE9e', (cours.duree_minutes || 60) + ' min')}
       ${infoCard('&#128104;&#8205;&#127891;', 'Formateur', escapeHtml(formateurName))}
       ${infoCard('&#128205;', 'Lieu', escapeHtml(cours.lieu || 'En ligne'))}
+      ${infoCard('&#128176;', 'Prix', priceDisplay)}
     </div>
     ${actionSection}
     <div id="respMsg"></div>
+    <!-- Payment Modal -->
+    ${prixTotal > 0 ? `
+    <div id="paymentModal" class="pm-overlay">
+      <div class="pm-card">
+        <div class="pm-header">
+          <button class="pm-close" onclick="closePaymentModal()">&times;</button>
+          <h2>Paiement de la session</h2>
+          <div class="pm-amount">$${prixTotal.toFixed(2)}</div>
+          <div style="font-size:13px;opacity:0.7;margin-top:4px">${escapeHtml(cours.thematique || 'Session')}</div>
+        </div>
+        <div class="pm-body">
+          <div class="pm-form-group">
+            <label class="pm-form-label">Num\xE9ro de carte</label>
+            <div class="pm-frame card-number-frame" id="card-number-frame"></div>
+            <div class="pm-card-brands">
+              <svg width="40" height="26" viewBox="0 0 40 26" id="pm-brand-visa" style="opacity:0.4"><rect width="40" height="26" rx="4" fill="#1A1F71"/><text x="20" y="16" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold" font-family="Inter,sans-serif">VISA</text></svg>
+              <svg width="40" height="26" viewBox="0 0 40 26" id="pm-brand-mc" style="opacity:0.4"><rect width="40" height="26" rx="4" fill="#2B2B2B"/><circle cx="16" cy="13" r="8" fill="#EB001B" opacity="0.9"/><circle cx="24" cy="13" r="8" fill="#F79E1B" opacity="0.9"/></svg>
+              <svg width="40" height="26" viewBox="0 0 40 26" id="pm-brand-amex" style="opacity:0.4"><rect width="40" height="26" rx="4" fill="#006FCF"/><text x="20" y="16" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold" font-family="Inter,sans-serif">AMEX</text></svg>
+            </div>
+          </div>
+          <div class="pm-row">
+            <div class="pm-form-group">
+              <label class="pm-form-label">Date d'expiration</label>
+              <div class="pm-frame expiry-date-frame" id="expiry-date-frame"></div>
+            </div>
+            <div class="pm-form-group">
+              <label class="pm-form-label">CVV</label>
+              <div class="pm-frame cvv-frame" id="cvv-frame"></div>
+            </div>
+          </div>
+          <button class="pm-pay-btn" id="payCardBtn" onclick="payCard()" disabled>Payer $${prixTotal.toFixed(2)}</button>
+          <div class="pm-divider"><span class="pm-divider-line"></span><span class="pm-divider-text">ou</span><span class="pm-divider-line"></span></div>
+          <button class="pm-paypal-btn" onclick="payPaypal()">Payer avec PayPal</button>
+          <div class="pm-error" id="pmError"></div>
+          <div class="pm-3ds-msg" id="pm3dsMsg">&#128274; V\xE9rification 3D Secure ouverte dans un nouvel onglet. Cette page se mettra \xE0 jour automatiquement.</div>
+          <div class="pm-secure">&#128274; Paiement s\xE9curis\xE9 et chiffr\xE9</div>
+        </div>
+      </div>
+    </div>` : ''}
     <script>
+    var currentPaymentId = null;
+    var framesInitialized = false;
+    var framesScriptLoaded = false;
+    var cardValid = false;
+    var expiryValid = false;
+    var cvvValid = false;
+    function closePaymentModal() {
+      document.getElementById('paymentModal').style.display = 'none';
+    }
+    function showPaymentError(msg) {
+      var el = document.getElementById('pmError');
+      el.style.display = 'block';
+      el.textContent = msg;
+    }
+    function loadFramesScript() {
+      return new Promise(function(resolve, reject) {
+        if (framesScriptLoaded) { resolve(); return; }
+        var s = document.createElement('script');
+        s.src = 'https://cdn.checkout.com/js/framesv2.min.js';
+        s.onload = function() { framesScriptLoaded = true; resolve(); };
+        s.onerror = function() { reject(new Error('Failed to load payment SDK')); };
+        document.head.appendChild(s);
+      });
+    }
+    async function initFrames() {
+      if (framesInitialized) return;
+      try {
+        await loadFramesScript();
+      } catch(e) { showPaymentError(e.message); return; }
+      // Small delay to let Frames detect the visible containers
+      await new Promise(function(r) { setTimeout(r, 200); });
+      framesInitialized = true;
+      Frames.init({
+        publicKey: '${checkoutPublicKey}',
+        style: {
+          base: {
+            fontSize: '15px',
+            fontFamily: 'Inter, -apple-system, sans-serif',
+            color: '#0f172a',
+            padding: '14px',
+            letterSpacing: '0.5px'
+          },
+          focus: { color: '#0f172a' },
+          placeholder: { base: { color: '#a0aec0', fontStyle: 'normal' } },
+          invalid: { color: '#ef4444' }
+        },
+        localization: {
+          cardNumberPlaceholder: '1234 1234 1234 1234',
+          expiryMonthPlaceholder: 'MM',
+          expiryYearPlaceholder: 'YY',
+          cvvPlaceholder: 'CVV'
+        }
+      });
+      Frames.addEventHandler(Frames.Events.FRAME_VALIDATION_CHANGED, function(e) {
+        var el = document.querySelector('.' + e.element + '-frame');
+        if (e.isValid) {
+          if (el) { el.classList.remove('frame--invalid'); el.classList.add('frame--valid'); }
+        } else if (e.isEmpty) {
+          if (el) { el.classList.remove('frame--invalid'); el.classList.remove('frame--valid'); }
+        } else {
+          if (el) el.classList.add('frame--invalid');
+        }
+        if (e.element === 'card-number') cardValid = e.isValid;
+        if (e.element === 'expiry-date') expiryValid = e.isValid;
+        if (e.element === 'cvv') cvvValid = e.isValid;
+        document.getElementById('payCardBtn').disabled = !(cardValid && expiryValid && cvvValid);
+      });
+      Frames.addEventHandler(Frames.Events.CARD_TOKENIZATION_FAILED, function(e) {
+        showPaymentError('Erreur de tokenisation. Veuillez r\\xE9essayer.');
+        document.getElementById('payCardBtn').disabled = false;
+      });
+      Frames.addEventHandler(Frames.Events.PAYMENT_METHOD_CHANGED, function(e) {
+        var brands = { Visa: 'pm-brand-visa', Mastercard: 'pm-brand-mc', 'American Express': 'pm-brand-amex' };
+        document.querySelectorAll('.pm-card-brands svg').forEach(function(s) { s.style.opacity = '0.4'; });
+        if (e.paymentMethod && brands[e.paymentMethod]) {
+          document.getElementById(brands[e.paymentMethod]).style.opacity = '1';
+        }
+      });
+    }
     async function respondSession(action) {
-      const body = { action };
+      var body = { action: action };
       if (action === 'reject') body.note = document.getElementById('rejectNote')?.value || '';
       if (action === 'request_modification') {
         body.proposed_date = document.getElementById('propDate')?.value || '';
@@ -18029,19 +18384,103 @@ async function renderStudentSessionDetail(env, user, coursId) {
         body.note = document.getElementById('modifyNote')?.value || '';
         if (!body.proposed_date || !body.proposed_time) { alert('Veuillez choisir une date et une heure'); return; }
       }
+      if (action === 'accept' && ${prixTotal} > 0) {
+        try {
+          var initRes = await fetch('/api/portal/sessions/${coursId}/init-payment', { method:'POST', headers:{'Content-Type':'application/json'} });
+          var initData = await initRes.json();
+          if (initData.payment_id) {
+            currentPaymentId = initData.payment_id;
+            document.getElementById('paymentModal').style.display = 'flex';
+            initFrames();
+          } else {
+            showPaymentError(initData.error || 'Erreur lors de la cr\xE9ation du paiement');
+          }
+        } catch(e) { alert('Erreur: ' + e.message); }
+        return;
+      }
       try {
-        const res = await fetch('/api/portal/sessions/${coursId}/respond', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-        const json = await res.json();
-        const msg = document.getElementById('respMsg');
+        var res = await fetch('/api/portal/sessions/${coursId}/respond', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        var json = await res.json();
+        var msg = document.getElementById('respMsg');
         if (json.success) {
           msg.style.display='block'; msg.style.background='#DCFCE7'; msg.style.color='#166534';
           msg.textContent = action === 'accept' ? 'Session accept\xE9e !' : action === 'reject' ? 'Session refus\xE9e.' : 'Proposition envoy\xE9e au formateur.';
-          setTimeout(() => window.location.reload(), 1500);
+          setTimeout(function() { window.location.reload(); }, 1500);
         } else {
           msg.style.display='block'; msg.style.background='#FEE2E2'; msg.style.color='#991B1B';
           msg.textContent = json.error || 'Erreur';
         }
       } catch(e) { alert('Erreur: ' + e.message); }
+    }
+    async function payCard() {
+      if (!currentPaymentId) return;
+      var btn = document.getElementById('payCardBtn');
+      btn.disabled = true;
+      btn.textContent = 'Traitement...';
+      document.getElementById('pmError').style.display = 'none';
+      try {
+        var tokenResult = await Frames.submitCard();
+        var res = await fetch('/api/payment/process-card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: tokenResult.token, reference_id: currentPaymentId, reference_type: 'session' })
+        });
+        var data = await res.json();
+        if (data.success) {
+          window.location.reload();
+        } else if (data.redirectUrl) {
+          window.open(data.redirectUrl, '_blank');
+          document.getElementById('pm3dsMsg').style.display = 'block';
+          btn.textContent = 'En attente de v\xE9rification...';
+          // Poll for payment status
+          var pollInterval = setInterval(async function() {
+            try {
+              var statusRes = await fetch('/api/portal/sessions/${coursId}/payment-status');
+              var statusData = await statusRes.json();
+              if (statusData.status === 'paid') {
+                clearInterval(pollInterval);
+                window.location.reload();
+              }
+            } catch(e) {}
+          }, 3000);
+        } else {
+          showPaymentError(data.error || 'Paiement refus\xE9');
+          btn.disabled = false;
+          btn.textContent = 'Payer $${prixTotal.toFixed(2)}';
+        }
+      } catch(e) {
+        showPaymentError('Erreur: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Payer $${prixTotal.toFixed(2)}';
+      }
+    }
+    async function payPaypal() {
+      if (!currentPaymentId) return;
+      document.getElementById('pmError').style.display = 'none';
+      try {
+        var res = await fetch('/api/payment/create-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference_id: currentPaymentId, reference_type: 'session', gateway: 'paypal' })
+        });
+        var data = await res.json();
+        if (data.redirectUrl) {
+          window.open(data.redirectUrl, '_blank');
+          document.getElementById('pm3dsMsg').style.display = 'block';
+          document.getElementById('pm3dsMsg').textContent = 'Paiement PayPal ouvert dans un nouvel onglet. Cette page se mettra \xE0 jour automatiquement.';
+          var pollPP = setInterval(async function() {
+            try {
+              var sr = await fetch('/api/portal/sessions/${coursId}/payment-status');
+              var sd = await sr.json();
+              if (sd.status === 'paid') { clearInterval(pollPP); window.location.reload(); }
+            } catch(ex) {}
+          }, 3000);
+        } else {
+          showPaymentError(data.error || 'Erreur PayPal');
+        }
+      } catch(e) {
+        showPaymentError('Erreur: ' + e.message);
+      }
     }
     <\/script>
   `;
@@ -18169,6 +18608,34 @@ async function renderTutorSessionDetail(env, user, coursId) {
   return htmlTutorPage({ title: cours.thematique || 'Session', pageTitle: cours.thematique || 'Session', activePage: "classes", content, userName: `${user.prenom} ${user.nom}` });
 }
 __name(renderTutorSessionDetail, "renderTutorSessionDetail");
+// API: Init session payment (creates pending payment record)
+async function handleInitSessionPayment(request, env, user, coursId) {
+  try {
+    const enrollment = await env.DB.prepare("SELECT cours_id FROM cours_eleves WHERE cours_id = ? AND eleve_id = ?").bind(coursId, user.id).first();
+    if (!enrollment) return jsonResponse({ error: "Not enrolled in this session" }, 403);
+    const cours = await env.DB.prepare("SELECT prix_total, date_cours, thematique_id FROM cours WHERE id = ?").bind(coursId).first();
+    if (!cours || !cours.prix_total || cours.prix_total <= 0) return jsonResponse({ error: "No payment required for this session" }, 400);
+    // Check for existing pending payment
+    const existing = await env.DB.prepare("SELECT id FROM payments WHERE cours_id = ? AND eleve_id = ? AND statut = 'pending'").bind(coursId, user.id).first();
+    if (existing) return jsonResponse({ success: true, payment_id: existing.id, amount: cours.prix_total });
+    // Get thematique name for description
+    const thematique = await env.DB.prepare("SELECT nom FROM thematiques WHERE id = ?").bind(cours.thematique_id).first();
+    const description = "Session: " + (thematique?.nom || "Cours") + " - " + (cours.date_cours || "");
+    const paymentId = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+    await env.DB.prepare("INSERT INTO payments (id, amount, currency, description, statut, cours_id, eleve_id, created_at) VALUES (?, ?, 'USD', ?, 'pending', ?, ?, datetime('now'))").bind(paymentId, cours.prix_total, description, coursId, user.id).run();
+    return jsonResponse({ success: true, payment_id: paymentId, amount: cours.prix_total });
+  } catch (e) {
+    console.error("Init session payment error:", e);
+    return jsonResponse({ error: "Failed to initialize payment" }, 500);
+  }
+}
+__name(handleInitSessionPayment, "handleInitSessionPayment");
+// API: Check session payment status
+async function handlePaymentStatus(env, user, coursId) {
+  const enrollment = await env.DB.prepare("SELECT payment_id FROM cours_eleves WHERE cours_id = ? AND eleve_id = ?").bind(coursId, user.id).first();
+  return jsonResponse({ status: enrollment?.payment_id ? 'paid' : 'pending' });
+}
+__name(handlePaymentStatus, "handlePaymentStatus");
 // API: Student responds to session
 async function handleStudentSessionResponse(request, env, user, coursId) {
   try {
@@ -18702,13 +19169,13 @@ async function renderLeadsListe(env, url, userName) {
       tableRows += `
         <tr>
           <td>
-            <div class="user-cell">
+            <a href="/leads/${lead.id}" class="user-cell" style="text-decoration:none;color:inherit;">
               <div class="user-avatar">${escapeHtml(initials.toUpperCase())}</div>
               <div class="user-info">
-                <div class="user-name">${escapeHtml(lead.prenom)} ${escapeHtml(lead.nom)}</div>
+                <div class="user-name" style="color:var(--primary);font-weight:700;">${escapeHtml(lead.prenom)} ${escapeHtml(lead.nom)}</div>
                 <div class="user-meta">${escapeHtml(lead.email)}</div>
               </div>
-            </div>
+            </a>
           </td>
           <td>${escapeHtml(lead.telephone)}<br><span style="font-size:11px;color:var(--gray-400)">${escapeHtml(lead.country_code)}</span></td>
           <td>${serviceIcon(lead.service_type)}</td>
@@ -19329,9 +19796,65 @@ async function renderLeadDetail(env, leadId, userName) {
             </form>
           </div>
         </div>
+
+        <!-- Reset Password -->
+        <div class="detail-card">
+          <div class="detail-card-header">\u{1F511} Reset Password</div>
+          <div class="detail-card-body" id="lead-reset-pwd-section">
+            <div style="text-align:center;color:#94A3B8;padding:8px;font-size:13px;" id="lead-pwd-loading">Checking account...</div>
+          </div>
+        </div>
       </div>
     </div>
 
+    <script>
+    // Check if lead has a user account for password reset
+    (function() {
+      var section = document.getElementById('lead-reset-pwd-section');
+      fetch('/api/admin/search-user?email=${encodeURIComponent(lead.email)}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.success || !data.user) {
+            section.innerHTML = '<div style="text-align:center;color:#94A3B8;padding:12px;font-size:13px;">\u{1F6AB} No portal account found for this email.<br><span style="font-size:11px;margin-top:4px;display:block;">The student must create an account first.</span></div>';
+            return;
+          }
+          var u = data.user;
+          section.innerHTML = '<div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">'
+            + '<div style="width:32px;height:32px;border-radius:50%;background:#1E293B;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">' + (u.prenom||'')[0].toUpperCase() + (u.nom||'')[0].toUpperCase() + '<\/div>'
+            + '<div><div style="font-weight:600;font-size:13px;color:#0F172A;">' + u.prenom + ' ' + u.nom + '<\/div>'
+            + '<div style="font-size:11px;color:#64748B;">' + u.email + '<\/div><\/div><\/div>'
+            + '<div style="position:relative;margin-bottom:10px;">'
+            + '<label style="display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">New Password</label>'
+            + '<input type="password" id="lead-new-pwd" placeholder="Min. 8 characters" style="width:100%;padding:8px 36px 8px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;box-sizing:border-box;">'
+            + '<button type="button" onclick="var i=document.getElementById(\\'lead-new-pwd\\');i.type=i.type===\\'password\\'?\\'text\\':\\'password\\'" style="position:absolute;right:8px;top:26px;background:none;border:none;cursor:pointer;font-size:14px;">\u{1F441}<\/button>'
+            + '<\/div>'
+            + '<button onclick="resetLeadPwd(\\'' + u.id + '\\')" id="lead-reset-btn" class="btn btn-sm" style="width:100%;background:#DC2626;color:#fff;border:none;padding:8px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">\u{1F504} Reset Password<\/button>'
+            + '<div id="lead-reset-msg" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;"><\/div>';
+        });
+    })();
+    function resetLeadPwd(userId) {
+      var pwd = document.getElementById('lead-new-pwd').value;
+      if (!pwd || pwd.length < 8) { alert('Password must be at least 8 characters'); return; }
+      var btn = document.getElementById('lead-reset-btn');
+      btn.disabled = true; btn.textContent = '\u23F3 Resetting...';
+      fetch('/api/admin/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, new_password: pwd }) })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          btn.disabled = false; btn.innerHTML = '\u{1F504} Reset Password';
+          var msg = document.getElementById('lead-reset-msg');
+          msg.style.display = 'block';
+          if (data.success) {
+            msg.style.background = '#DCFCE7'; msg.style.color = '#166534';
+            msg.textContent = '\u2705 Password reset successfully!';
+            document.getElementById('lead-new-pwd').value = '';
+          } else {
+            msg.style.background = '#FEF2F2'; msg.style.color = '#991B1B';
+            msg.textContent = '\u274C ' + (data.error || 'Failed');
+          }
+          setTimeout(function() { msg.style.display = 'none'; }, 4000);
+        });
+    }
+    </script>
     <script>
     // Load doc verification for converted leads
     if (document.getElementById('docVerifySection')) {
@@ -21204,6 +21727,8 @@ var PAGE_CSS14 = `
   .badge-ouvert { background: var(--success-light); color: #065f46; border: 1px solid #a7f3d0; }
   .badge-complet { background: var(--blue-light); color: #1e40af; border: 1px solid #93c5fd; }
   .badge-en_cours { background: var(--warning-light); color: #92400e; border: 1px solid #fde68a; }
+  .badge-planifie { background: #FEF3C7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-confirme { background: var(--success-light); color: #065f46; border: 1px solid #a7f3d0; }
   .badge-termine { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-200); }
   .badge-annule { background: var(--danger-light); color: #991b1b; border: 1px solid #fca5a5; }
 
@@ -21240,140 +21765,6 @@ function statusBadge6(statut) {
 }
 __name(statusBadge6, "statusBadge");
 async function renderGroupClassesListe(env, url, userName) {
-  const search = url.searchParams.get("search")?.trim() || "";
-  const filterStatut = url.searchParams.get("statut") || "all";
-  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
-  const { classes, total } = await listGroupClasses(env, {
-    statut: filterStatut,
-    search,
-    page,
-    limit: 20
-  });
-  const statsResult = await env.DB.prepare(`
-    SELECT
-      COUNT(*) as total,
-      SUM(CASE WHEN statut = 'ouvert' THEN 1 ELSE 0 END) as cnt_open,
-      SUM(CASE WHEN statut = 'en_cours' THEN 1 ELSE 0 END) as cnt_active,
-      SUM(CASE WHEN statut = 'complet' THEN 1 ELSE 0 END) as cnt_full,
-      SUM(inscrits) as total_enrolled
-    FROM group_classes
-  `).first();
-  const stats = {
-    total: statsResult?.total || 0,
-    open: statsResult?.cnt_open || 0,
-    active: statsResult?.cnt_active || 0,
-    full: statsResult?.cnt_full || 0,
-    enrolled: statsResult?.total_enrolled || 0
-  };
-  let tableRows = "";
-  if (classes.length === 0) {
-    tableRows = `
-      <tr>
-        <td colspan="8" class="empty-state">
-          <span class="empty-icon">&#128218;</span>
-          <div class="empty-title">No group classes</div>
-          <div class="empty-text">Create your first group class to get started.</div>
-        </td>
-      </tr>`;
-  } else {
-    for (const gc of classes) {
-      const pct = gc.max_eleves > 0 ? Math.round(gc.inscrits / gc.max_eleves * 100) : 0;
-      const fillClass = pct >= 100 ? "full" : pct >= 50 ? "mid" : "low";
-      tableRows += `
-        <tr>
-          <td>
-            <a href="/group-classes/${gc.id}" style="color:var(--primary);font-weight:600;text-decoration:none">
-              ${escapeHtml(gc.titre)}
-            </a>
-            ${gc.thematique_nom ? `<br><span style="font-size:11px;color:var(--gray-400)">${escapeHtml(gc.thematique_nom)}</span>` : ""}
-          </td>
-          <td>${escapeHtml(gc.formateur_prenom || "")} ${escapeHtml(gc.formateur_nom || "")}</td>
-          <td>${escapeHtml(gc.date_debut || "-")}<br><span style="font-size:11px;color:var(--gray-400)">${escapeHtml(gc.heure_debut)}</span></td>
-          <td>${gc.duree_minutes}min</td>
-          <td>
-            <span style="font-size:13px;font-weight:600">${gc.inscrits}/${gc.max_eleves}</span>
-            <div class="enrollment-bar"><div class="enrollment-fill ${fillClass}" style="width:${pct}%"></div></div>
-          </td>
-          <td><span style="font-weight:700">$${gc.prix_par_eleve}</span>/student</td>
-          <td>${statusBadge6(gc.statut)}</td>
-          <td>
-            <div class="table-actions">
-              <a href="/group-classes/${gc.id}" class="btn btn-sm btn-outline">&#128065; View</a>
-            </div>
-          </td>
-        </tr>`;
-    }
-  }
-  const content = `
-    <div class="page-header">
-      <div>
-        <h1><span class="page-icon">&#128101;</span> Group Classes</h1>
-        <div class="page-subtitle">${stats.total} group classes, ${stats.enrolled} total enrollments</div>
-      </div>
-      <div>
-        <button class="btn btn-sm btn-primary" onclick="window.location.href='/group-classes/new'">&#10133; New Class</button>
-      </div>
-    </div>
-
-    <!-- Stats -->
-    <div class="gc-stats">
-      <div class="gc-stat">
-        <div class="gc-stat-count" style="color:var(--success)">${stats.open}</div>
-        <div class="gc-stat-label">Open</div>
-      </div>
-      <div class="gc-stat">
-        <div class="gc-stat-count" style="color:var(--warning)">${stats.active}</div>
-        <div class="gc-stat-label">In Progress</div>
-      </div>
-      <div class="gc-stat">
-        <div class="gc-stat-count" style="color:var(--blue)">${stats.full}</div>
-        <div class="gc-stat-label">Full</div>
-      </div>
-      <div class="gc-stat">
-        <div class="gc-stat-count">${stats.enrolled}</div>
-        <div class="gc-stat-label">Enrolled</div>
-      </div>
-    </div>
-
-    <!-- Filter Bar -->
-    <form class="filter-bar" method="GET" action="/group-classes">
-      <input type="text" name="search" class="search-input" placeholder="Search by title, tutor..." value="${escapeHtml(search)}">
-      <select name="statut" class="filter-select" onchange="this.form.submit()">
-        <option value="all"${filterStatut === "all" ? " selected" : ""}>All statuses</option>
-        <option value="ouvert"${filterStatut === "ouvert" ? " selected" : ""}>Open</option>
-        <option value="complet"${filterStatut === "complet" ? " selected" : ""}>Full</option>
-        <option value="en_cours"${filterStatut === "en_cours" ? " selected" : ""}>In Progress</option>
-        <option value="termine"${filterStatut === "termine" ? " selected" : ""}>Completed</option>
-        <option value="annule"${filterStatut === "annule" ? " selected" : ""}>Cancelled</option>
-      </select>
-      <button type="submit" class="btn btn-sm btn-outline">&#128269; Search</button>
-      ${filterStatut !== "all" || search ? '<a href="/group-classes" class="btn btn-sm btn-outline">&#10060; Clear</a>' : ""}
-    </form>
-
-    <!-- Table -->
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Tutor</th>
-            <th>Date</th>
-            <th>Duration</th>
-            <th>Enrollment</th>
-            <th>Price</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tableRows}
-        </tbody>
-      </table>
-    </div>
-
-    ${paginationHTML(page, total, 20, "/group-classes")}
-  `;
-  // Also fetch group sessions from cours table (type_cours = 'collectif')
   const now = new Date().toISOString().split("T")[0];
   const coursGroupRes = await env.DB.prepare(`
     SELECT c.id, c.titre, c.date_cours, c.heure_debut, c.duree_minutes, c.max_eleves,
@@ -21408,7 +21799,7 @@ async function renderGroupClassesListe(env, url, userName) {
   }
   let coursGroupRows = "";
   if (coursGroup.length === 0) {
-    coursGroupRows = `<tr><td colspan="9" class="empty-state"><div class="empty-title">No group sessions from Classes & Calendar</div></td></tr>`;
+    coursGroupRows = `<tr><td colspan="8" class="empty-state"><div style="padding:40px 0"><span style="font-size:48px">&#128101;</span><div class="empty-title" style="margin-top:12px">No group sessions</div><div class="empty-text">Create a group session from Classes & Calendar to get started.</div></div></td></tr>`;
   } else {
     for (const cg of coursGroup) {
       const inscrits = cg.inscrits || 0;
@@ -21416,11 +21807,11 @@ async function renderGroupClassesListe(env, url, userName) {
       const fillClass = pct >= 100 ? "full" : pct >= 50 ? "mid" : "low";
       const isUpcoming = cg.date_cours >= now;
       const videoUrl = cg.video_host_url || cg.video_room_url;
-      const statusLabel = cg.statut === 'termine' ? '<span style="color:var(--success);font-weight:600">Completed</span>'
-        : cg.statut === 'annule' ? '<span style="color:var(--gray-400);font-weight:600">Cancelled</span>'
-        : '<span style="color:var(--blue);font-weight:600">Scheduled</span>';
+      const statusLabels = { planifie: 'Planifi\u00e9', confirme: 'Confirm\u00e9', termine: 'Termin\u00e9', annule: 'Annul\u00e9' };
+      const statusLabel = `<span class="badge badge-${cg.statut || 'planifie'} badge-dot">${statusLabels[cg.statut] || cg.statut || 'Planifi\u00e9'}</span>`;
+      const gcSearchData = [cg.titre || '', cg.thematique_nom || '', cg.formateur_prenom || '', cg.formateur_nom || '', cg.date_cours || '', cg.heure_debut || '', cg.lieu || '', cg.eleves_noms || ''].join(' ').toLowerCase();
       coursGroupRows += `
-        <tr>
+        <tr data-status="${cg.statut || 'planifie'}" data-search="${escapeHtml(gcSearchData)}">
           <td>
             <a href="/cours/${cg.id}" style="color:var(--primary);font-weight:600;text-decoration:none">
               ${escapeHtml(cg.titre || cg.thematique_nom || 'Group Session')}
@@ -21435,45 +21826,80 @@ async function renderGroupClassesListe(env, url, userName) {
             <div class="enrollment-bar"><div class="enrollment-fill ${fillClass}" style="width:${pct}%"></div></div>
             ${cg.eleves_noms ? `<div style="font-size:11px;color:var(--gray-400);margin-top:2px">${escapeHtml(cg.eleves_noms)}</div>` : ''}
           </td>
-          <td>${cg.lieu ? escapeHtml(cg.lieu) : '<span style="color:var(--gray-400)">—</span>'}</td>
+          <td>${cg.lieu ? escapeHtml(cg.lieu) : '<span style="color:var(--gray-400)">\u2014</span>'}</td>
           <td>${statusLabel}</td>
           <td>
             <div class="table-actions">
-              ${isUpcoming && videoUrl ? `<a href="${videoUrl}" target="_blank" class="btn btn-sm btn-primary" style="font-size:11px">&#127909; Join</a>` : ''}
+              ${isUpcoming && videoUrl ? `<a href="/session/${cg.id}?role=host" target="_blank" class="btn btn-sm btn-primary" style="font-size:11px">&#127909; Join</a>` : ''}
               <a href="/cours/${cg.id}" class="btn btn-sm btn-outline">&#128065; View</a>
             </div>
           </td>
         </tr>`;
     }
   }
-  const coursGroupSection = `
-    <div style="margin-top:32px">
-      <div class="page-header">
-        <div>
-          <h2 style="font-size:18px;margin:0"><span class="page-icon">&#128197;</span> Group Sessions (Classes & Calendar)</h2>
-          <div class="page-subtitle">${coursGroup.length} group session${coursGroup.length !== 1 ? 's' : ''} created from Classes & Calendar</div>
-        </div>
-      </div>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Title / Subject</th>
-              <th>Tutor</th>
-              <th>Date</th>
-              <th>Duration</th>
-              <th>Students</th>
-              <th>Location</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>${coursGroupRows}</tbody>
-        </table>
+  const fullContent = `
+    <div class="page-header">
+      <div>
+        <h1><span class="page-icon">&#128101;</span> Group Classes</h1>
+        <div class="page-subtitle"><span id="gcCount">${coursGroup.length}</span> group session${coursGroup.length !== 1 ? 's' : ''}</div>
       </div>
     </div>
+
+    <div class="filter-bar" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="gcSearch" class="search-input" placeholder="Search by title, tutor, student, location, date..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:inherit">
+      <select id="gcStatusFilter" class="filter-select" style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:var(--gray-700)">
+        <option value="all">All statuses</option>
+        <option value="planifie">Planifi\u00e9</option>
+        <option value="confirme">Confirm\u00e9</option>
+        <option value="termine">Termin\u00e9</option>
+        <option value="annule">Annul\u00e9</option>
+      </select>
+      <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('gcSearch').value='';document.getElementById('gcStatusFilter').value='all';filterGcTable()">&#10060; Clear</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Title / Subject</th>
+            <th>Tutor</th>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Students</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="gcTableBody">${coursGroupRows}</tbody>
+      </table>
+    </div>
+
+    <script>
+      function filterGcTable() {
+        var search = document.getElementById('gcSearch').value.toLowerCase().trim();
+        var status = document.getElementById('gcStatusFilter').value;
+        var rows = document.querySelectorAll('#gcTableBody tr');
+        var visible = 0;
+        rows.forEach(function(row) {
+          var rowStatus = row.getAttribute('data-status') || '';
+          var rowSearch = row.getAttribute('data-search') || '';
+          var matchStatus = status === 'all' || rowStatus === status;
+          var matchSearch = !search || rowSearch.indexOf(search) !== -1;
+          if (matchStatus && matchSearch) {
+            row.style.display = '';
+            visible++;
+          } else {
+            row.style.display = 'none';
+          }
+        });
+        var countEl = document.getElementById('gcCount');
+        if (countEl) countEl.textContent = visible;
+      }
+      document.getElementById('gcSearch').addEventListener('input', filterGcTable);
+      document.getElementById('gcStatusFilter').addEventListener('change', filterGcTable);
+    <\/script>
   `;
-  const fullContent = content + coursGroupSection;
   return htmlPage({
     title: "Group Classes",
     activePage: "group-classes",
@@ -22263,7 +22689,7 @@ function renderPaymentSelection(opts) {
 </html>`;
 }
 __name(renderPaymentSelection, "renderPaymentSelection");
-function renderPaymentSuccess(locale) {
+function renderPaymentSuccess(locale, backUrl) {
   const t2 = locale === "fr" ? {
     title: "Paiement confirm\xE9",
     msg: "Votre paiement a \xE9t\xE9 trait\xE9 avec succ\xE8s. Vous recevrez un email de confirmation sous peu.",
@@ -22326,7 +22752,7 @@ function renderPaymentSuccess(locale) {
     <span class="check">&#9989;</span>
     <h1>${t2.title}</h1>
     <p>${t2.msg}</p>
-    <a href="/">${t2.back}</a>
+    <a href="${backUrl || '/'}">${backUrl ? (locale === 'fr' ? 'Retour a la session' : 'Back to session') : t2.back}</a>
   </div>
 </body>
 </html>`;
@@ -23486,79 +23912,27 @@ var SESSIONS_CSS = `
   .stat-chip.today { background: rgba(220,38,38,0.1); color: #DC2626; }
   .stat-chip.past { background: rgba(100,116,139,0.1); color: #64748b; }
 
-  .session-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    border: 1px solid var(--gray-100);
-    margin-bottom: 16px;
-    overflow: hidden;
-    transition: all 0.2s ease;
-    animation: slideUp 0.4s ease both;
-  }
-  .session-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); }
-  .session-card.is-today { border-left: 4px solid #DC2626; }
-  .session-card.is-past { opacity: 0.6; }
-
-  .session-card-inner {
+  .filter-bar {
     display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
     align-items: center;
-    padding: 20px 24px;
-    gap: 20px;
   }
-  .session-date-box {
-    text-align: center;
-    min-width: 64px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: var(--gray-50);
-  }
-  .session-date-box.today { background: linear-gradient(135deg, #DC2626, #ef4444); color: #fff; }
-  .session-date-day { font-size: 24px; font-weight: 800; line-height: 1; }
-  .session-date-month { font-size: 11px; font-weight: 600; text-transform: uppercase; margin-top: 2px; }
-  .session-date-box.today .session-date-day,
-  .session-date-box.today .session-date-month { color: #fff; }
-
-  .session-details { flex: 1; }
-  .session-student { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
-  .session-meta { font-size: 13px; color: var(--gray-500); display: flex; gap: 16px; flex-wrap: wrap; }
-  .session-meta span { display: inline-flex; align-items: center; gap: 4px; }
-
-  .session-actions { display: flex; gap: 8px; align-items: center; }
-  .btn-join {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 20px;
+  .filter-select {
+    padding: 8px 12px;
+    border: 1px solid var(--gray-200);
     border-radius: 8px;
     font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: all 0.2s;
-    border: none;
-    cursor: pointer;
-  }
-  .btn-join-admin {
-    background: linear-gradient(135deg, #DC2626, #ef4444);
-    color: #fff;
-  }
-  .btn-join-admin:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220,38,38,0.3); }
-  .btn-join-student {
-    background: var(--gray-100);
+    font-family: inherit;
+    background: #fff;
     color: var(--gray-700);
   }
-  .btn-join-student:hover { background: var(--gray-200); }
-  .btn-copy {
-    background: none;
-    border: 1px solid var(--gray-200);
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--gray-500);
-    transition: all 0.2s;
-  }
-  .btn-copy:hover { border-color: var(--gray-400); color: var(--gray-700); }
+
+  .badge-planifie { background: #FEF3C7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-confirme { background: var(--success-light); color: #065f46; border: 1px solid #a7f3d0; }
+  .badge-termine { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-200); }
+  .badge-annule { background: var(--danger-light); color: #991b1b; border: 1px solid #fca5a5; }
 
   .provider-badge {
     display: inline-flex;
@@ -23604,15 +23978,11 @@ var SESSIONS_CSS = `
   .empty-state h3 { font-size: 18px; color: var(--gray-600); margin-bottom: 4px; }
   .empty-state p { font-size: 14px; }
 
-  .section-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--gray-400);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 28px 0 12px;
-    padding-left: 4px;
-  }
+  tr.row-today { background: #FEF2F2 !important; }
+  tr.row-today:hover { background: #FEE2E2 !important; }
+  tr.row-past { opacity: 0.55; }
+  .today-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #DC2626; margin-right: 6px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 `;
 async function renderSessions(env, userName) {
   const now = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
@@ -23635,7 +24005,7 @@ async function renderSessions(env, userName) {
            NULL as utm_source,
            f.prenom || ' ' || f.nom as formateur_nom,
            t.nom as thematique_nom,
-           c.duree_minutes, c.lieu, 'cours' as source
+           c.duree_minutes, c.lieu, c.statut, 'cours' as source
     FROM cours c
     LEFT JOIN formateurs f ON f.id = c.formateur_id
     LEFT JOIN thematiques t ON t.id = c.thematique_id
@@ -23672,85 +24042,122 @@ async function renderSessions(env, userName) {
   const todaySessions = sessions.filter((s) => s.booking_date === now);
   const upcomingSessions = sessions.filter((s) => s.booking_date > now);
   const pastSessions = sessions.filter((s) => s.booking_date < now).reverse().slice(0, 10);
-  const months2 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  function renderCard(s, type) {
-    const d = /* @__PURE__ */ new Date(s.booking_date + "T00:00:00");
-    const day = d.getDate();
-    const month = months2[d.getMonth()];
-    const isToday = type === "today";
-    const isPast = type === "past";
+  const allSorted = [...todaySessions, ...upcomingSessions, ...pastSessions];
+  const statusLabelsCard = { planifie: 'Planifi\u00e9', confirme: 'Confirm\u00e9', termine: 'Termin\u00e9', annule: 'Annul\u00e9' };
+  function renderRow(s) {
+    const isToday = s.booking_date === now;
+    const isPast = s.booking_date < now;
     const isCours = s.source === "cours";
+    const rowClass = isToday ? "row-today" : isPast ? "row-past" : "";
     const providerClass = s.video_provider === "daily" ? "provider-daily" : s.video_provider === "jitsi" ? "provider-jitsi" : "";
     const providerLabel = s.video_provider === "daily" ? "Daily.co" : s.video_provider === "jitsi" ? "Jitsi" : "";
+    const sessionUrl = s.video_room_url ? ("/session/" + s.id) : null;
+    const hostUrl = s.video_room_url ? ("/session/" + s.id + "?role=host") : null;
+    const studentName = (s.lead_prenom || "Student") + (s.lead_nom ? " " + s.lead_nom : "");
+    const effectiveStatus = isCours && s.statut ? s.statut : (isPast ? 'termine' : 'planifie');
+    const statusBadge = '<span class="badge badge-' + effectiveStatus + ' badge-dot">' + (statusLabelsCard[effectiveStatus] || effectiveStatus) + '</span>';
     const sourceBadge = isCours
-      ? `<span class="utm-badge" style="background:#EFF6FF;color:#2563EB">Cours</span>`
-      : (s.utm_source ? `<span class="utm-badge utm-${s.utm_source.toLowerCase()}">${s.utm_source}</span>` : `<span class="utm-badge utm-organic">Organic</span>`);
-    const sessionUrl = isCours ? (s.video_room_url || null) : `https://callmyprof.com/session/${s.id}`;
-    const hostUrl = isCours ? (s.video_host_url || s.video_room_url || null) : (sessionUrl ? `${sessionUrl}?role=host` : null);
-    const studentName = s.lead_prenom || "Student";
-    const extraInfo = isCours ? `<span style="color:#6366F1;font-weight:500">&#127891; ${escapeHtml(s.thematique_nom || "")}</span>` + (s.formateur_nom ? ` <span style="color:var(--gray-400)">&#8226;</span> <span>&#128100; ${escapeHtml(s.formateur_nom)}</span>` : "") + (s.duree_minutes ? ` <span style="color:var(--gray-400)">&#8226;</span> <span>${s.duree_minutes}min</span>` : "") + (s.lieu ? ` <span style="color:var(--gray-400)">&#8226;</span> <span>&#128205; ${escapeHtml(s.lieu)}</span>` : "") : "";
-    return `
-      <div class="session-card ${isToday ? "is-today" : ""} ${isPast ? "is-past" : ""}">
-        <div class="session-card-inner">
-          <div class="session-date-box ${isToday ? "today" : ""}">
-            <div class="session-date-day">${day}</div>
-            <div class="session-date-month">${month}</div>
-          </div>
-          <div class="session-details">
-            <div class="session-student">
-              ${escapeHtml(studentName)} ${s.lead_nom ? escapeHtml(s.lead_nom) : ""}
-              ${sourceBadge}
-            </div>
-            <div class="session-meta">
-              <span>&#128348; ${s.booking_time}</span>
-              ${providerLabel !== "—" ? `<span class="provider-badge ${providerClass}">${providerLabel}</span>` : ""}
-              ${s.lead_email ? `<span>&#9993; ${escapeHtml(s.lead_email)}</span>` : ""}
-              ${isToday ? '<span class="countdown" data-date="' + s.booking_date + '" data-time="' + s.booking_time + '"></span>' : ""}
-            </div>
-            ${extraInfo ? `<div class="session-meta" style="margin-top:4px">${extraInfo}</div>` : ""}
-          </div>
-          <div class="session-actions">
-            ${!isPast ? `
-              ${hostUrl ? `<a href="${hostUrl}" target="_blank" class="btn-join btn-join-admin">&#127909; Rejoindre</a>` : ""}
-              ${sessionUrl ? `<button class="btn-copy" onclick="navigator.clipboard.writeText('${sessionUrl}');this.textContent='Copie!';setTimeout(()=>this.textContent='&#128203; Lien',1500)" title="Copier le lien etudiant">&#128203; Lien</button>` : ""}
-              ${isCours ? `<a href="/cours" class="btn-copy" style="text-decoration:none;margin-left:4px">&#128197; Cours</a>` : ""}
-            ` : `
-              <span style="font-size:13px;color:var(--gray-400);">Terminee</span>
-            `}
-          </div>
-        </div>
-      </div>
-    `;
+      ? '<span class="utm-badge" style="background:#EFF6FF;color:#2563EB">Cours</span>'
+      : (s.utm_source ? '<span class="utm-badge utm-' + s.utm_source.toLowerCase() + '">' + escapeHtml(s.utm_source) + '</span>' : '<span class="utm-badge utm-organic">Organic</span>');
+    const searchData = [s.booking_date || '', s.booking_time || '', studentName, s.lead_email || '', s.formateur_nom || '', s.thematique_nom || '', s.lieu || '', s.source || ''].join(' ').toLowerCase();
+    return '<tr class="' + rowClass + '" data-status="' + effectiveStatus + '" data-search="' + escapeHtml(searchData) + '">' +
+      '<td>' + (isToday ? '<span class="today-dot"></span>' : '') + escapeHtml(s.booking_date || '-') + '<br><span style="font-size:12px;color:var(--gray-400)">' + escapeHtml(s.booking_time || '') + '</span>' +
+        (isToday ? ' <span class="countdown" data-date="' + s.booking_date + '" data-time="' + s.booking_time + '"></span>' : '') +
+      '</td>' +
+      '<td><span style="font-weight:600">' + escapeHtml(studentName) + '</span>' +
+        (s.lead_email ? '<br><span style="font-size:11px;color:var(--gray-400)">' + escapeHtml(s.lead_email) + '</span>' : '') +
+      '</td>' +
+      '<td>' + (isCours && s.formateur_nom ? escapeHtml(s.formateur_nom) : '<span style="color:var(--gray-400)">\u2014</span>') + '</td>' +
+      '<td>' + (isCours && s.thematique_nom ? '<span style="color:#6366F1;font-weight:500">' + escapeHtml(s.thematique_nom) + '</span>' : '<span style="color:var(--gray-400)">\u2014</span>') + '</td>' +
+      '<td>' + (s.duree_minutes ? s.duree_minutes + 'min' : '<span style="color:var(--gray-400)">\u2014</span>') + '</td>' +
+      '<td>' + (s.lieu ? escapeHtml(s.lieu) : '<span style="color:var(--gray-400)">\u2014</span>') + '</td>' +
+      '<td>' + sourceBadge + (providerLabel ? ' <span class="provider-badge ' + providerClass + '">' + providerLabel + '</span>' : '') + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td><div class="table-actions">' +
+        (!isPast && hostUrl ? '<a href="' + hostUrl + '" target="_blank" class="btn btn-sm btn-primary" style="font-size:11px">&#127909; Join</a>' : '') +
+        (!isPast && sessionUrl ? ' <button class="btn btn-sm btn-outline" style="font-size:11px" onclick="var b=this;navigator.clipboard.writeText(b.getAttribute(\'data-url\'));b.textContent=\'Copied!\';setTimeout(function(){b.textContent=\'\\ud83d\\udccb Link\'},1500)" data-url="' + escapeHtml(sessionUrl) + '">&#128203; Link</button>' : '') +
+        (isCours ? ' <a href="/cours/' + s.id + '" class="btn btn-sm btn-outline" style="font-size:11px">&#128065; View</a>' : '') +
+        (isPast ? '<span style="font-size:11px;color:var(--gray-400)">Past</span>' : '') +
+      '</div></td>' +
+    '</tr>';
   }
-  __name(renderCard, "renderCard");
-  const todayHtml = todaySessions.length > 0 ? todaySessions.map((s) => renderCard(s, "today")).join("") : "";
-  const upcomingHtml = upcomingSessions.length > 0 ? upcomingSessions.map((s) => renderCard(s, "upcoming")).join("") : "";
-  const pastHtml = pastSessions.length > 0 ? pastSessions.map((s) => renderCard(s, "past")).join("") : "";
-  const emptyHtml = sessions.length === 0 ? `
-    <div class="empty-state">
-      <div class="empty-state-icon">&#127909;</div>
-      <h3>Aucune session video</h3>
-      <p>Les sessions apparaitront ici quand un etudiant reservera un creneau via le booking.</p>
-    </div>
-  ` : "";
+  __name(renderRow, "renderRow");
+  let tableRows = "";
+  if (allSorted.length === 0) {
+    tableRows = '<tr><td colspan="9" class="empty-state"><div class="empty-state-icon">&#127909;</div><h3>Aucune session video</h3><p>Les sessions apparaitront ici quand un etudiant reservera un creneau via le booking.</p></td></tr>';
+  } else {
+    tableRows = allSorted.map(function(s) { return renderRow(s); }).join("");
+  }
   const content = `
     <div class="sessions-header">
-      <h1>&#127909; Private Session 1v1</h1>
+      <div>
+        <h1><span class="page-icon">&#127909;</span> Private Session 1v1</h1>
+        <div class="page-subtitle"><span id="sessionCount">${sessions.length}</span> session${sessions.length !== 1 ? 's' : ''} total</div>
+      </div>
       <div class="sessions-stats">
-        <span class="stat-chip today">&#128308; ${todaySessions.length} aujourd'hui</span>
-        <span class="stat-chip upcoming">&#128197; ${upcomingSessions.length} a venir</span>
-        <span class="stat-chip past">&#9989; ${pastSessions.length} passees</span>
+        <span class="stat-chip today">&#128308; ${todaySessions.length} today</span>
+        <span class="stat-chip upcoming">&#128197; ${upcomingSessions.length} upcoming</span>
+        <span class="stat-chip past">&#9989; ${pastSessions.length} past</span>
       </div>
     </div>
 
-    ${emptyHtml}
+    <div class="filter-bar">
+      <input type="text" id="sessionSearch" class="search-input" placeholder="Search by student, tutor, subject, location, email..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:inherit">
+      <select id="sessionStatusFilter" class="filter-select">
+        <option value="all">All statuses</option>
+        <option value="planifie">Planifi\u00e9</option>
+        <option value="confirme">Confirm\u00e9</option>
+        <option value="termine">Termin\u00e9</option>
+        <option value="annule">Annul\u00e9</option>
+      </select>
+      <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('sessionSearch').value='';document.getElementById('sessionStatusFilter').value='all';filterSessionsTable()">&#10060; Clear</button>
+    </div>
 
-    ${todaySessions.length > 0 ? `<div class="section-title">&#128308; Aujourd'hui</div>${todayHtml}` : ""}
-    ${upcomingSessions.length > 0 ? `<div class="section-title">&#128197; A venir</div>${upcomingHtml}` : ""}
-    ${pastSessions.length > 0 ? `<div class="section-title">&#9989; Passees</div>${pastHtml}` : ""}
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Date / Time</th>
+            <th>Student</th>
+            <th>Tutor</th>
+            <th>Subject</th>
+            <th>Duration</th>
+            <th>Location</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="sessionsTableBody">
+          ${tableRows}
+        </tbody>
+      </table>
+    </div>
 
     <script>
-      // Countdown timers for today's sessions
+      function filterSessionsTable() {
+        var search = document.getElementById('sessionSearch').value.toLowerCase().trim();
+        var status = document.getElementById('sessionStatusFilter').value;
+        var rows = document.querySelectorAll('#sessionsTableBody tr');
+        var visible = 0;
+        rows.forEach(function(row) {
+          var rowStatus = row.getAttribute('data-status') || '';
+          var rowSearch = row.getAttribute('data-search') || '';
+          var matchStatus = status === 'all' || rowStatus === status;
+          var matchSearch = !search || rowSearch.indexOf(search) !== -1;
+          if (matchStatus && matchSearch) {
+            row.style.display = '';
+            visible++;
+          } else {
+            row.style.display = 'none';
+          }
+        });
+        var countEl = document.getElementById('sessionCount');
+        if (countEl) countEl.textContent = visible;
+      }
+      document.getElementById('sessionSearch').addEventListener('input', filterSessionsTable);
+      document.getElementById('sessionStatusFilter').addEventListener('change', filterSessionsTable);
+
       function updateCountdowns() {
         document.querySelectorAll('.countdown').forEach(function(el) {
           var d = el.getAttribute('data-date');
@@ -24683,15 +25090,13 @@ async function createDailyRoom(env, options) {
     const roomName = `cmp-${shortId}-${dateClean}`;
     const sessionStart = /* @__PURE__ */ new Date(`${options.scheduledDate}T${options.scheduledTime}:00Z`);
     const durationMs = (options.durationMinutes || 60) * 60 * 1e3;
-    const bufferMs = 2 * 60 * 60 * 1e3;
+    const bufferMs = 24 * 60 * 60 * 1e3;
     const expiryDate = new Date(sessionStart.getTime() + durationMs + bufferMs);
-    const nbfDate = new Date(sessionStart.getTime() - 15 * 60 * 1e3);
     const roomConfig = {
       name: roomName,
       privacy: "private",
       // Require meeting token to join
       properties: {
-        nbf: Math.floor(nbfDate.getTime() / 1e3),
         exp: Math.floor(expiryDate.getTime() / 1e3),
         max_participants: options.maxParticipants || 2,
         enable_chat: true,
@@ -25770,6 +26175,22 @@ async function handlePortalLogin(request, env, portalType) {
       const { cookie } = await createSession(env.DB, user.id);
       return redirectResponse("/dashboard", cookie);
     }
+    // Allow dual-role: eleve with formateur_id can access tutor portal
+    if (portalType === "tutor" && user.role === "eleve") {
+      const fullUser = await env.DB.prepare("SELECT formateur_id FROM users WHERE id = ?").bind(user.id).first();
+      if (fullUser && fullUser.formateur_id) {
+        const { cookie } = await createSession(env.DB, user.id);
+        return redirectResponse("/tutor", cookie);
+      }
+    }
+    // Allow dual-role: formateur with lead_id can access student portal
+    if (portalType !== "tutor" && user.role === "formateur") {
+      const fullUser = await env.DB.prepare("SELECT lead_id FROM users WHERE id = ?").bind(user.id).first();
+      if (fullUser && fullUser.lead_id) {
+        const { cookie } = await createSession(env.DB, user.id);
+        return redirectResponse("/portal", cookie);
+      }
+    }
     return htmlResponse(renderPortalLoginPage("This account does not have access to this portal.", null, portalType));
   }
   const { cookie } = await createSession(env.DB, user.id);
@@ -26054,7 +26475,7 @@ async function renderStudentDashboard(env, user) {
   }
   const content = `
     <div class="p-welcome-banner">
-      <h2>Welcome back, ${escapeHtml(user.prenom || "Student")}!</h2>
+      <h2>Welcome back, ${escapeHtml((user.prenom || "") + " " + (user.nom || "")).trim() || "Student"}!</h2>
       <p>Here's an overview of your learning journey.</p>
     </div>
     ${nextSessionHtml}
@@ -26135,7 +26556,7 @@ async function renderStudentSessions(env, user) {
       : s.statut === "cancelled" ? '<span class="p-badge p-badge-gray">Cancelled</span>'
       : '<span class="p-badge p-badge-blue">Confirmed</span>';
     const isUpcoming = s.booking_date >= now;
-    const joinLink = s.source === "cours" ? s.video_room_url : `/session/${s.id}`;
+    const joinLink = `/session/${s.id}`;
     const joinBtn = isUpcoming && (s.video_room_url || s.source !== "cours") ? `<a href="${joinLink}" class="p-btn p-btn-primary" style="padding:4px 14px;font-size:12px" target="_blank">Join &rarr;</a>` : '<span style="color:#94A3B8">\u2014</span>';
     const typeLabel = s.service_type === "online" ? "🌐 Online" : s.service_type === "group" ? "👥 Group" : "👤 Individual";
     const subject = s.subject_description ? escapeHtml(s.subject_description.length > 35 ? s.subject_description.slice(0, 35) + "…" : s.subject_description) : '<span style="color:#94A3B8">—</span>';
@@ -26728,7 +27149,7 @@ async function renderTutorDashboard(env, user) {
   }
   const content = `
     <div class="p-welcome-banner">
-      <h2>Welcome back, ${escapeHtml(user.prenom || "Tutor")}!</h2>
+      <h2>Welcome back, ${escapeHtml((user.prenom || "") + " " + (user.nom || "")).trim() || "Tutor"}!</h2>
       <p>Here's an overview of your teaching activity.</p>
     </div>
     ${nextClassHtml}
@@ -26779,7 +27200,7 @@ async function renderTutorClasses(env, user) {
     const titre = c.titre ? escapeHtml(c.titre) : '<span style="color:#94A3B8">—</span>';
     const isUpcoming = c.date_cours >= now;
     const videoUrl = c.video_host_url || c.video_room_url;
-    const joinBtn = isUpcoming && videoUrl && c.statut !== 'annule' ? `<a href="${videoUrl}" class="p-btn p-btn-primary" style="padding:4px 14px;font-size:12px" target="_blank">Join &rarr;</a>` : '<span style="color:#94A3B8">\u2014</span>';
+    const joinBtn = isUpcoming && videoUrl && c.statut !== 'annule' ? `<a href="/session/${c.id}?role=host" class="p-btn p-btn-primary" style="padding:4px 14px;font-size:12px" target="_blank">Join &rarr;</a>` : '<span style="color:#94A3B8">\u2014</span>';
     const acceptCol = tutorAcceptBadge(c.tutor_status || 'pending');
     const detailBtn = isUpcoming && (c.tutor_status || 'pending') === 'pending' ? `<a href="/tutor/classes/${c.id}" class="p-btn" style="padding:4px 14px;font-size:12px;background:#F59E0B;color:#fff;border-radius:6px;text-decoration:none">Respond</a>` : `<a href="/tutor/classes/${c.id}" style="font-size:12px;color:#2563EB;text-decoration:underline">Details</a>`;
     return `<tr class="srow">
@@ -28091,26 +28512,122 @@ var index_default = {
       if (path.startsWith("/session/") && method === "GET") {
         const bookingId = path.split("/session/")[1];
         if (bookingId) {
+          // Try bookings table first
           const booking = await env.DB.prepare(
             "SELECT b.*, l.prenom FROM bookings b LEFT JOIN leads l ON l.id = b.lead_id WHERE b.id = ?"
           ).bind(bookingId).first();
-          if (!booking || !booking.video_room_url) {
-            return new Response(renderSessionExpired(), { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+          if (booking && booking.video_room_url) {
+            const queryToken = url.searchParams.get("t") || void 0;
+            const isHost = url.searchParams.get("role") === "host";
+            return new Response(
+              renderSessionPage({
+                bookingId: booking.id,
+                provider: booking.video_provider || "jitsi",
+                roomUrl: isHost && booking.video_host_url ? booking.video_host_url : booking.video_room_url,
+                token: queryToken,
+                studentName: booking.prenom,
+                date: booking.booking_date,
+                time: booking.booking_time
+              }),
+              { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
+            );
           }
-          const queryToken = url.searchParams.get("t") || void 0;
-          const isHost = url.searchParams.get("role") === "host";
-          return new Response(
-            renderSessionPage({
-              bookingId: booking.id,
-              provider: booking.video_provider || "jitsi",
-              roomUrl: isHost && booking.video_host_url ? booking.video_host_url : booking.video_room_url,
-              token: queryToken,
-              studentName: booking.prenom,
-              date: booking.booking_date,
-              time: booking.booking_time
-            }),
-            { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
-          );
+          // Try cours table (admin-created sessions)
+          const cours = await env.DB.prepare(
+            "SELECT c.id, c.date_cours, c.heure_debut, c.duree_minutes, c.video_provider, c.video_room_url, c.video_host_url, c.video_room_name, c.statut, c.type_cours, c.max_eleves, t.nom as thematique FROM cours c LEFT JOIN thematiques t ON t.id = c.thematique_id WHERE c.id = ?"
+          ).bind(bookingId).first();
+          if (cours) {
+            const isHost = url.searchParams.get("role") === "host";
+            let roomUrl = cours.video_room_url;
+            let roomName = cours.video_room_name;
+            let token = void 0;
+            let provider = cours.video_provider || "daily";
+
+            // For Daily.co sessions: ensure room exists and is accessible
+            if (env.DAILY_API_KEY) {
+              let needsNewRoom = true;
+              if (roomName) {
+                try {
+                  const checkRes = await fetch(`${DAILY_API_URL}/rooms/${roomName}`, {
+                    headers: { "Authorization": `Bearer ${env.DAILY_API_KEY}` }
+                  });
+                  if (checkRes.ok) {
+                    const roomData = await checkRes.json();
+                    const now = Math.floor(Date.now() / 1000);
+                    // Room exists: check if nbf is in the future or room is expired
+                    const hasNbfIssue = roomData.config && roomData.config.nbf && roomData.config.nbf > now;
+                    const isExpired = roomData.config && roomData.config.exp && roomData.config.exp < now;
+                    if (hasNbfIssue || isExpired) {
+                      // Delete the problematic room
+                      await fetch(`${DAILY_API_URL}/rooms/${roomName}`, {
+                        method: "DELETE",
+                        headers: { "Authorization": `Bearer ${env.DAILY_API_KEY}` }
+                      });
+                    } else {
+                      needsNewRoom = false; // Room is fine
+                    }
+                  }
+                } catch(e) { console.error("Room check error:", e); }
+              }
+
+              // Create new room if needed
+              if (needsNewRoom) {
+                const newRoom = await createDailyRoom(env, {
+                  sessionId: cours.id,
+                  scheduledDate: cours.date_cours,
+                  scheduledTime: cours.heure_debut || "00:00",
+                  durationMinutes: cours.duree_minutes || 60,
+                  maxParticipants: cours.type_cours === "groupe" ? (cours.max_eleves || 10) + 1 : 2
+                });
+                if (newRoom.success && newRoom.room) {
+                  roomName = newRoom.room.name;
+                  roomUrl = newRoom.room.url;
+                  provider = "daily";
+                  // Update DB with new room info
+                  // Generate host token
+                  const hostToken = await createDailyToken(env, { roomName, userName: "Host", isOwner: true, expirySeconds: 86400 });
+                  const studentToken = await createDailyToken(env, { roomName, userName: "Student", isOwner: false, expirySeconds: 86400 });
+                  const hostUrl = hostToken.success ? `${roomUrl}?t=${hostToken.token}` : roomUrl;
+                  const studentUrl = studentToken.success ? `${roomUrl}?t=${studentToken.token}` : roomUrl;
+                  await env.DB.prepare("UPDATE cours SET video_provider = 'daily', video_room_url = ?, video_host_url = ?, video_room_name = ? WHERE id = ?")
+                    .bind(studentUrl, hostUrl, roomName, cours.id).run();
+                }
+              }
+
+              // Generate a fresh token for this join request
+              if (roomName) {
+                try {
+                  const userName = url.searchParams.get("name") || (isHost ? "Host" : "Student");
+                  const freshToken = await createDailyToken(env, {
+                    roomName: roomName,
+                    userName: userName,
+                    isOwner: isHost,
+                    expirySeconds: 86400
+                  });
+                  if (freshToken.success && freshToken.token) {
+                    token = freshToken.token;
+                    roomUrl = `https://callmyprof.daily.co/${roomName}`;
+                  }
+                } catch(e) { console.error("Fresh token error:", e); }
+              }
+            }
+
+            if (roomUrl) {
+              return new Response(
+                renderSessionPage({
+                  bookingId: cours.id,
+                  provider: provider,
+                  roomUrl: roomUrl,
+                  token: token,
+                  studentName: cours.thematique || "Session",
+                  date: cours.date_cours,
+                  time: cours.heure_debut
+                }),
+                { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
+              );
+            }
+          }
+          return new Response(renderSessionExpired(), { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
         }
       }
       if (path === "/session-demo/daily" && method === "GET") {
@@ -28269,6 +28786,14 @@ var index_default = {
         {
           const sessionRespondId = matchPath(path, "/api/portal/sessions/:id/respond");
           if (sessionRespondId && method === "POST") return handleStudentSessionResponse(request, env, studentUser, sessionRespondId);
+        }
+        {
+          const initPayId = matchPath(path, "/api/portal/sessions/:id/init-payment");
+          if (initPayId && method === "POST") return handleInitSessionPayment(request, env, studentUser, initPayId);
+        }
+        {
+          const payStatusId = matchPath(path, "/api/portal/sessions/:id/payment-status");
+          if (payStatusId && method === "GET") return handlePaymentStatus(env, studentUser, payStatusId);
         }
       }
 
@@ -28540,7 +29065,7 @@ var index_default = {
               customer: customerEmail ? { email: customerEmail } : void 0,
               metadata: { reference_id: body.reference_id, reference_type: body.reference_type },
               "3ds": { enabled: true },
-              success_url: `${new URL(request.url).origin}/payment/success?ref=${body.reference_id}`,
+              success_url: `${new URL(request.url).origin}/payment/success?ref=${body.reference_id}&type=${body.reference_type || ''}`,
               failure_url: `${new URL(request.url).origin}/payment/cancelled`
             })
           });
@@ -28563,6 +29088,14 @@ var index_default = {
           }
           if (checkoutData.approved || checkoutData.status === "Authorized" || checkoutData.status === "Captured") {
             await processPaymentWebhook(env.DB, body.reference_id, checkoutData.id, checkoutData.id, "checkout", checkoutData);
+            // Session payment: auto-accept student + credit escrow
+            const sessionPmt = await env.DB.prepare("SELECT cours_id, eleve_id, amount FROM payments WHERE id = ?").bind(body.reference_id).first();
+            if (sessionPmt?.cours_id && sessionPmt?.eleve_id) {
+              await env.DB.prepare("UPDATE cours_eleves SET eleve_status = 'accepted', payment_id = ?, eleve_responded_at = datetime('now') WHERE cours_id = ? AND eleve_id = ?")
+                .bind(body.reference_id, sessionPmt.cours_id, sessionPmt.eleve_id).run();
+              await creditEscrow(env.DB, body.reference_id, sessionPmt.cours_id, sessionPmt.eleve_id, sessionPmt.amount, 'USD');
+              await checkAndAutoConfirm(env, sessionPmt.cours_id);
+            }
             return jsonResponse({ success: true });
           }
           return jsonResponse({ error: "Payment not approved" }, 400);
@@ -28573,6 +29106,15 @@ var index_default = {
         }
       }
       if (path === "/payment/success" && method === "GET") {
+        const payRef = url.searchParams.get("ref") || "";
+        const payType = url.searchParams.get("type") || "";
+        // For session payments, find the cours_id and show a back-to-session link
+        if (payType === "session" && payRef) {
+          const pmtRow = await env.DB.prepare("SELECT cours_id FROM payments WHERE id = ?").bind(payRef).first();
+          if (pmtRow?.cours_id) {
+            return htmlResponse(renderPaymentSuccess(locale, `/portal/sessions/${pmtRow.cours_id}`));
+          }
+        }
         return htmlResponse(renderPaymentSuccess(locale));
       }
       if (path === "/payment/cancelled" && method === "GET") {
@@ -28584,6 +29126,15 @@ var index_default = {
           const payload = await adapter.verifyWebhook(request, env.CHECKOUT_WEBHOOK_SECRET || "");
           if (payload.status === "paid" && payload.referenceId) {
             await processPaymentWebhook(env.DB, payload.referenceId, payload.transactionId, payload.sessionId, "checkout", payload.rawData);
+            // Session payment: auto-accept student + credit escrow
+            const sessionPmt = await env.DB.prepare("SELECT id, cours_id, eleve_id, amount FROM payments WHERE (payment_session_id = ? OR id = ?) AND cours_id IS NOT NULL")
+              .bind(payload.sessionId, payload.referenceId).first();
+            if (sessionPmt?.cours_id && sessionPmt?.eleve_id) {
+              await env.DB.prepare("UPDATE cours_eleves SET eleve_status = 'accepted', payment_id = ?, eleve_responded_at = datetime('now') WHERE cours_id = ? AND eleve_id = ?")
+                .bind(sessionPmt.id, sessionPmt.cours_id, sessionPmt.eleve_id).run();
+              await creditEscrow(env.DB, sessionPmt.id, sessionPmt.cours_id, sessionPmt.eleve_id, sessionPmt.amount, 'USD');
+              await checkAndAutoConfirm(env, sessionPmt.cours_id);
+            }
           }
           return jsonResponse({ received: true });
         } catch (err) {
@@ -28597,6 +29148,15 @@ var index_default = {
           const payload = await adapter.verifyWebhook(request, "");
           if (payload.status === "paid" && payload.referenceId) {
             await processPaymentWebhook(env.DB, payload.referenceId, payload.transactionId, payload.sessionId, "paypal", payload.rawData);
+            // Session payment: auto-accept student + credit escrow
+            const sessionPmt = await env.DB.prepare("SELECT id, cours_id, eleve_id, amount FROM payments WHERE (payment_session_id = ? OR id = ?) AND cours_id IS NOT NULL")
+              .bind(payload.sessionId, payload.referenceId).first();
+            if (sessionPmt?.cours_id && sessionPmt?.eleve_id) {
+              await env.DB.prepare("UPDATE cours_eleves SET eleve_status = 'accepted', payment_id = ?, eleve_responded_at = datetime('now') WHERE cours_id = ? AND eleve_id = ?")
+                .bind(sessionPmt.id, sessionPmt.cours_id, sessionPmt.eleve_id).run();
+              await creditEscrow(env.DB, sessionPmt.id, sessionPmt.cours_id, sessionPmt.eleve_id, sessionPmt.amount, 'USD');
+              await checkAndAutoConfirm(env, sessionPmt.cours_id);
+            }
           }
           return jsonResponse({ received: true });
         } catch (err) {
@@ -28937,7 +29497,7 @@ var index_default = {
         return htmlResponse(html);
       }
       if (path === "/api/cours" && method === "POST") {
-        return createCours(env, request);
+        return createCours(env, request, ctx);
       }
       {
         const coursStatutId = matchPath(path, "/api/cours/:id/statut");
@@ -28994,6 +29554,23 @@ var index_default = {
       }
       if (path === "/api/admin/verify-doc" && method === "POST") {
         return handleAdminVerifyDoc(request, env);
+      }
+      if (path === "/api/admin/search-user" && method === "GET") {
+        const email = url.searchParams.get("email");
+        if (!email) return jsonResponse({ success: false, error: "Email required" });
+        const u = await env.DB.prepare("SELECT id, email, prenom, nom, role FROM users WHERE email = ? COLLATE NOCASE").bind(email.trim()).first();
+        if (!u) return jsonResponse({ success: false, user: null });
+        return jsonResponse({ success: true, user: { id: u.id, email: u.email, prenom: u.prenom, nom: u.nom, role: u.role } });
+      }
+      if (path === "/api/admin/reset-password" && method === "POST") {
+        const body = await request.json();
+        if (!body.user_id || !body.new_password) return errorResponse("User ID and new password required");
+        if (body.new_password.length < 8) return errorResponse("Password must be at least 8 characters");
+        const targetUser = await env.DB.prepare("SELECT id, email FROM users WHERE id = ?").bind(body.user_id).first();
+        if (!targetUser) return errorResponse("User not found", 404);
+        const newHash = await hashPassword(body.new_password);
+        await env.DB.prepare("UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?").bind(newHash, body.user_id).run();
+        return jsonResponse({ success: true, email: targetUser.email });
       }
       {
         const leadDocsId = matchPath(path, "/api/admin/lead-docs/:id");
